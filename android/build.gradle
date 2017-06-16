@@ -30,7 +30,7 @@ android {
 }
 
 ext {
-	ARTIFACTID = 'de.golfgl.gdx-gamesvcs-android'
+	ARTIFACTID = 'gdx-gamesvcs-android'
 }
 
 apply from : '../androidpublish.gradle'
