@@ -5,28 +5,85 @@ package de.golfgl.gdxgamesvcs;
  */
 
 public interface IGameServiceClient {
+
     /**
-     * Connects to Gameservice
+     * Gets an id for this game service.
      *
-     * @param silent if true, no error messages or log in prompts will be shown
+     * @return Game Service ID
+     */
+    String getGameServiceId();
+
+    /**
+     * set this listener to get callbacks from the game service client
+     *
+     * @param gsListener
+     */
+    void setListener(IGameServiceListener gsListener);
+
+    /**
+     * Connects to Gameservice, opens the session.
+     *
+     * @param silent if true, no error messages or log in prompts will be shown for. Use this at application start
+     *               or after resuming the application in Android.
      */
     void connect(boolean silent);
 
     /**
-     * Disconnects from Gameservice
-     *
-     * @param silent if false, an expiclit signOut is performed
+     * Disconnects from Gameservice, closes the session
+     * <p>
+     * Use this in your main games pause() method on Android and when game is quit by the user.
      */
-    void disconnect(boolean silent);
+    void disconnect();
 
+    /**
+     * Signs explicitely out and disconnects from Gameservice. Use only when explicitely wanted by user.
+     */
+    void logOff();
+
+    /**
+     * Gets Players display name
+     *
+     * @return Display name
+     */
     String getPlayerDisplayName();
 
+    /**
+     * Checks the connection status of the game service. See also isConnectionPending.
+     *
+     * @return true if connected, false otherwise
+     */
     boolean isConnected();
 
+    /**
+     * Checks if a connection attempt is running
+     *
+     * @return
+     */
+    boolean isConnectionPending();
+
+    /**
+     * Opens user interface for leader boards, if available.
+     *
+     * @param leaderBoardId if null, then overview is opened (when supported)
+     * @throws GameServiceException
+     */
     void showLeaderboards(String leaderBoardId) throws GameServiceException;
 
+    /**
+     * Opens user interface for achievements, if available.
+     *
+     * @throws GameServiceException
+     */
     void showAchievements() throws GameServiceException;
 
+    /**
+     * Submits to given leaderboard
+     *
+     * @param leaderboardId
+     * @param score
+     * @param tag
+     * @throws GameServiceException when no connection is open
+     */
     void submitToLeaderboard(String leaderboardId, long score, String tag) throws GameServiceException;
 
     void submitEvent(String eventId, int increment);
@@ -35,7 +92,13 @@ public interface IGameServiceClient {
 
     void incrementAchievement(String achievementId, int incNum);
 
-    boolean saveGameState(boolean sync, byte[] gameState, long progressValue);
+    /**
+     * Saves game state to the cloud.
+     *
+     * @param gameState     State to save
+     * @param progressValue A value indicating player's progress. Used for conflict handling
+     */
+    void saveGameState(byte[] gameState, long progressValue);
 
-    boolean loadGameState(boolean sync);
+    void loadGameState();
 }
