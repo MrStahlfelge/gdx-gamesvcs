@@ -62,12 +62,28 @@ public interface IGameServiceClient {
     boolean isConnectionPending();
 
     /**
+     * Some game service libraries provide an own UI for leaderboards so you don't have to implement one.
+     * Use this to check before calling showLeaderboards() to prevent UnsupportedOperationExceptions.
+     *
+     * @return true, if UI for leaderboard is provided. false otherwise
+     */
+    boolean providesLeaderboardUI();
+
+    /**
      * Opens user interface for leader boards, if available.
      *
      * @param leaderBoardId if null, then overview is opened (when supported)
      * @throws GameServiceException
      */
     void showLeaderboards(String leaderBoardId) throws GameServiceException;
+
+    /**
+     * Some game service libraries provide an own UI for achievements so you don't have to implement one.
+     * Use this to check before calling showAchievements() to prevent UnsupportedOperationExceptions.
+     *
+     * @return true, if UI for achievements is provided. false otherwise
+     */
+    boolean providesAchievementsUI();
 
     /**
      * Opens user interface for achievements, if available.
@@ -101,4 +117,5 @@ public interface IGameServiceClient {
     void saveGameState(byte[] gameState, long progressValue);
 
     void loadGameState();
+
 }
