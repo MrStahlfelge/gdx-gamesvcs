@@ -1,15 +1,17 @@
-# my-gdx-extension
+# gdx-gamesvcs
 
-This is the corresponding project to my blog article:
+Framework and Implementation for using Game Services (BaaS) with libGDX.
 
-http://tomgrill.de/how-to-write-your-own-libgdx-extension-setup
+Corresponding demo app: https://github.com/MrStahlfelge/gdx-gamesvcs-app
+
+## Working demo
+
+Coming soon
 
 ## Updates & News
-Follow me to receive release updates about this and my other projects (Promise: No BS posts)
+Follow me to receive release updates about this
 
-https://twitter.com/TomGrillGames and https://www.facebook.com/tomgrillgames
-
-I will also stream sometimes when developing at https://www.twitch.tv/tomgrill and write a blog article from time to time at http://tomgrill.de 
+https://twitter.com/MrStahlfelge
 
 # License
 
