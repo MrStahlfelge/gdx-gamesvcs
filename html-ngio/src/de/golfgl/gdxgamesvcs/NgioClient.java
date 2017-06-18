@@ -27,6 +27,8 @@ public class NgioClient implements IGameServiceClient {
     protected String sessionId;
     protected boolean initialized;
     protected IGameServiceIdMapper<Integer> boardMapper;
+    protected IGameServiceIdMapper<Integer> medalMapper;
+    protected String eventHostId;
     private String ngEncryptionKey;
     private boolean connected;
     private boolean connectionPending;
@@ -43,6 +45,14 @@ public class NgioClient implements IGameServiceClient {
         this.gsListener = gsListener;
     }
 
+    /**
+     * You need to call this basic initialization in order to call Newgrounds.io
+     *
+     * @param ngAppId         the id from your NG API tools
+     * @param ngioSessionid   session id, obtain it from NGIO_SESSIONID_PARAM of your iframe
+     * @param ngEncryptionKey not used at the moment
+     * @return this for method chaining
+     */
     public NgioClient initialize(String ngAppId, String ngioSessionid, String ngEncryptionKey) {
         this.ngAppId = ngAppId;
         this.sessionId = ngioSessionid;
@@ -56,11 +66,33 @@ public class NgioClient implements IGameServiceClient {
      * sets up the mapper for scoreboard calls
      *
      * @param boardMapper
-     * @return
+     * @return this for method chaining
      */
     public NgioClient setNgScoreboardMapper(IGameServiceIdMapper<Integer> boardMapper) {
         this.boardMapper = boardMapper;
         return this;
+    }
+
+    /**
+     * sets up the mapper for medal calls
+     *
+     * @param medalMapper
+     * @return this for method chaining
+     */
+    public NgioClient setNgMedalMapper(IGameServiceIdMapper<Integer> medalMapper) {
+        this.medalMapper = medalMapper;
+        return this;
+    }
+
+    /**
+     * logging events to Newgrounds requires an id for the host.
+     * <p>
+     * NGIO documentation sais: The domain hosting your app. Example: "newgrounds.com", "localHost"
+     *
+     * @param eventHostId id you want to log to newgrounds
+     */
+    public void setEventHostId(String eventHostId) {
+        this.eventHostId = eventHostId;
     }
 
     @Override
@@ -207,7 +239,7 @@ public class NgioClient implements IGameServiceClient {
 
     @Override
     public void showLeaderboards(String leaderBoardId) throws GameServiceException {
-        throw new UnsupportedOperationException(GAMESERVICE_ID);
+        throw new GameServiceException.NotSupportedException();
     }
 
     @Override
@@ -217,7 +249,7 @@ public class NgioClient implements IGameServiceClient {
 
     @Override
     public void showAchievements() throws GameServiceException {
-        throw new UnsupportedOperationException(GAMESERVICE_ID);
+        throw new GameServiceException.NotSupportedException();
     }
 
     @Override
@@ -241,28 +273,50 @@ public class NgioClient implements IGameServiceClient {
         if (tag != null)
             parameters.addChild("tag", new JsonValue(tag));
 
-        sendToGateway("ScoreBoard.postScore", parameters,
-                new RequestResultRunnable() {
-                    @Override
-                    public void run(String json) {
-                        //We do nothing with the answer. Perhaps we could show an exception to the user in the future
-                    }
-                });
+        sendToGateway("ScoreBoard.postScore", parameters, null);
     }
 
     @Override
     public void submitEvent(String eventId, int increment) {
+        // incrementing is not supported by Newgrounds, so we ignore the param
 
+        if (eventHostId == null)
+            throw new IllegalStateException("No host id for logging events provided.");
+
+        if (!isConnected())
+            return;
+
+        JsonValue parameters = new JsonValue(JsonValue.ValueType.object);
+        parameters.addChild("event_name", new JsonValue(eventId));
+        parameters.addChild("host", new JsonValue(eventHostId));
+
+        sendToGateway("Event.logEvent", parameters, null);
     }
 
     @Override
     public void unlockAchievement(String achievementId) {
+        if (medalMapper == null)
+            throw new IllegalStateException("No mapper for achievement ids provided.");
 
+        Integer medalId = medalMapper.mapToGsId(achievementId);
+
+        // no board available or not connected
+        if (medalId == null)
+            return;
+
+        if (!isConnected())
+            return;
+
+        JsonValue parameters = new JsonValue(JsonValue.ValueType.object);
+        parameters.addChild("id", new JsonValue(medalId));
+
+        sendToGateway("Medal.unlock", parameters, null);
     }
 
     @Override
     public void incrementAchievement(String achievementId, int incNum) {
-        throw new UnsupportedOperationException(GAMESERVICE_ID);
+        // incrementing is not supported, so fall back
+        unlockAchievement(achievementId);
     }
 
     @Override
@@ -275,7 +329,22 @@ public class NgioClient implements IGameServiceClient {
         throw new UnsupportedOperationException(GAMESERVICE_ID);
     }
 
+    /**
+     * Call newgrounds.io gateway
+     *
+     * @param component  see http://www.newgrounds.io/help/components/
+     * @param parameters also see NG doc
+     * @param req        callback object
+     */
     protected void sendToGateway(String component, JsonValue parameters, RequestResultRunnable req) {
+        // if no callback is needed, provide a no-op callback
+        if (req == null)
+            req = new RequestResultRunnable() {
+                @Override
+                public void run(String json) {
+                }
+            };
+
         sendForm("{\"app_id\": \"" + ngAppId + "\",\"session_id\":\"" + sessionId + "\","
                         + "\"call\": {\"component\": \"" + component + "\",\"parameters\": " +
                         (parameters == null ? "{}" : parameters.toJson(JsonWriter.OutputType.json)) + "}}\n",
