@@ -94,7 +94,7 @@ public class NoGameServiceClient implements IGameServiceClient {
         Gdx.app.log(GAMESERVICE_ID, "Show leaderboards called: " + leaderBoardId);
 
         if (!this.providesLeaderboardUI)
-            throw new UnsupportedOperationException("No leaderboard UI provided, but showLeaderboards called!");
+            throw new GameServiceException.NotSupportedException();
     }
 
     public NoGameServiceClient setProvidesAchievementsUI(boolean providesAchievementsUI) {
@@ -113,12 +113,15 @@ public class NoGameServiceClient implements IGameServiceClient {
         Gdx.app.log(GAMESERVICE_ID, "Show achievements called.");
 
         if (!this.providesAchievementsUI)
-            throw new UnsupportedOperationException("No achievements UI provided, but showAchievements called!");
+            throw new GameServiceException.NotSupportedException();
     }
 
     @Override
     public void submitToLeaderboard(String leaderboardId, long score, String tag) throws GameServiceException {
         Gdx.app.log(GAMESERVICE_ID, "Submit to leaderboard " + leaderboardId + ", score " + score + ", tag " + tag);
+
+        if (!isConnected())
+            throw new GameServiceException.NotConnectedException();
     }
 
     @Override

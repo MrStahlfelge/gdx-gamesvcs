@@ -104,7 +104,7 @@ public interface IGameServiceClient {
      * @param leaderboardId
      * @param score
      * @param tag
-     * @throws GameServiceException when no connection is open
+     * @throws GameServiceException.NotConnectedException when no connection is open
      */
     void submitToLeaderboard(String leaderboardId, long score, String tag) throws GameServiceException;
 

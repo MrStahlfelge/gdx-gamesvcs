@@ -5,4 +5,12 @@ package de.golfgl.gdxgamesvcs;
  */
 
 public class GameServiceException extends Throwable {
+
+    public static class NotSupportedException extends GameServiceException {
+
+    }
+
+    public static class NotConnectedException extends GameServiceException {
+
+    }
 }
