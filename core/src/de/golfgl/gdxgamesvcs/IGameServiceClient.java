@@ -21,22 +21,28 @@ public interface IGameServiceClient {
     void setListener(IGameServiceListener gsListener);
 
     /**
-     * Connects to Gameservice, opens the session.
+     * Connects to Gameservice and tries to get a user session.
+     * <p>
+     * Note: Probably you have set up the GameService client with an initialize() method. It is not defined by
+     * this interface because it depends on the service which parameters the method needs.
      *
      * @param silent if true, no error messages or log in prompts will be shown for. Use this at application start
-     *               or after resuming the application in Android.
+     *               or after resuming the application in Android. If false, log in screens may appear for letting
+     *               the user enter his credentials.
      */
     void connect(boolean silent);
 
     /**
-     * Disconnects from Gameservice, closes the session
+     * Disconnects from Gameservice by dropping an open connection or deactivating ping calls,
+     * but does not close the session.
      * <p>
      * Use this in your main games pause() method on Android and when game is quit by the user.
      */
     void disconnect();
 
     /**
-     * Signs explicitely out and disconnects from Gameservice. Use only when explicitely wanted by user.
+     * Signs explicitely out and disconnects from Gameservice. Use only when explicitely wanted by user to end his
+     * session.
      */
     void logOff();
 
