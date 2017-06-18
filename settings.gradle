@@ -2,6 +2,7 @@ include ':android'
 include ':core'
 include ':desktop'
 include ':html'
+include ':html-ngio'
 include ':ios'
 include ':ios-moe'
 
