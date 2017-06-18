@@ -3,6 +3,7 @@ package de.golfgl.gdxgamesvcs;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
+import com.badlogic.gdx.utils.JsonWriter;
 
 /**
  * Newgrounds.io client.
@@ -18,12 +19,14 @@ import com.badlogic.gdx.utils.JsonValue;
 public class NgioClient implements IGameServiceClient {
 
     public static final String GAMESERVICE_ID = "GS_NGIO";
-    public static final String NGIO_GATEWAY = "https://www.newgrounds.io/gateway_v3.php";
+    public static final String NGIO_GATEWAY = "//www.newgrounds.io/gateway_v3.php";
+    public static final String NGIO_SESSIONID_PARAM = "ngio_session_id";
 
     protected IGameServiceListener gsListener;
     protected String ngAppId;
     protected String sessionId;
     protected boolean initialized;
+    protected IGameServiceIdMapper<Integer> boardMapper;
     private String ngEncryptionKey;
     private boolean connected;
     private boolean connectionPending;
@@ -40,11 +43,24 @@ public class NgioClient implements IGameServiceClient {
         this.gsListener = gsListener;
     }
 
-    public void initialize(String ngAppId, String ngioSessionid, String ngEncryptionKey) {
+    public NgioClient initialize(String ngAppId, String ngioSessionid, String ngEncryptionKey) {
         this.ngAppId = ngAppId;
         this.sessionId = ngioSessionid;
         this.ngEncryptionKey = ngEncryptionKey;
         this.initialized = true;
+
+        return this;
+    }
+
+    /**
+     * sets up the mapper for scoreboard calls
+     *
+     * @param boardMapper
+     * @return
+     */
+    public NgioClient setNgScoreboardMapper(IGameServiceIdMapper<Integer> boardMapper) {
+        this.boardMapper = boardMapper;
+        return this;
     }
 
     @Override
@@ -66,9 +82,7 @@ public class NgioClient implements IGameServiceClient {
             connectionPending = true;
 
             // yeah, I know I could do that better... but hey, at least it is fast!
-            sendToGateway("{\"app_id\": \"" + ngAppId + "\",\"session_id\":\"" + sessionId + "\","
-                            + "\"call\": {\"component\": " +
-                            "\"App.checkSession\",\"parameters\": {}}}\n",
+            sendToGateway("App.checkSession", null,
                     new RequestResultRunnable() {
                         @Override
                         public void run(String json) {
@@ -178,7 +192,7 @@ public class NgioClient implements IGameServiceClient {
 
     @Override
     public boolean isConnected() {
-        return connected;
+        return connected && userId > 0;
     }
 
     @Override
@@ -208,7 +222,32 @@ public class NgioClient implements IGameServiceClient {
 
     @Override
     public void submitToLeaderboard(String leaderboardId, long score, String tag) throws GameServiceException {
+        if (boardMapper == null)
+            throw new IllegalStateException("No mapper for leader board ids provided.");
 
+        Integer boardId = boardMapper.mapToGsId(leaderboardId);
+
+        // no board available or not connected
+        if (boardId == null)
+            return;
+
+        // API says when not connected throw an Exception, so we do this
+        if (!isConnected())
+            throw new GameServiceException.NotConnectedException();
+
+        JsonValue parameters = new JsonValue(JsonValue.ValueType.object);
+        parameters.addChild("id", new JsonValue(boardId));
+        parameters.addChild("value", new JsonValue(score));
+        if (tag != null)
+            parameters.addChild("tag", new JsonValue(tag));
+
+        sendToGateway("ScoreBoard.postScore", parameters,
+                new RequestResultRunnable() {
+                    @Override
+                    public void run(String json) {
+                        //We do nothing with the answer. Perhaps we could show an exception to the user in the future
+                    }
+                });
     }
 
     @Override
@@ -236,8 +275,11 @@ public class NgioClient implements IGameServiceClient {
         throw new UnsupportedOperationException(GAMESERVICE_ID);
     }
 
-    protected void sendToGateway(String content, RequestResultRunnable req) {
-        sendForm(content, req);
+    protected void sendToGateway(String component, JsonValue parameters, RequestResultRunnable req) {
+        sendForm("{\"app_id\": \"" + ngAppId + "\",\"session_id\":\"" + sessionId + "\","
+                        + "\"call\": {\"component\": \"" + component + "\",\"parameters\": " +
+                        (parameters == null ? "{}" : parameters.toJson(JsonWriter.OutputType.json)) + "}}\n",
+                req);
     }
 
     /**
@@ -251,7 +293,7 @@ public class NgioClient implements IGameServiceClient {
 
 		xhr.onreadystatechange = function() {
 			if (xhr.readyState==4) {
-				resultRun.@de.golfgl.gdxgamesvcs.NgioClientOld.RequestResultRunnable::run(Ljava/lang/String;)(xhr
+				resultRun.@de.golfgl.gdxgamesvcs.NgioClient.RequestResultRunnable::run(Ljava/lang/String;)(xhr
 				.responseText);
 			}
 		};
