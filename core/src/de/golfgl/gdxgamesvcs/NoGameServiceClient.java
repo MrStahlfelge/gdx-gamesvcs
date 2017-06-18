@@ -126,7 +126,7 @@ public class NoGameServiceClient implements IGameServiceClient {
 
     @Override
     public void submitEvent(String eventId, int increment) {
-        Gdx.app.log(GAMESERVICE_ID, "Submit event " + eventId + ", score " + increment);
+        Gdx.app.log(GAMESERVICE_ID, "Submit event " + eventId + ", value " + increment);
     }
 
     @Override
