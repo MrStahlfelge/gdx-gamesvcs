@@ -128,13 +128,15 @@ public class NgioClient implements IGameServiceClient {
 
     protected void checkSessionAnswer(boolean silent, String json) {
         JsonValue root = new JsonReader().parse(json);
+
+        // was the query processed successfully=
         boolean success = root.getBoolean("success", false);
 
         String errorMsg = "";
         JsonValue errorObject = null;
 
         if (success) {
-
+            // if the query was successful, maybe session is invalid?
             try {
                 JsonValue resultObjectData = root.get("result").get("data");
 
@@ -165,7 +167,6 @@ public class NgioClient implements IGameServiceClient {
                 Gdx.app.error(GAMESERVICE_ID, "Error checking session - could not parse user data");
             }
 
-            gsListener.gsConnected();
         } else {
 //=> Answer when call is blocked:
 // {"success":false,"error":{"message":"You have been making too many calls to the API and have been temporarily
@@ -333,7 +334,7 @@ public class NgioClient implements IGameServiceClient {
     public CloudSaveCapability supportsCloudGameState() {
         return CloudSaveCapability.NotSupported;
     }
-    
+
     /**
      * Call newgrounds.io gateway
      *
