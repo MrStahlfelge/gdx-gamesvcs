@@ -9,6 +9,8 @@ import com.badlogic.gdx.Gdx;
  * You can use it for testing purposes in your desktop project, but also in your productive game to avoid checking
  * for null pointers on every call.
  * <p>
+ * And of course you can extend it for your own implementation of a game service - contributions are very welcome!
+ * <p>
  * Created by Benjamin Schulte on 17.06.2017.
  */
 
@@ -16,9 +18,9 @@ public class NoGameServiceClient implements IGameServiceClient {
 
     public static final String GAMESERVICE_ID = "GS_NOOP";
 
-    private IGameServiceListener gsListener;
+    protected IGameServiceListener gsListener;
 
-    private boolean connected;
+    protected boolean connected;
     private boolean providesLeaderboardUI;
     private boolean providesAchievementsUI;
 
