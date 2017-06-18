@@ -329,6 +329,11 @@ public class NgioClient implements IGameServiceClient {
         throw new UnsupportedOperationException(GAMESERVICE_ID);
     }
 
+    @Override
+    public CloudSaveCapability supportsCloudGameState() {
+        return CloudSaveCapability.NotSupported;
+    }
+    
     /**
      * Call newgrounds.io gateway
      *

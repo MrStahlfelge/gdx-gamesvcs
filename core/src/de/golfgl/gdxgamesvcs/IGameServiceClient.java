@@ -124,4 +124,12 @@ public interface IGameServiceClient {
 
     void loadGameState();
 
+    /**
+     * use this to check if your game service - or the API client - supports cloud save feature
+     *
+     * @return enum CloudSaveCapability
+     */
+    CloudSaveCapability supportsCloudGameState();
+
+    enum CloudSaveCapability { NotSupported, SingleFileSupported, MultipleFilesSupported };
 }

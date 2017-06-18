@@ -149,4 +149,9 @@ public class NoGameServiceClient implements IGameServiceClient {
         Gdx.app.log(GAMESERVICE_ID, "Called load game state.");
     }
 
+    @Override
+    public CloudSaveCapability supportsCloudGameState() {
+        return CloudSaveCapability.NotSupported;
+    }
+
 }
