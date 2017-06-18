@@ -21,7 +21,7 @@ See the corresponding demo app https://github.com/MrStahlfelge/gdx-gamesvcs-app 
 ## Supported game services
 
 * Newgrounds (HTML5-only)
-* Google Play Games (Android only, not open-sourced, coming soon)
+* Google Play Games (Android only, not yet open-sourced, but coming soon)
 
 Contributes are very welcome!
 
@@ -48,13 +48,13 @@ Android:
     
 and so on.
 
-For HTML5, you have also add a line to `GdxDefinition.gwt.xml` and `GdxDefinitionSuperdev.gwt.xml`:
+For HTML5, you also have to add a line to `GdxDefinition.gwt.xml` and `GdxDefinitionSuperdev.gwt.xml`:
 
     <inherits name="de.golfgl.gdxgamesvcs.gdx_gamesvcs_gwt" />
 
 See [Demo App Commit 4ff746](https://github.com/MrStahlfelge/gdx-gamesvcs-app/commit/4ff746d591aead2a8ceeaff01c871209f31143cf) for the full list of dependencies.
 
-Most of the dependencies are empty, but may be filled in the future.
+Most of the dependencies are empty, but may be filled in the future so better include them to avoid problems.
 
 You no can use the `NoGameServiceClient` in your project. For using another Gameservice, add its dependencies according to its wiki page or implement your own client.
 
@@ -97,14 +97,14 @@ Main game class:
 
 In the launcher class you instantiate and initialize the GameServiceClient you really want to use:
 
-        NgioClient gsClient = new NgioClient();
+        YourGameserviceClient gsClient = new YourGameserviceClient();
 
         gsClient.initialize( game service dependant initialization parameters );
 
         myGdxGame.gsClient = gsClient;
 
 
-Check for `gsClient.isConnected()` if you successfully established a connection.
+Check for `gsClient.isConnected()` if you successfully established a connection, or set a listeneder and wait for the call to `gsConnected`.
 
 When connected, you can feed your players by unlocking achievements and posting scores to leaderboards really easy:
 
