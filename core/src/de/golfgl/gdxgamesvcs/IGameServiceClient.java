@@ -7,16 +7,18 @@ package de.golfgl.gdxgamesvcs;
 public interface IGameServiceClient {
 
     /**
-     * Gets an id for this game service.
+     * Gets an id for this game service for identifiying or showing labels
      *
      * @return Game Service ID
      */
     String getGameServiceId();
 
     /**
-     * set this listener to get callbacks from the game service client
+     * Set this listener to get callbacks from the game service client
+     * <p>
+     * This is not mandatory.
      *
-     * @param gsListener
+     * @param gsListener your listening class, normally your Main Game class
      */
     void setListener(IGameServiceListener gsListener);
 
@@ -29,12 +31,14 @@ public interface IGameServiceClient {
      * @param silent if true, no error messages or log in prompts will be shown for. Use this at application start
      *               or after resuming the application in Android. If false, log in screens may appear for letting
      *               the user enter his credentials.
+     * @return true if connection is already established or connection is pending. false if no connect is tried due to
+     * unfulfilled prejudices (normally credentials not given).
      */
-    void connect(boolean silent);
+    boolean connect(boolean silent);
 
     /**
      * Disconnects from Gameservice by dropping an open connection or deactivating ping calls,
-     * but does not close the session.
+     * but does not close the user's session and so not invalidating a signin.
      * <p>
      * Use this in your main games pause() method on Android and when game is quit by the user.
      */
@@ -79,7 +83,7 @@ public interface IGameServiceClient {
      * Opens user interface for leader boards, if available.
      *
      * @param leaderBoardId if null, then overview is opened (when supported)
-     * @throws GameServiceException
+     * @throws GameServiceException if not connected to service or operation not supported by client
      */
     void showLeaderboards(String leaderBoardId) throws GameServiceException;
 
@@ -94,12 +98,15 @@ public interface IGameServiceClient {
     /**
      * Opens user interface for achievements, if available.
      *
-     * @throws GameServiceException
+     * @throws GameServiceException if not connected to service or operation not supported by client
      */
     void showAchievements() throws GameServiceException;
 
     /**
-     * Submits to given leaderboard
+     * Submits to given leaderboard.
+     * <p>
+     * Besides the thrown error when no connection is open, this API is of type
+     * fire and forget. Every possible error is checked by the API and not thrown, but logged on info level.
      *
      * @param leaderboardId
      * @param score
@@ -108,20 +115,55 @@ public interface IGameServiceClient {
      */
     void submitToLeaderboard(String leaderboardId, long score, String tag) throws GameServiceException;
 
+    /**
+     * Posts an event to the API.
+     * <p>
+     * This API is of type fire and forget. Every possible error is checked by the API and not thrown, but logged on
+     * info level. If the connection is not open, this is no error.
+     *
+     * @param eventId   event to post to
+     * @param increment value the event is incremented. This parameter is ignored when not supported by the API
+     */
     void submitEvent(String eventId, int increment);
 
+    /**
+     * Unlocks an achievement.
+     * <p>
+     * This API is of type fire and forget. Every possible error is checked by the API and not thrown, but logged on
+     * info level. If the connection is not open, this is no error.
+     *
+     * @param achievementId achievement to unlock
+     */
     void unlockAchievement(String achievementId);
 
+    /**
+     * Increments an achievement. If incrementing achievements is not supported by the API, it unlocks the achievement.
+     * <p>
+     * This API is of type fire and forget. Every possible error is checked by the API and not thrown, but logged on
+     * info level. If the connection is not open, this is no error.
+     *
+     * @param achievementId achievement to increment
+     * @param incNum        value to increment
+     */
     void incrementAchievement(String achievementId, int incNum);
 
     /**
      * Saves game state to the cloud.
+     * <p>
+     * This method may throw an UnsupportedOperationException when cloud save is not supported. Check with
+     * {@link #supportsCloudGameState()} before calling.
      *
      * @param gameState     State to save
      * @param progressValue A value indicating player's progress. Used for conflict handling
      */
     void saveGameState(byte[] gameState, long progressValue);
 
+    /**
+     * Loads game state from the cloud and calls gsGameStateLoaded method of the listener set.
+     * <p>
+     * This method may throw an UnsupportedOperationException when cloud save is not supported. Check with
+     * {@link #supportsCloudGameState()} before calling.
+     */
     void loadGameState();
 
     /**
@@ -131,5 +173,7 @@ public interface IGameServiceClient {
      */
     CloudSaveCapability supportsCloudGameState();
 
-    enum CloudSaveCapability { NotSupported, SingleFileSupported, MultipleFilesSupported };
+    enum CloudSaveCapability {NotSupported, SingleFileSupported, MultipleFilesSupported}
+
+    ;
 }

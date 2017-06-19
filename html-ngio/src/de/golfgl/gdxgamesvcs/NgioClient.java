@@ -96,21 +96,21 @@ public class NgioClient implements IGameServiceClient {
     }
 
     @Override
-    public void connect(final boolean silent) {
+    public boolean connect(final boolean silent) {
         if (connected)
-            return;
+            return true;
 
         //TODO: Ping every 5 minutes
 
         if (!initialized) {
-            Gdx.app.error(GAMESERVICE_ID, "Cannot connect before initizalize is called.");
-            return;
+            Gdx.app.error(GAMESERVICE_ID, "Cannot connect before initialize is called.");
+            return false;
         }
 
-        if (sessionId == null && !silent && gsListener != null)
-            gsListener.gsErrorMsg("Please sign in to Newgrounds and reload the game to use your Newgrounds account.");
-
-        if (sessionId != null) {
+        if (sessionId == null) {
+            Gdx.app.log(GAMESERVICE_ID, "Session id needed to connect to Newgrounds, but not set.");
+            return false;
+        } else {
             connectionPending = true;
 
             // yeah, I know I could do that better... but hey, at least it is fast!
@@ -122,6 +122,8 @@ public class NgioClient implements IGameServiceClient {
                             checkSessionAnswer(silent, json);
                         }
                     });
+
+            return true;
         }
 
     }
@@ -187,7 +189,7 @@ public class NgioClient implements IGameServiceClient {
             Gdx.app.log(GAMESERVICE_ID, errorMsg);
 
             if (!silent && gsListener != null)
-                gsListener.gsErrorMsg(errorMsg);
+                gsListener.gsErrorMsg(IGameServiceListener.GsErrorType.errorLoginFailed, errorMsg);
         }
 
         if (gsListener != null) {
@@ -255,8 +257,10 @@ public class NgioClient implements IGameServiceClient {
 
     @Override
     public void submitToLeaderboard(String leaderboardId, long score, String tag) throws GameServiceException {
-        if (boardMapper == null)
-            throw new IllegalStateException("No mapper for leader board ids provided.");
+        if (boardMapper == null) {
+            Gdx.app.log(GAMESERVICE_ID, "Cannot post score: No mapper for leader board ids provided.");
+            return;
+        }
 
         Integer boardId = boardMapper.mapToGsId(leaderboardId);
 
@@ -281,8 +285,10 @@ public class NgioClient implements IGameServiceClient {
     public void submitEvent(String eventId, int increment) {
         // incrementing is not supported by Newgrounds, so we ignore the param
 
-        if (eventHostId == null)
-            throw new IllegalStateException("No host id for logging events provided.");
+        if (eventHostId == null) {
+            Gdx.app.log(GAMESERVICE_ID, "Cannot post event: No host id for logging events provided.");
+            return;
+        }
 
         if (!isConnected())
             return;
@@ -296,8 +302,10 @@ public class NgioClient implements IGameServiceClient {
 
     @Override
     public void unlockAchievement(String achievementId) {
-        if (medalMapper == null)
-            throw new IllegalStateException("No mapper for achievement ids provided.");
+        if (medalMapper == null) {
+            Gdx.app.log(GAMESERVICE_ID, "Cannot unlock achievmenet: No mapper for achievement ids provided.");
+            return;
+        }
 
         Integer medalId = medalMapper.mapToGsId(achievementId);
 

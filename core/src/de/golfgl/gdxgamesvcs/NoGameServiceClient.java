@@ -35,13 +35,18 @@ public class NoGameServiceClient implements IGameServiceClient {
     }
 
     @Override
-    public void connect(boolean silent) {
+    public boolean connect(boolean silent) {
         Gdx.app.log(GAMESERVICE_ID, "Connect called, silent: " + silent);
+
+        if (connected)
+            return true;
 
         connected = true;
 
         if (gsListener != null)
             gsListener.gsConnected();
+
+        return true;
     }
 
     @Override

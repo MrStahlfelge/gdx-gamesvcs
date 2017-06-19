@@ -20,7 +20,15 @@ public interface IGameServiceListener {
      */
     public void gsDisconnected();
 
-    public void gsErrorMsg(String msg);
+    /**
+     * Called from GameServiceClient to show a message to the user.
+     *
+     * @param et - error type for your own message
+     * @param msg - further information, may be null
+     */
+    public void gsErrorMsg(GsErrorType et, String msg);
+
+    public enum GsErrorType {errorLoginFailed, errorUnknown}
 
     /**
      * Returns a game state that was saved in Cloud services
