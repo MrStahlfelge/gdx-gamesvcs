@@ -1,6 +1,8 @@
 package de.golfgl.gdxgamesvcs;
 
 /**
+ * This is the main interface for gdx-gamesvcs. Use this in your game core.
+ * <p>
  * Created by Benjamin Schulte on 16.06.2017.
  */
 
@@ -110,7 +112,7 @@ public interface IGameServiceClient {
      *
      * @param leaderboardId
      * @param score
-     * @param tag
+     * @param tag           an optional information to post on the leader board, if API supports it. May be null.
      * @throws GameServiceException.NotConnectedException when no connection is open
      */
     void submitToLeaderboard(String leaderboardId, long score, String tag) throws GameServiceException;
@@ -153,18 +155,22 @@ public interface IGameServiceClient {
      * This method may throw an UnsupportedOperationException when cloud save is not supported. Check with
      * {@link #supportsCloudGameState()} before calling.
      *
+     * @param fileId        file id to save to when multiple files are supported. Ignored otherwise
      * @param gameState     State to save
-     * @param progressValue A value indicating player's progress. Used for conflict handling
+     * @param progressValue A value indicating player's progress. Used for conflict handling: if game state already
+     *                      saved is higher than this value, the gameState is not saved
      */
-    void saveGameState(byte[] gameState, long progressValue);
+    void saveGameState(String fileId, byte[] gameState, long progressValue);
 
     /**
      * Loads game state from the cloud and calls gsGameStateLoaded method of the listener set.
      * <p>
      * This method may throw an UnsupportedOperationException when cloud save is not supported. Check with
      * {@link #supportsCloudGameState()} before calling.
+     *
+     * @param fileId file id to load from when multiple files are supported. Ignored otherwise
      */
-    void loadGameState();
+    void loadGameState(String fileId);
 
     /**
      * use this to check if your game service - or the API client - supports cloud save feature
@@ -174,6 +180,4 @@ public interface IGameServiceClient {
     CloudSaveCapability supportsCloudGameState();
 
     enum CloudSaveCapability {NotSupported, SingleFileSupported, MultipleFilesSupported}
-
-    ;
 }

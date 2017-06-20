@@ -329,12 +329,12 @@ public class NgioClient implements IGameServiceClient {
     }
 
     @Override
-    public void saveGameState(byte[] gameState, long progressValue) {
+    public void saveGameState(String fileId, byte[] gameState, long progressValue) {
         throw new UnsupportedOperationException(GAMESERVICE_ID);
     }
 
     @Override
-    public void loadGameState() {
+    public void loadGameState(String fileId) {
         throw new UnsupportedOperationException(GAMESERVICE_ID);
     }
 
