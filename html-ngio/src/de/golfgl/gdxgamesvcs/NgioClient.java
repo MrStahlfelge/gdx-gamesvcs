@@ -87,7 +87,10 @@ public class NgioClient implements IGameServiceClient {
     /**
      * logging events to Newgrounds requires an id for the host.
      * <p>
-     * NGIO documentation sais: The domain hosting your app. Example: "newgrounds.com", "localHost"
+     * NGIO documentation sais: The domain hosting your app. Example: "newgrounds.com", "localHost", but on GWT
+     * you should just use
+     * <p>
+     * com.google.gwt.user.client.Window.Location.getHostname()
      *
      * @param eventHostId id you want to log to newgrounds
      */
@@ -100,7 +103,12 @@ public class NgioClient implements IGameServiceClient {
         if (connected)
             return true;
 
-        //TODO: Ping every 5 minutes
+        //TODO: Ping every 5 minutes:
+        //Ngio documentation:
+        // Remembered sessions will expire after 30 days of inactivity. All other sessions will expire after one hour
+        // of inactivity. Session expirations get renewed with every call. You could use 'Gateway.ping' every
+        // 5 minutes to keep sessions alive.
+
 
         if (!initialized) {
             Gdx.app.error(GAMESERVICE_ID, "Cannot connect before initialize is called.");
