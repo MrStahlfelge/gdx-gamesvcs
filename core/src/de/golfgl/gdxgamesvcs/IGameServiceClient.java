@@ -107,15 +107,14 @@ public interface IGameServiceClient {
     /**
      * Submits to given leaderboard.
      * <p>
-     * Besides the thrown error when no connection is open, this API is of type
-     * fire and forget. Every possible error is checked by the API and not thrown, but logged on info level.
+     * This API is of type fire and forget. Every possible error is checked by the API and not thrown, but logged on
+     * info level. If the connection is not open, this is no error.
      *
      * @param leaderboardId
      * @param score
      * @param tag           an optional information to post on the leader board, if API supports it. May be null.
-     * @throws GameServiceException.NotConnectedException when no connection is open
      */
-    void submitToLeaderboard(String leaderboardId, long score, String tag) throws GameServiceException;
+    void submitToLeaderboard(String leaderboardId, long score, String tag);
 
     /**
      * Posts an event to the API.

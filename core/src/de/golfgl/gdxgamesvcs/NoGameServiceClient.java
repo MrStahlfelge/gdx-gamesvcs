@@ -122,11 +122,8 @@ public class NoGameServiceClient implements IGameServiceClient {
     }
 
     @Override
-    public void submitToLeaderboard(String leaderboardId, long score, String tag) throws GameServiceException {
+    public void submitToLeaderboard(String leaderboardId, long score, String tag) {
         Gdx.app.log(GAMESERVICE_ID, "Submit to leaderboard " + leaderboardId + ", score " + score + ", tag " + tag);
-
-        if (!isConnected())
-            throw new GameServiceException.NotConnectedException();
     }
 
     @Override

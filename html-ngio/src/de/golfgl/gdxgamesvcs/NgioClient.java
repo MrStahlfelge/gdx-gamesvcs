@@ -256,7 +256,7 @@ public class NgioClient implements IGameServiceClient {
     }
 
     @Override
-    public void submitToLeaderboard(String leaderboardId, long score, String tag) throws GameServiceException {
+    public void submitToLeaderboard(String leaderboardId, long score, String tag) {
         if (boardMapper == null) {
             Gdx.app.log(GAMESERVICE_ID, "Cannot post score: No mapper for leader board ids provided.");
             return;
@@ -265,12 +265,8 @@ public class NgioClient implements IGameServiceClient {
         Integer boardId = boardMapper.mapToGsId(leaderboardId);
 
         // no board available or not connected
-        if (boardId == null)
+        if (boardId == null || !isConnected())
             return;
-
-        // API says when not connected throw an Exception, so we do this
-        if (!isConnected())
-            throw new GameServiceException.NotConnectedException();
 
         JsonValue parameters = new JsonValue(JsonValue.ValueType.object);
         parameters.addChild("id", new JsonValue(boardId));
