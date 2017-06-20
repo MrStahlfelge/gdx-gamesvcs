@@ -84,6 +84,33 @@ project(":core") {
 
 
 
+project(":core-gamejolt") {
+    apply plugin: 'java'
+
+    apply from: '../publish.gradle'
+
+    configurations {
+        custom
+        compile.extendsFrom custom
+    }
+
+    eclipse {
+        project {
+            name = appName + "-core-gamejolt"
+        }
+    }
+
+    dependencies {
+        compile project(':core')
+    }
+    dependencies {
+        compile "com.badlogicgames.gdx:gdx:$gdxVersion"
+    }
+}
+
+
+
+
 project(":desktop") {
     apply plugin: 'java'
 

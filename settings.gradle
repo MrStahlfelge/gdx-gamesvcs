@@ -1,5 +1,6 @@
 include ':android'
 include ':core'
+include ':core-gamejolt'
 include ':desktop'
 include ':html'
 include ':html-ngio'
