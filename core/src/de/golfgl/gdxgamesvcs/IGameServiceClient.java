@@ -27,6 +27,10 @@ public interface IGameServiceClient {
     /**
      * Connects to Gameservice and tries to get a user session.
      * <p>
+     * It depends from the game service implementation what the connected state implies. See the documentation of
+     * the specific service. This method should be called with silent param at application startup, and when resuming
+     * in Android.
+     * <p>
      * Note: Probably you have set up the GameService client with an initialize() method. It is not defined by
      * this interface because it depends on the service which parameters the method needs.
      *
@@ -108,7 +112,8 @@ public interface IGameServiceClient {
      * Submits to given leaderboard.
      * <p>
      * This API is of type fire and forget. Every possible error is checked by the API and not thrown, but logged on
-     * info level. If the connection is not open, this is no error.
+     * info level. If the connection is not open, this is no error - some game services allow submitting scores
+     * without a user session.
      *
      * @param leaderboardId
      * @param score
@@ -120,7 +125,8 @@ public interface IGameServiceClient {
      * Posts an event to the API.
      * <p>
      * This API is of type fire and forget. Every possible error is checked by the API and not thrown, but logged on
-     * info level. If the connection is not open, this is no error.
+     * info level. If the connection is not open, this is no error - some game services allow submitting events
+     * without a user session.
      *
      * @param eventId   event to post to
      * @param increment value the event is incremented. This parameter is ignored when not supported by the API

@@ -119,15 +119,21 @@ In the launcher class you instantiate and initialize the GameServiceClient you r
 
 Check for `gsClient.isConnected()` if you successfully established a connection, or set a listeneder and wait for the call to `gsConnected`.
 
+Please note: It depends on the game service which calls are allowed without being connected to a user session.
+
 ### Submitting events and scores, unlocking achievements
 
-When connected, you can feed your players by unlocking achievements and posting scores to leaderboards really easy:
+You can feed your players by unlocking achievements and posting scores to leaderboards really easy:
 
     gsClient.submitToLeaderboard(leaderboardId, score, tag);
     
     gsClient.unlockAchievement(achievementId);
     
+Events are interesting for you as a developer.     
+    
     gsClient.submitEvent(eventId, 1);
+
+Please note: It depends of the game services which calls are allowed for unauthenticated users. 
 
 ### Using cloud save feature
 
