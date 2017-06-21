@@ -5,6 +5,7 @@ import com.badlogic.gdx.Net;
 import com.badlogic.gdx.net.HttpParametersUtils;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
+import com.badlogic.gdx.utils.Timer;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
@@ -19,6 +20,9 @@ import java.util.Map;
  * <p>
  * See http://gamejolt.com/api/doc/game for GameJolt API documentation
  * <p>
+ * Some code taken from smelc/gdx-gamejolt - thanks for providing it!
+ * https://github.com/smelc/gdx-gamejolt &amp; http://www.schplaf.org/hgames/
+ * <p>
  * Created by Benjamin Schulte on 17.06.2017.
  */
 
@@ -27,6 +31,7 @@ public class GameJoltClient implements IGameServiceClient {
     public static final String GJ_GATEWAY = "http://gamejolt.com/api/game/v1/";
     public static final String GJ_USERNAME_PARAM = "gjapi_username";
     public static final String GJ_USERTOKEN_PARAM = "gjapi_token";
+    protected static final int GJ_PING_INTERVAL = 30;
 
     //TODO: Sessions support with open/close/ping - http://gamejolt.com/api/doc/game/sessions
 
@@ -40,7 +45,9 @@ public class GameJoltClient implements IGameServiceClient {
     protected boolean initialized;
     protected IGameServiceIdMapper<Integer> scoreTableMapper;
     protected IGameServiceIdMapper<Integer> trophyMapper;
+    protected Timer.Task pingTask;
     private String eventKeyPrefix;
+    private String guestName;
 
     public void initialize(String gjAppId, String gjAppPrivateKey) {
         this.gjAppId = gjAppId;
@@ -75,13 +82,51 @@ public class GameJoltClient implements IGameServiceClient {
         return userToken;
     }
 
+    /**
+     * Sets the GameJolt user token. Not possible when connected!
+     *
+     * @param userToken
+     * @return
+     */
     public GameJoltClient setUserToken(String userToken) {
+        if (isConnected())
+            throw new IllegalStateException();
+
         this.userToken = userToken;
         return this;
     }
 
+    /**
+     * Sets the GameJolt user name. Not possible when connected!
+     *
+     * @param userName
+     * @return
+     */
     public GameJoltClient setUserName(String userName) {
+        if (isConnected())
+            throw new IllegalStateException();
+
         this.userName = userName;
+        return this;
+    }
+
+    /**
+     * see {@link #setGuestName(String)}
+     *
+     * @return
+     */
+    public String getGuestName() {
+        return guestName;
+    }
+
+    /**
+     * GameJolt can post scores to scoreboards without an authenticated user. Set a guest name to enable this featuee.
+     *
+     * @param guestName
+     */
+    public GameJoltClient setGuestName(String guestName) {
+        this.guestName = guestName;
+
         return this;
     }
 
@@ -118,7 +163,7 @@ public class GameJoltClient implements IGameServiceClient {
         Map<String, String> params = new HashMap<String, String>();
         addGameIDUserNameUserToken(params);
 
-        final Net.HttpRequest http = buildRequest("users/auth/", params);
+        final Net.HttpRequest http = buildJsonRequest("users/auth/", params);
         if (http == null)
             return false;
 
@@ -143,7 +188,8 @@ public class GameJoltClient implements IGameServiceClient {
                     connected = response.getBoolean("success");
 
                     if (connected) {
-                        //TODO Sessions: session could be opened here
+                        // Open a session
+                        sendOpenSessionEvent();
 
                         if (gsListener != null)
                             gsListener.gsConnected();
@@ -171,6 +217,35 @@ public class GameJoltClient implements IGameServiceClient {
         return true;
     }
 
+    protected void sendOpenSessionEvent() {
+        Map<String, String> params = new HashMap<String, String>();
+        addGameIDUserNameUserToken(params);
+
+        final Net.HttpRequest http = buildJsonRequest("sessions/open/", params);
+
+        if (http != null)
+            Gdx.net.sendHttpRequest(http, new NoOpResponseListener());
+
+        pingTask = Timer.schedule(new Timer.Task() {
+            @Override
+            public void run() {
+                sendKeepSessionOpenEvent();
+            }
+        }, GJ_PING_INTERVAL, GJ_PING_INTERVAL);
+
+    }
+
+    protected void sendKeepSessionOpenEvent() {
+        Map<String, String> params = new HashMap<String, String>();
+        addGameIDUserNameUserToken(params);
+
+        final Net.HttpRequest http = buildJsonRequest("sessions/ping/", params);
+
+        if (http != null)
+            Gdx.net.sendHttpRequest(http, new NoOpResponseListener());
+
+    }
+
     protected void authenticationFailed(boolean silent, String msg) {
         connected = false;
         connectionPending = false;
@@ -185,7 +260,10 @@ public class GameJoltClient implements IGameServiceClient {
 
     @Override
     public void disconnect() {
-        //TODO sessions could be closed here (when opened)
+        if (pingTask != null)
+            pingTask.cancel();
+
+        sendCloseSessionEvent();
 
         connected = false;
 
@@ -193,11 +271,23 @@ public class GameJoltClient implements IGameServiceClient {
             gsListener.gsDisconnected();
     }
 
+    protected void sendCloseSessionEvent() {
+        Map<String, String> params = new HashMap<String, String>();
+        addGameIDUserNameUserToken(params);
+
+        final Net.HttpRequest http = buildJsonRequest("sessions/close/", params);
+
+        if (http != null)
+            Gdx.net.sendHttpRequest(http, new NoOpResponseListener());
+
+    }
+
+
     @Override
     public void logOff() {
+        disconnect();
         userName = null;
         userToken = null;
-        disconnect();
     }
 
     @Override
@@ -237,11 +327,14 @@ public class GameJoltClient implements IGameServiceClient {
 
     @Override
     public void submitToLeaderboard(String leaderboardId, long score, String tag) {
-        //Interesting detail: GameJolt allows submitting scores without an open session.
-        //This client does not implement it, but you can submit scores without giving username and token,
-        //but with "guest" parameter instead
+        //GameJolt allows submitting scores without an open session.
+        //Enable it by setting guest name.
         //see http://gamejolt.com/api/doc/game/scores/add
 
+        if (!initialized) {
+            Gdx.app.error(GAMESERVICE_ID, "Cannot post score: set app ID via initialize()");
+            return;
+        }
         if (scoreTableMapper == null) {
             Gdx.app.log(GAMESERVICE_ID, "Cannot post score: No mapper for score table ids provided.");
             return;
@@ -249,19 +342,27 @@ public class GameJoltClient implements IGameServiceClient {
 
         Integer boardId = scoreTableMapper.mapToGsId(leaderboardId);
 
-        // no board available or not connected
-        if (boardId == null || !isConnected())
+        // no board available
+        if (boardId == null)
             return;
 
         Map<String, String> params = new HashMap<String, String>();
-        addGameIDUserNameUserToken(params);
+
+        if (isConnected())
+            addGameIDUserNameUserToken(params);
+        else if (guestName != null) {
+            params.put("game_id", gjAppId);
+            params.put("guest", guestName);
+        } else {
+            Gdx.app.log(GAMESERVICE_ID, "Cannot post to scoreboard. No guest name and no user given.");
+        }
         params.put("score", String.valueOf(score));
         params.put("sort", String.valueOf(score));
         if (tag != null)
             params.put("extra_data", tag);
         params.put("table_id", boardId.toString());
 
-        final Net.HttpRequest http = buildRequest("scores/add/", params);
+        final Net.HttpRequest http = buildJsonRequest("scores/add/", params);
         if (http == null)
             return;
 
@@ -293,16 +394,18 @@ public class GameJoltClient implements IGameServiceClient {
      * @param eventKeyPrefix Your prefix for event keys, or null to deactivate using global data storage for events.
      *                       Default is null.
      */
-    public void setEventKeyPrefix(String eventKeyPrefix) {
+    public GameJoltClient setEventKeyPrefix(String eventKeyPrefix) {
         this.eventKeyPrefix = eventKeyPrefix;
+        return this;
     }
 
     @Override
     public void submitEvent(String eventId, int increment) {
 
-        if (!isConnected())
+        if (!initialized) {
+            Gdx.app.error(GAMESERVICE_ID, "Cannot submit event: set app ID via initialize() first");
             return;
-
+        }
         if (eventKeyPrefix == null) {
             Gdx.app.log(GAMESERVICE_ID, "No event logged - no event key prefix provided.");
             return;
@@ -316,11 +419,32 @@ public class GameJoltClient implements IGameServiceClient {
         params.put("value", Integer.toString(increment));
         params.put("operation", "add");
 
-        final Net.HttpRequest http = buildRequest("data-store/update/", params);
+        final Net.HttpRequest http = buildJsonRequest("data-store/update/", params);
         if (http == null)
             return;
 
         Gdx.net.sendHttpRequest(http, new NoOpResponseListener());
+    }
+
+    /**
+     * Use careful! It resets your event to 0. Needed for first time initialization.
+     *
+     * @param eventId
+     */
+    public void initializeOrResetEventKey(String eventId) {
+        if (!initialized) {
+            Gdx.app.error(GAMESERVICE_ID, "Cannot submit event: set app ID via initialize() first");
+            return;
+        }
+        if (eventKeyPrefix == null) {
+            Gdx.app.log(GAMESERVICE_ID, "No event key prefix provided.");
+            return;
+        }
+
+        // no user name or token added! We want to use the global storage.
+        // http://gamejolt.com/api/doc/game/data-store/set
+        storeData(eventKeyPrefix + eventId, true, "0");
+
     }
 
     @Override
@@ -343,7 +467,7 @@ public class GameJoltClient implements IGameServiceClient {
         addGameIDUserNameUserToken(params);
         params.put("trophy_id", String.valueOf(trophyId));
 
-        final Net.HttpRequest http = buildRequest("trophies/add-achieved/", params);
+        final Net.HttpRequest http = buildJsonRequest("trophies/add-achieved/", params);
         if (http == null)
             return;
 
@@ -359,8 +483,35 @@ public class GameJoltClient implements IGameServiceClient {
     @Override
     public void saveGameState(String fileId, byte[] gameState, long progressValue) {
         //TODO - it is supported by Gamejolt, but not by this client
+        //see storeData
 
         throw new UnsupportedOperationException();
+    }
+
+    protected void storeData(String dataKey, boolean globalKey, String content) {
+        Map<String, String> params = new HashMap<String, String>();
+
+        if (globalKey)
+            params.put("game_id", gjAppId);
+        else
+            addGameIDUserNameUserToken(params);
+        params.put("key", dataKey);
+
+        // should better be POSTed, which should work according to the documentation. But it did not (see below).
+        params.put("data", content);
+
+        final Net.HttpRequest http = buildJsonRequest("data-store/set/", params);
+        if (http == null)
+            return;
+
+        //This does not work:
+        //http.setMethod(Net.HttpMethods.POST);
+        //http.setContent("data=" + content);
+        //This also does not work:
+        //http.setMethod(Net.HttpMethods.POST);
+        //http.setContent(content);
+
+        Gdx.net.sendHttpRequest(http, new NoOpResponseListener());
     }
 
     @Override
@@ -382,8 +533,13 @@ public class GameJoltClient implements IGameServiceClient {
         params.put("user_token", userToken);
     }
 
-    protected /* @Nullable */ Net.HttpRequest buildRequest(String component, Map<String, String> params) {
-        String request = GJ_GATEWAY + component + "?format=json&";
+    protected /* @Nullable */ Net.HttpRequest buildJsonRequest(String component, Map<String, String> params) {
+        component = component + "?format=json&";
+        return buildRequest(component, params);
+    }
+
+    protected Net.HttpRequest buildRequest(String component, Map<String, String> params) {
+        String request = GJ_GATEWAY + component;
         request += HttpParametersUtils.convertHttpParameters(params);
 
         /* Generate signature */
@@ -410,9 +566,6 @@ public class GameJoltClient implements IGameServiceClient {
     }
 
     protected String md5(String s) throws UnsupportedEncodingException, NoSuchAlgorithmException {
-        // Thanks to smelc/gdx-gamejolt for providing this code!
-        // https://github.com/smelc/gdx-gamejolt & http://www.schplaf.org/hgames/
-
         final MessageDigest md = MessageDigest.getInstance("MD5");
         final byte[] bytes = s.getBytes("UTF-8");
         final byte[] digest = md.digest(bytes);
