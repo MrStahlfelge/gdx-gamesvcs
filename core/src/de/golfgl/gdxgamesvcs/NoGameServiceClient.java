@@ -7,7 +7,7 @@ import com.badlogic.gdx.Gdx;
  * <p>
  * It always performs no ops, but is logging its actions.
  * You can use it for testing purposes in your desktop project, but also in your productive game to avoid checking
- * for null pointers on every call.
+ * for null pointers on every call. See {@link #setDebugConnectEnabled(boolean)} option.
  * <p>
  * And of course you can extend it for your own implementation of a game service - contributions are very welcome!
  * <p>
@@ -23,6 +23,23 @@ public class NoGameServiceClient implements IGameServiceClient {
     protected boolean connected;
     private boolean providesLeaderboardUI;
     private boolean providesAchievementsUI;
+    private boolean debugConnectEnabled = true;
+
+    /**
+     * Set to false if you don't want the NoGameServiceClient to emulate to be connected. While this can be useful
+     * in development, it could be better for productive environments to ensure that isConnected() is always false.
+     *
+     * @param debugConnectEnabled
+     * @return this, for method chaining
+     */
+    public NoGameServiceClient setDebugConnectEnabled(boolean debugConnectEnabled) {
+        if (isConnected())
+            throw new IllegalStateException();
+
+        this.debugConnectEnabled = debugConnectEnabled;
+
+        return this;
+    }
 
     @Override
     public String getGameServiceId() {
@@ -40,6 +57,9 @@ public class NoGameServiceClient implements IGameServiceClient {
 
         if (connected)
             return true;
+
+        if (!debugConnectEnabled)
+            return false;
 
         connected = true;
 
