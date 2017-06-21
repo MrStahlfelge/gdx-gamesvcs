@@ -289,13 +289,15 @@ public class NgioClient implements IGameServiceClient {
     public void submitEvent(String eventId, int increment) {
         // incrementing is not supported by Newgrounds, so we ignore the param
 
+        if (!initialized) {
+            Gdx.app.error(GAMESERVICE_ID, "Cannot submit event before initialize() is called.");
+            return;
+        }
+
         if (eventHostId == null) {
             Gdx.app.log(GAMESERVICE_ID, "Cannot post event: No host id for logging events provided.");
             return;
         }
-
-        if (!isConnected())
-            return;
 
         JsonValue parameters = new JsonValue(JsonValue.ValueType.object);
         parameters.addChild("event_name", new JsonValue(eventId));
