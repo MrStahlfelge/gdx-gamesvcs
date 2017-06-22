@@ -218,6 +218,9 @@ public class GameJoltClient implements IGameServiceClient {
     }
 
     protected void sendOpenSessionEvent() {
+        if (!isConnected())
+            return;
+
         Map<String, String> params = new HashMap<String, String>();
         addGameIDUserNameUserToken(params);
 
@@ -236,6 +239,9 @@ public class GameJoltClient implements IGameServiceClient {
     }
 
     protected void sendKeepSessionOpenEvent() {
+        if (!isConnected())
+            return;
+
         Map<String, String> params = new HashMap<String, String>();
         addGameIDUserNameUserToken(params);
 
@@ -272,6 +278,9 @@ public class GameJoltClient implements IGameServiceClient {
     }
 
     protected void sendCloseSessionEvent() {
+        if (!isConnected())
+            return;
+
         Map<String, String> params = new HashMap<String, String>();
         addGameIDUserNameUserToken(params);
 
