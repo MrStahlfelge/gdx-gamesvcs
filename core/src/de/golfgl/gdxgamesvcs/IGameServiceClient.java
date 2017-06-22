@@ -118,8 +118,9 @@ public interface IGameServiceClient {
      * @param leaderboardId
      * @param score
      * @param tag           an optional information to post on the leader board, if API supports it. May be null.
+     * @return false if submission couldn't be made. true if submit request was made (regardless if it was successful)
      */
-    void submitToLeaderboard(String leaderboardId, long score, String tag);
+    boolean submitToLeaderboard(String leaderboardId, long score, String tag);
 
     /**
      * Posts an event to the API.
@@ -130,8 +131,9 @@ public interface IGameServiceClient {
      *
      * @param eventId   event to post to
      * @param increment value the event is incremented. This parameter is ignored when not supported by the API
+     * @return false if submission couldn't be made. true if submit request was made (regardless if it was successful)
      */
-    void submitEvent(String eventId, int increment);
+    boolean submitEvent(String eventId, int increment);
 
     /**
      * Unlocks an achievement.
@@ -140,8 +142,9 @@ public interface IGameServiceClient {
      * info level. If the connection is not open, this is no error.
      *
      * @param achievementId achievement to unlock
+     * @return false if submission couldn't be made. true if submit request was made (regardless if it was successful)
      */
-    void unlockAchievement(String achievementId);
+    boolean unlockAchievement(String achievementId);
 
     /**
      * Increments an achievement. If incrementing achievements is not supported by the API, it unlocks the achievement.
@@ -151,8 +154,9 @@ public interface IGameServiceClient {
      *
      * @param achievementId achievement to increment
      * @param incNum        value to increment
+     * @return false if submission couldn't be made. true if submit request was made (regardless if it was successful)
      */
-    void incrementAchievement(String achievementId, int incNum);
+    boolean incrementAchievement(String achievementId, int incNum);
 
     /**
      * Saves game state to the cloud.
@@ -165,7 +169,7 @@ public interface IGameServiceClient {
      * @param progressValue A value indicating player's progress. Used for conflict handling: if game state already
      *                      saved is higher than this value, the gameState is not saved
      */
-    void saveGameState(String fileId, byte[] gameState, long progressValue);
+    void saveGameState(String fileId, byte[] gameState, long progressValue) throws GameServiceException;
 
     /**
      * Loads game state from the cloud and calls gsGameStateLoaded method of the listener set.
@@ -175,7 +179,7 @@ public interface IGameServiceClient {
      *
      * @param fileId file id to load from when multiple files are supported. Ignored otherwise
      */
-    void loadGameState(String fileId);
+    void loadGameState(String fileId) throws GameServiceException;
 
     /**
      * use this to check if your game service - or the API client - supports cloud save feature

@@ -142,23 +142,29 @@ public class NoGameServiceClient implements IGameServiceClient {
     }
 
     @Override
-    public void submitToLeaderboard(String leaderboardId, long score, String tag) {
+    public boolean submitToLeaderboard(String leaderboardId, long score, String tag) {
         Gdx.app.log(GAMESERVICE_ID, "Submit to leaderboard " + leaderboardId + ", score " + score + ", tag " + tag);
+
+        return isConnected();
     }
 
     @Override
-    public void submitEvent(String eventId, int increment) {
+    public boolean submitEvent(String eventId, int increment) {
         Gdx.app.log(GAMESERVICE_ID, "Submit event " + eventId + ", value " + increment);
+
+        return isConnected();
     }
 
     @Override
-    public void unlockAchievement(String achievementId) {
+    public boolean unlockAchievement(String achievementId) {
         Gdx.app.log(GAMESERVICE_ID, "Unlock achievement " + achievementId);
+        return isConnected();
     }
 
     @Override
-    public void incrementAchievement(String achievementId, int incNum) {
+    public boolean incrementAchievement(String achievementId, int incNum) {
         Gdx.app.log(GAMESERVICE_ID, "Increment achievement " + incNum);
+        return isConnected();
     }
 
     @Override

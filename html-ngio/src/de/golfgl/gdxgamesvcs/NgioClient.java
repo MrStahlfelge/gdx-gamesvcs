@@ -264,17 +264,17 @@ public class NgioClient implements IGameServiceClient {
     }
 
     @Override
-    public void submitToLeaderboard(String leaderboardId, long score, String tag) {
+    public boolean submitToLeaderboard(String leaderboardId, long score, String tag) {
         if (boardMapper == null) {
             Gdx.app.log(GAMESERVICE_ID, "Cannot post score: No mapper for leader board ids provided.");
-            return;
+            return false;
         }
 
         Integer boardId = boardMapper.mapToGsId(leaderboardId);
 
         // no board available or not connected
         if (boardId == null || !isConnected())
-            return;
+            return false;
 
         JsonValue parameters = new JsonValue(JsonValue.ValueType.object);
         parameters.addChild("id", new JsonValue(boardId));
@@ -283,20 +283,22 @@ public class NgioClient implements IGameServiceClient {
             parameters.addChild("tag", new JsonValue(tag));
 
         sendToGateway("ScoreBoard.postScore", parameters, null);
+
+        return true;
     }
 
     @Override
-    public void submitEvent(String eventId, int increment) {
+    public boolean submitEvent(String eventId, int increment) {
         // incrementing is not supported by Newgrounds, so we ignore the param
 
         if (!initialized) {
             Gdx.app.error(GAMESERVICE_ID, "Cannot submit event before initialize() is called.");
-            return;
+            return false;
         }
 
         if (eventHostId == null) {
             Gdx.app.log(GAMESERVICE_ID, "Cannot post event: No host id for logging events provided.");
-            return;
+            return false;
         }
 
         JsonValue parameters = new JsonValue(JsonValue.ValueType.object);
@@ -304,44 +306,49 @@ public class NgioClient implements IGameServiceClient {
         parameters.addChild("host", new JsonValue(eventHostId));
 
         sendToGateway("Event.logEvent", parameters, null);
+
+        return true;
     }
 
     @Override
-    public void unlockAchievement(String achievementId) {
+    public boolean unlockAchievement(String achievementId) {
         if (medalMapper == null) {
             Gdx.app.log(GAMESERVICE_ID, "Cannot unlock achievmenet: No mapper for achievement ids provided.");
-            return;
+            return false;
         }
 
         Integer medalId = medalMapper.mapToGsId(achievementId);
 
         // no board available or not connected
         if (medalId == null)
-            return;
+            return false;
 
         if (!isConnected())
-            return;
+            return false;
 
         JsonValue parameters = new JsonValue(JsonValue.ValueType.object);
         parameters.addChild("id", new JsonValue(medalId));
 
         sendToGateway("Medal.unlock", parameters, null);
+
+        return true;
     }
 
     @Override
-    public void incrementAchievement(String achievementId, int incNum) {
+    public boolean incrementAchievement(String achievementId, int incNum) {
         // incrementing is not supported, so fall back
-        unlockAchievement(achievementId);
+        return unlockAchievement(achievementId);
     }
 
     @Override
-    public void saveGameState(String fileId, byte[] gameState, long progressValue) {
-        throw new UnsupportedOperationException(GAMESERVICE_ID);
+    public void saveGameState(String fileId, byte[] gameState, long progressValue) throws GameServiceException
+            .NotSupportedException {
+        throw new GameServiceException.NotSupportedException();
     }
 
     @Override
-    public void loadGameState(String fileId) {
-        throw new UnsupportedOperationException(GAMESERVICE_ID);
+    public void loadGameState(String fileId) throws GameServiceException.NotSupportedException {
+        throw new GameServiceException.NotSupportedException();
     }
 
     @Override

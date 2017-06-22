@@ -57,7 +57,13 @@ Android:
     
 and so on.
 
-For HTML5, you also have to add a line to `GdxDefinition.gwt.xml` and `GdxDefinitionSuperdev.gwt.xml`:
+For HTML5, you also have to include the sources
+
+    compile "de.golfgl.gdxgamesvcs:gdx-gamesvcs-html:$gamsvcsVersion"
+    compile "de.golfgl.gdxgamesvcs:gdx-gamesvcs-core:$gamsvcsVersion:sources"
+    compile "de.golfgl.gdxgamesvcs:gdx-gamesvcs-html:$gamsvcsVersion:sources"
+
+and add a line to `GdxDefinition.gwt.xml` and `GdxDefinitionSuperdev.gwt.xml`:
 
     <inherits name="de.golfgl.gdxgamesvcs.gdx_gamesvcs_gwt" />
 
@@ -149,6 +155,17 @@ If you ensured that cloud save feature is enabled, use this methods to invoke it
 
 The methods perform an ansynchronous operation and call your listener afterwards.
 
+
+### Fetching scores and achievement status
+
+The interface provides a method for open up an API's default leaderboard or achievmeent UI:
+
+    gsClient.providesAchievementsUI();
+    gsClient.showAchievements();
+
+At the moment, such a default UI is only provided by Google Play Games API on Android.
+
+Fetching scores and achievement status to show in your own UI is currently not supported. If you implement it, please contribute.
     
 
 ## Updates & News

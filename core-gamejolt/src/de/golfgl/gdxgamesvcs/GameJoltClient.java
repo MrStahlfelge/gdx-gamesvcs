@@ -335,25 +335,25 @@ public class GameJoltClient implements IGameServiceClient {
     }
 
     @Override
-    public void submitToLeaderboard(String leaderboardId, long score, String tag) {
+    public boolean submitToLeaderboard(String leaderboardId, long score, String tag) {
         //GameJolt allows submitting scores without an open session.
         //Enable it by setting guest name.
         //see http://gamejolt.com/api/doc/game/scores/add
 
         if (!initialized) {
             Gdx.app.error(GAMESERVICE_ID, "Cannot post score: set app ID via initialize()");
-            return;
+            return false;
         }
         if (scoreTableMapper == null) {
             Gdx.app.log(GAMESERVICE_ID, "Cannot post score: No mapper for score table ids provided.");
-            return;
+            return false;
         }
 
         Integer boardId = scoreTableMapper.mapToGsId(leaderboardId);
 
         // no board available
         if (boardId == null)
-            return;
+            return false;
 
         Map<String, String> params = new HashMap<String, String>();
 
@@ -373,10 +373,11 @@ public class GameJoltClient implements IGameServiceClient {
 
         final Net.HttpRequest http = buildJsonRequest("scores/add/", params);
         if (http == null)
-            return;
+            return false;
 
         Gdx.net.sendHttpRequest(http, new NoOpResponseListener());
 
+        return true;
     }
 
     /**
@@ -409,15 +410,15 @@ public class GameJoltClient implements IGameServiceClient {
     }
 
     @Override
-    public void submitEvent(String eventId, int increment) {
+    public boolean submitEvent(String eventId, int increment) {
 
         if (!initialized) {
             Gdx.app.error(GAMESERVICE_ID, "Cannot submit event: set app ID via initialize() first");
-            return;
+            return false;
         }
         if (eventKeyPrefix == null) {
             Gdx.app.log(GAMESERVICE_ID, "No event logged - no event key prefix provided.");
-            return;
+            return false;
         }
 
         Map<String, String> params = new HashMap<String, String>();
@@ -430,9 +431,11 @@ public class GameJoltClient implements IGameServiceClient {
 
         final Net.HttpRequest http = buildJsonRequest("data-store/update/", params);
         if (http == null)
-            return;
+            return false;
 
         Gdx.net.sendHttpRequest(http, new NoOpResponseListener());
+
+        return true;
     }
 
     /**
@@ -457,20 +460,20 @@ public class GameJoltClient implements IGameServiceClient {
     }
 
     @Override
-    public void unlockAchievement(String achievementId) {
+    public boolean unlockAchievement(String achievementId) {
         if (trophyMapper == null) {
             Gdx.app.log(GAMESERVICE_ID, "Cannot unlock achievement: No mapper for trophy ids provided.");
-            return;
+            return false;
         }
 
         if (!isConnected())
-            return;
+            return false;
 
         Integer trophyId = trophyMapper.mapToGsId(achievementId);
 
         // no board available or not connected
         if (trophyId == null)
-            return;
+            return false;
 
         Map<String, String> params = new HashMap<String, String>();
         addGameIDUserNameUserToken(params);
@@ -478,23 +481,26 @@ public class GameJoltClient implements IGameServiceClient {
 
         final Net.HttpRequest http = buildJsonRequest("trophies/add-achieved/", params);
         if (http == null)
-            return;
+            return false;
 
         Gdx.net.sendHttpRequest(http, new NoOpResponseListener());
+
+        return true;
     }
 
     @Override
-    public void incrementAchievement(String achievementId, int incNum) {
+    public boolean incrementAchievement(String achievementId, int incNum) {
         // not supported - fall back
-        unlockAchievement(achievementId);
+        return unlockAchievement(achievementId);
     }
 
     @Override
-    public void saveGameState(String fileId, byte[] gameState, long progressValue) {
+    public void saveGameState(String fileId, byte[] gameState, long progressValue) throws GameServiceException
+            .NotSupportedException {
         //TODO - it is supported by Gamejolt, but not by this client
         //see storeData
 
-        throw new UnsupportedOperationException();
+        throw new GameServiceException.NotSupportedException();
     }
 
     protected void storeData(String dataKey, boolean globalKey, String content) {
@@ -524,10 +530,10 @@ public class GameJoltClient implements IGameServiceClient {
     }
 
     @Override
-    public void loadGameState(String fileId) {
+    public void loadGameState(String fileId) throws GameServiceException {
         //TODO - it is supported by Gamejolt, but not by this client
 
-        throw new UnsupportedOperationException();
+        throw new GameServiceException.NotSupportedException();
     }
 
     @Override
