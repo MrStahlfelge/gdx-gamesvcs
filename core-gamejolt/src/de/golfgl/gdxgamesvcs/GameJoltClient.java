@@ -49,10 +49,19 @@ public class GameJoltClient implements IGameServiceClient {
     private String eventKeyPrefix;
     private String guestName;
 
-    public void initialize(String gjAppId, String gjAppPrivateKey) {
+    /**
+     * You need to call this basic initialization in order to call GameJolts
+     *
+     * @param gjAppId         your GameJolt App Id
+     * @param gjAppPrivateKey your apps private key
+     * @return this for method chaining
+     */
+    public GameJoltClient initialize(String gjAppId, String gjAppPrivateKey) {
         this.gjAppId = gjAppId;
         this.gjAppPrivateKey = gjAppPrivateKey;
         initialized = true;
+
+        return this;
     }
 
     /**

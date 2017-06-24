@@ -94,8 +94,9 @@ public class NgioClient implements IGameServiceClient {
      *
      * @param eventHostId id you want to log to newgrounds
      */
-    public void setEventHostId(String eventHostId) {
+    public NgioClient setEventHostId(String eventHostId) {
         this.eventHostId = eventHostId;
+        return this;
     }
 
     @Override
