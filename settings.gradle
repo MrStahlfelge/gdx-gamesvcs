@@ -4,6 +4,7 @@ include ':core-gamejolt'
 include ':desktop'
 include ':html'
 include ':html-ngio'
+include ':html-kong'
 include ':ios'
 include ':ios-moe'
 

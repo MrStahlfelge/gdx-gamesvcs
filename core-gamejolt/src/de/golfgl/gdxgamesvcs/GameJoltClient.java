@@ -33,8 +33,6 @@ public class GameJoltClient implements IGameServiceClient {
     public static final String GJ_USERTOKEN_PARAM = "gjapi_token";
     protected static final int GJ_PING_INTERVAL = 30;
 
-    //TODO: Sessions support with open/close/ping - http://gamejolt.com/api/doc/game/sessions
-
     protected IGameServiceListener gsListener;
     protected String userName;
     protected String userToken;
