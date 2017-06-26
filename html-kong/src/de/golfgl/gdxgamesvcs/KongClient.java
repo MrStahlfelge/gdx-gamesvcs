@@ -4,7 +4,9 @@ import com.badlogic.gdx.Gdx;
 
 /**
  * Kongegrate Client
- *
+ * <p>
+ * see http://docs.kongregate.com/docs/javascript-api
+ * <p>
  * Created by Benjamin Schulte on 25.06.2017.
  */
 
@@ -30,6 +32,9 @@ public class KongClient implements IGameServiceClient {
             try {
                 loadKongApi();
                 initialized = true;
+                // if Kong API has initialized, it also is connected
+                if (gsListener != null)
+                    gsListener.gsConnected();
             } catch (Throwable t) {
                 Gdx.app.error(GAMESERVICE_ID, "Could not initialize - kongregate_api.js included in index.html?");
             }
@@ -45,29 +50,37 @@ public class KongClient implements IGameServiceClient {
 
     @Override
     public void disconnect() {
-        //TODO
+        //nothing to do
     }
 
     @Override
     public void logOff() {
-        //TODO
+        //nothing to do
     }
 
     @Override
     public String getPlayerDisplayName() {
-        //TODO var username = kongregate.services.getUsername();
-        return null;
+        if (isKongGuest())
+            return null;
+        else
+            return getKongPlayerName();
     }
+
+    private native boolean isKongGuest() /*-{
+        return kongregate.services.isGuest();
+    }-*/;
+
+    private native String getKongPlayerName() /*-{
+        return $wnd.kongregate.services.getUsername();
+    }-*/;
 
     @Override
     public boolean isConnected() {
-        //TODO
-        return false;
+        return initialized;
     }
 
     @Override
     public boolean isConnectionPending() {
-        //TODO
         return false;
     }
 
@@ -93,15 +106,22 @@ public class KongClient implements IGameServiceClient {
 
     @Override
     public boolean submitToLeaderboard(String leaderboardId, long score, String tag) {
-        //TODO Abfang für Long
-        submitKongStat(leaderboardId, (int) score);
-        return false;
+        try {
+            if (initialized)
+                submitKongStat(leaderboardId, (int) score);
+
+            return initialized;
+        } catch (Throwable t) {
+            return false;
+        }
     }
 
     @Override
     public boolean submitEvent(String eventId, int increment) {
+        if (initialized)
         submitKongStat(eventId, increment);
-        return true;
+
+        return initialized;
     }
 
     private native void submitKongStat(String id, int num) /*-{
@@ -110,14 +130,15 @@ public class KongClient implements IGameServiceClient {
 
     @Override
     public boolean unlockAchievement(String achievementId) {
-        //TODO not supported
-        return false;
+        return incrementAchievement(achievementId, 1);
     }
 
     @Override
     public boolean incrementAchievement(String achievementId, int incNum) {
-        //TODO not supported
-        return false;
+        if (initialized)
+            submitKongStat(achievementId, incNum);
+
+        return initialized;
     }
 
     @Override
