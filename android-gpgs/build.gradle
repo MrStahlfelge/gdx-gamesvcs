@@ -1,0 +1,61 @@
+apply plugin: 'com.android.library'
+
+project.group = 'de.golfgl.gdxgamesvcs'
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.2.3'
+    }
+}
+
+android {
+    // Set defaults so that com.google.example.games.basegameutils.BaseGameUtils can be used outside of BasicSamples
+    if (!project.hasProperty('android_compile_version')) {
+        ext.android_compile_version = 25
+    }
+    if (!project.hasProperty('android_min_version')) {
+        ext.android_min_version = 15
+    }
+    if (!project.hasProperty('android_version')) {
+        ext.build_tools_version = "25.0.2"
+    }
+
+    // Set defaults so that com.google.example.games.basegameutils.BaseGameUtils can be used outside of BasicSamples
+    if (!project.hasProperty('android_min_sdk_version')) {
+        ext.android_min_sdk_version = 9
+    }
+
+    compileSdkVersion android_compile_version
+    buildToolsVersion "25.0.2"
+
+    defaultConfig {
+        minSdkVersion android_min_version
+        targetSdkVersion android_compile_version
+    }
+
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = ['src']
+            res.srcDirs = ['res']
+
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
+
+
+}
+
+ext {
+    ARTIFACTID = 'gdx-gamesvcs-android-gpgs'
+}
+
+apply from: '../androidpublish.gradle'

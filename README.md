@@ -51,27 +51,15 @@ Define the version of this API right after the gdxVersion:
 
 Core:
 
-    compile "de.golfgl.gdxgamesvcs:gdx-gamesvcs-desktop:$gamsvcsVersion"
+    compile "de.golfgl.gdxgamesvcs:gdx-gamesvcs-core:$gamsvcsVersion"
     
-Android:    
-    
-    compile "de.golfgl.gdxgamesvcs:gdx-gamesvcs-android:$gamsvcsVersion"
-    
-and so on.
+For the HTML5 project, you also have to include the sources
 
-For HTML5, you also have to include the sources
-
-    compile "de.golfgl.gdxgamesvcs:gdx-gamesvcs-html:$gamsvcsVersion"
     compile "de.golfgl.gdxgamesvcs:gdx-gamesvcs-core:$gamsvcsVersion:sources"
-    compile "de.golfgl.gdxgamesvcs:gdx-gamesvcs-html:$gamsvcsVersion:sources"
 
 and add a line to `GdxDefinition.gwt.xml` and `GdxDefinitionSuperdev.gwt.xml`:
 
     <inherits name="de.golfgl.gdxgamesvcs.gdx_gamesvcs_gwt" />
-
-See [Demo App Commit 4ff746](https://github.com/MrStahlfelge/gdx-gamesvcs-app/commit/4ff746d591aead2a8ceeaff01c871209f31143cf) for the full list of dependencies.
-
-Most platform sub projects are empty, but may be filled in the future. So better include them to avoid problems.
 
 After including the dependencies and refreshing, you can use the `NoGameServiceClient` in your project. For using another Gameservice, add its dependencies according to its [wiki page](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki)or implement your own client against `IGameServiceClient`.
 
