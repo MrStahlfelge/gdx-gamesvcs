@@ -312,7 +312,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
                     Games.Leaderboards.getLeaderboardIntent(mGoogleApiClient, leaderBoardId) :
                     Games.Leaderboards.getAllLeaderboardsIntent(mGoogleApiClient), RC_LEADERBOARD);
         else
-            throw new GameServiceException();
+            throw new GameServiceException.NotConnectedException();
     }
 
     @Override
@@ -326,7 +326,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
             myContext.startActivityForResult(Games.Achievements.getAchievementsIntent(mGoogleApiClient),
                     RC_ACHIEVEMENTS);
         else
-            throw new GameServiceException();
+            throw new GameServiceException.NotConnectedException();
 
     }
 
