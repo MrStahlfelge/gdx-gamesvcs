@@ -4,7 +4,7 @@ Framework and Implementation for using Game Services (BaaS) with libGDX.
 
 ## Supported game services
 
-* [Google Play Games](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Google-Play-Games) (Android only, not yet open-sourced, but coming soon)
+* [Google Play Games](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Google-Play-Games) (Android only)
 * [Newgrounds](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Newgrounds) (HTML5-only)
 * [GameJolt](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/GameJolt) (all platforms)
 * [Kongregate](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Kongregate) (HTML5-only)
@@ -131,7 +131,7 @@ Events are interesting for you as a developer.
 
 Please note: It depends of the game services which calls are allowed for unauthenticated users. 
 
-### Using cloud save feature
+### Cloud save
 
 Not every game service and client implementation supports cloud save, so you must check the availability by checking
 
@@ -152,6 +152,7 @@ The interface provides a method for open up an API's default leaderboard or achi
 
     gsClient.providesAchievementsUI();
     gsClient.showAchievements();
+    // same for leaderboards
 
 At the moment, such a default UI is only provided by Google Play Games API on Android.
 
