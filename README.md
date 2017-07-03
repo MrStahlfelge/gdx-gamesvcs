@@ -2,6 +2,8 @@
 
 Framework and Implementation for using Game Services (BaaS) with libGDX.
 
+![Demo app](/assets/gdxgsgpgs.gif?raw=true "Demo app")
+
 ## Supported game services
 
 * [Google Play Games](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Google-Play-Games) (Android only)
