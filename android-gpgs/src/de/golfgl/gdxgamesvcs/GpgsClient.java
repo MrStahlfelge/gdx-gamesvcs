@@ -414,12 +414,10 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         snapshot.getSnapshotContents().writeBytes(gameState);
 
         // Change metadata
-        // Description wird in Play Games app angezeigt
-        SnapshotMetadataChange metadataChange = new SnapshotMetadataChange.Builder()
-                .fromMetadata(snapshot.getMetadata())
-                .setDescription("Time to play again!") //TODO
-                .setProgressValue(progressValue)
-                .build();
+        SnapshotMetadataChange.Builder metaDataBuilder = new SnapshotMetadataChange.Builder()
+                .fromMetadata(snapshot.getMetadata());
+        metaDataBuilder = setSaveGameMetaData(metaDataBuilder, id, gameState, progressValue);
+        SnapshotMetadataChange metadataChange = metaDataBuilder.build();
 
         Snapshots.CommitSnapshotResult commit = Games.Snapshots.commitAndClose(
                 mGoogleApiClient, snapshot, metadataChange).await();
@@ -433,6 +431,21 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         // No failures
         Log.i(GAMESERVICE_ID, "Successfully saved gamestate with " + gameState.length + "B");
         return true;
+    }
+
+    /**
+     * override this method if you need to set some meta data, for example the description which is displayed
+     * in the Play Games app
+     *
+     * @param metaDataBuilder builder for savegame metadata
+     * @param id              snapshot id
+     * @param gameState       gamestate data
+     * @param progressValue   gamestate progress value
+     * @return changed meta data builder
+     */
+    protected SnapshotMetadataChange.Builder setSaveGameMetaData(SnapshotMetadataChange.Builder metaDataBuilder,
+                                                                 String id, byte[] gameState, long progressValue) {
+        return metaDataBuilder.setProgressValue(progressValue);
     }
 
     @Override
