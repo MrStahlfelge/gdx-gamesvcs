@@ -16,7 +16,7 @@ public interface IGameServiceListener {
     public void gsConnected();
 
     /**
-     * Called when game service has disconnected
+     * Called when game service has disconnected or a connection attempt failed
      */
     public void gsDisconnected();
 

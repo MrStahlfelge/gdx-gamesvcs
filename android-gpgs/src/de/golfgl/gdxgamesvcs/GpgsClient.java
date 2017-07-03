@@ -217,6 +217,8 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         }
         Log.w(GAMESERVICE_ID, "onConnectFailed: " + connectionResult.getErrorCode());
 
+        boolean isPendingBefore = isConnectionPending;
+
         // if the sign-in button was clicked
         // launch the sign-in flow
         if (mSignInClicked) {
@@ -260,6 +262,10 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
 
         } else
             isConnectionPending = false;
+
+        // inform listener if connection attempt failed
+        if (gameListener != null && isPendingBefore && !isConnectionPending)
+            gameListener.gsDisconnected();
     }
 
     public void signInResult(int resultCode, Intent data) {
