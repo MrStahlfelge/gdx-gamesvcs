@@ -11,7 +11,7 @@ Framework and Implementation for using Game Services (BaaS) with libGDX.
 * [GameJolt](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/GameJolt) (all platforms)
 * [Kongregate](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Kongregate) (HTML5-only)
 
-Further contributes are very welcome!
+Further contributes are very welcome! Very wanted: GameCircle. :-)
 
 ## Motivation
 
@@ -75,8 +75,8 @@ You should be fine by adding the following lines to your game in order to connec
 
 Main game class:
 
-   public IGameServiceClient gsClient;
-
+    public IGameServiceClient gsClient;
+    
     @Override
     public void create() {
         // ...awesome initialization code...
@@ -117,8 +117,6 @@ In the launcher class you instantiate and initialize the GameServiceClient you r
 
 Check for `gsClient.isConnected()` if you successfully established a connection, or set a listeneder and wait for the call to `gsConnected`.
 
-Please note: It depends on the game service which calls are allowed without being connected to a user session.
-
 ### Submitting events and scores, unlocking achievements
 
 You can feed your players by unlocking achievements and posting scores to leaderboards really easy:
@@ -131,7 +129,7 @@ Events are interesting for you as a developer.
     
     gsClient.submitEvent(eventId, 1);
 
-Please note: It depends of the game services which calls are allowed for unauthenticated users. 
+Please note: It depends of the game services which calls are allowed for unauthenticated users. The API client implementations deal with that so you don't have to.  
 
 ### Cloud save
 
