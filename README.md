@@ -1,6 +1,6 @@
 # gdx-gamesvcs
 
-Framework and Implementation for using Game Services (BaaS) with libGDX.
+Framework and implementations for using Game Services (BaaS) with libGDX.
 
 ![Demo app](/assets/gdxgsgpgs.gif?raw=true "Demo app")
 
@@ -38,7 +38,7 @@ See the corresponding demo app https://github.com/MrStahlfelge/gdx-gamesvcs-app 
 
 ## Installation
 
-At the moment, the library is unstable so you should consider to build it yourself. To do so, clone or download this repository then open it in Android Studio. Then perform the following command to compile and upload the library in your local repository:
+At the moment, there is no stable release version but only a snapshot version. You should consider to build the packages from source yourself. To do so, clone or download this repository, then open it in Android Studio. Perform the following command to compile and upload the library in your local repository:
 
     gradlew clean uploadArchives -PLOCAL=true
     
