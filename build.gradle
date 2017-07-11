@@ -75,10 +75,10 @@ project(":android-gpgs") {
     dependencies {
         // Set defaults so that com.google.example.games.basegameutils.BaseGameUtils can be used outside of BasicSamples
         if (!project.hasProperty('appcompat_library_version')) {
-            ext.appcompat_library_version = '20.0.+'
+            ext.appcompat_library_version = '20.0.0'
         }
         if (!project.hasProperty('support_library_version')) {
-            ext.support_library_version = '20.0.+'
+            ext.support_library_version = '20.0.0'
         }
         if (!project.hasProperty('gms_library_version')) {
             ext.gms_library_version = '8.4.0'
