@@ -38,18 +38,13 @@ See the corresponding demo app https://github.com/MrStahlfelge/gdx-gamesvcs-app 
 
 ## Installation
 
-At the moment, there is no stable release version but only a snapshot version. You should consider to build the packages from source yourself. To do so, clone or download this repository, then open it in Android Studio. Perform the following command to compile and upload the library in your local repository:
-
-    gradlew clean uploadArchives -PLOCAL=true
-    
-Without doing that, you will get my latest push to the public repository.
-
-In any case, you can integrate the lib into your project by adding the dependencies to your `build.gradle` file.
+This project is published to the Sonatype Maven repository. You can integrate the lib 
+into your project by just adding the dependencies to your `build.gradle` file.
 
 Define the version of this API right after the gdxVersion: 
    
     gdxVersion = '1.9.6'
-    gamsvcsVersion = '0.0.1-SNAPSHOT'
+    gamsvcsVersion = '0.0.1'
 
 Core:
 
@@ -64,6 +59,13 @@ and add a line to `GdxDefinition.gwt.xml` and `GdxDefinitionSuperdev.gwt.xml`:
     <inherits name="de.golfgl.gdxgamesvcs.gdx_gamesvcs_gwt" />
 
 After including the dependencies and refreshing, you can use the `NoGameServiceClient` in your project. For using another Gameservice, add its dependencies according to its [wiki page](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki)or implement your own client against `IGameServiceClient`.
+
+### Building from source
+To build from source, clone or download this repository, then open it in Android Studio. Perform the following command to compile and upload the library in your local repository:
+
+    gradlew clean uploadArchives -PLOCAL=true
+    
+See `build.gradle` file for current version to use in your dependencies.
 
 ## Usage
 
