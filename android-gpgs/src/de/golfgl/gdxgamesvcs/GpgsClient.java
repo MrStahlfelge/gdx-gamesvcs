@@ -263,7 +263,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         } else
             isConnectionPending = false;
 
-        // inform listener if connection attempt failed
+        // inform listener that connection attempt failed
         if (gameListener != null && isPendingBefore && !isConnectionPending)
             gameListener.gsDisconnected();
     }
@@ -275,9 +275,15 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
             isConnectionPending = true;
             mGoogleApiClient.connect();
         } else {
-            Log.w(GAMESERVICE_ID, "SignInResult - Unable to sign in");
+            Log.w(GAMESERVICE_ID, "SignInResult - Unable to sign in: " + resultCode);
 
+            boolean isPendingBefore = isConnectionPending;
             isConnectionPending = false;
+
+            // inform listener that connection attempt failed
+            if (gameListener != null && isPendingBefore)
+                gameListener.gsDisconnected();
+
             // Bring up an error dialog to alert the user that sign-in
             // failed. The R.string.signin_failure should reference an error
             // string in your strings.xml file that tells the user they
