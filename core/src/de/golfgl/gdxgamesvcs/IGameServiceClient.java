@@ -8,6 +8,11 @@ package de.golfgl.gdxgamesvcs;
 
 public interface IGameServiceClient {
 
+    public static final String GS_GAMEJOLT_ID = "GS_GAMEJOLT";
+    public static final String GS_GOOGLEPLAYGAMES_ID = "GPGS";
+    public static final String GS_KONGREGATE_ID = "GS_KONG";
+    public static final String GS_NEWGROUNDS_ID = "GS_NGIO";
+
     /**
      * Gets an id for this game service for identifiying or showing labels
      *

@@ -34,7 +34,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     public static final int RC_LEADERBOARD = 9002;
     public static final int RC_ACHIEVEMENTS = 9003;
 
-    public static final String GAMESERVICE_ID = "GPGS";
+    public static final String GAMESERVICE_ID = IGameServiceClient.GS_GOOGLEPLAYGAMES_ID;
     protected static final int MAX_CONNECTFAIL_RETRIES = 4;
     private static final int MAX_SNAPSHOT_RESOLVE_RETRIES = 3;
     protected Activity myContext;

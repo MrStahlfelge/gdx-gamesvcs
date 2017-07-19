@@ -18,7 +18,7 @@ import com.badlogic.gdx.utils.JsonWriter;
 
 public class NgioClient implements IGameServiceClient {
 
-    public static final String GAMESERVICE_ID = "GS_NGIO";
+    public static final String GAMESERVICE_ID = IGameServiceClient.GS_NEWGROUNDS_ID;
     public static final String NGIO_GATEWAY = "//www.newgrounds.io/gateway_v3.php";
     public static final String NGIO_SESSIONID_PARAM = "ngio_session_id";
 

@@ -27,7 +27,7 @@ import java.util.Map;
  */
 
 public class GameJoltClient implements IGameServiceClient {
-    public static final String GAMESERVICE_ID = "GS_GAMEJOLT";
+    public static final String GAMESERVICE_ID = IGameServiceClient.GS_GAMEJOLT_ID;
     public static final String GJ_GATEWAY = "http://gamejolt.com/api/game/v1/";
     public static final String GJ_USERNAME_PARAM = "gjapi_username";
     public static final String GJ_USERTOKEN_PARAM = "gjapi_token";

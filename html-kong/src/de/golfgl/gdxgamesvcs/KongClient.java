@@ -11,7 +11,7 @@ import com.badlogic.gdx.Gdx;
  */
 
 public class KongClient implements IGameServiceClient {
-    public static final String GAMESERVICE_ID = "GS_KONG";
+    public static final String GAMESERVICE_ID = IGameServiceClient.GS_KONGREGATE_ID;
     protected IGameServiceListener gsListener;
 
     boolean initialized;
