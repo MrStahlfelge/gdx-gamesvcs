@@ -369,8 +369,9 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     }
 
     @Override
-    public boolean incrementAchievement(String achievementId, int incNum) {
+    public boolean incrementAchievement(String achievementId, int incNum, float completionPercentage) {
         if (isConnected()) {
+            // GPGS supports passing a value for incrementation, no need to use completionPercentage
             Games.Achievements.increment(mGoogleApiClient, achievementId, incNum);
             return true;
         } else

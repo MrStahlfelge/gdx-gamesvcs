@@ -496,9 +496,12 @@ public class GameJoltClient implements IGameServiceClient {
     }
 
     @Override
-    public boolean incrementAchievement(String achievementId, int incNum) {
+    public boolean incrementAchievement(String achievementId, int incNum, float completionPercentage) {
         // not supported - fall back
-        return unlockAchievement(achievementId);
+        if (completionPercentage >= 1f)
+            return unlockAchievement(achievementId);
+        else
+            return true;
     }
 
     @Override

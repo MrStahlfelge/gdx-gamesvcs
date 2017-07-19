@@ -152,16 +152,21 @@ public interface IGameServiceClient {
     boolean unlockAchievement(String achievementId);
 
     /**
-     * Increments an achievement. If incrementing achievements is not supported by the API, it unlocks the achievement.
+     * Increments an achievement. If API supports incrementing by a value, parameter incNum is passed to the API.
+     * If API supports only passing a percentage value for completion, the parameter completionPercentage is passed
+     * to the API.
+     * If incrementing achievements is not supported by the API at all, the achievement will be unlocked if
+     * completionPercentage is at least 1.
      * <p>
      * This API is of type fire and forget. Every possible error is checked by the API and not thrown, but logged on
      * info level. If the connection is not open, this is no error.
      *
-     * @param achievementId achievement to increment
-     * @param incNum        value to increment
+     * @param achievementId        achievement to increment
+     * @param incNum               value to increment (if supported by API)
+     * @param completionPercentage completion percentage, should be between 0f and 1f
      * @return false if submission couldn't be made. true if submit request was made (regardless if it was successful)
      */
-    boolean incrementAchievement(String achievementId, int incNum);
+    boolean incrementAchievement(String achievementId, int incNum, float completionPercentage);
 
     /**
      * Saves game state to the cloud.

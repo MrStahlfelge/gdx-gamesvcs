@@ -119,7 +119,7 @@ public class KongClient implements IGameServiceClient {
     @Override
     public boolean submitEvent(String eventId, int increment) {
         if (initialized)
-        submitKongStat(eventId, increment);
+            submitKongStat(eventId, increment);
 
         return initialized;
     }
@@ -130,11 +130,11 @@ public class KongClient implements IGameServiceClient {
 
     @Override
     public boolean unlockAchievement(String achievementId) {
-        return incrementAchievement(achievementId, 1);
+        return incrementAchievement(achievementId, 1, 1f);
     }
 
     @Override
-    public boolean incrementAchievement(String achievementId, int incNum) {
+    public boolean incrementAchievement(String achievementId, int incNum, float completionPercentage) {
         if (initialized)
             submitKongStat(achievementId, incNum);
 

@@ -336,9 +336,12 @@ public class NgioClient implements IGameServiceClient {
     }
 
     @Override
-    public boolean incrementAchievement(String achievementId, int incNum) {
+    public boolean incrementAchievement(String achievementId, int incNum, float completionPercentage) {
         // incrementing is not supported, so fall back
-        return unlockAchievement(achievementId);
+        if (completionPercentage >= 1f)
+            return unlockAchievement(achievementId);
+        else
+            return true;
     }
 
     @Override
