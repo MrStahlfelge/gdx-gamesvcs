@@ -24,6 +24,11 @@ allprojects {
     apply plugin: "idea"
 
     ext {
+        minSdk = 15
+        targetSdk = 25
+        compileSdk = 25
+        buildTools = '25.0.2'
+
         appName = 'gdx-gamesvcs'
         gdxVersion = '1.9.5'
         roboVMVersion = '2.3.0'
@@ -90,7 +95,6 @@ project(":android-gpgs") {
         compile "com.google.android.gms:play-services-plus:${gms_library_version}"
 
         compile project(':core')
-        compile project(':android')
     }
 }
 
@@ -216,7 +220,6 @@ project(":html-ngio") {
 
     dependencies {
         compile project(':core')
-        compile project(':html')
     }
     dependencies {
         compile "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion"
@@ -246,7 +249,6 @@ project(":html-kong") {
 
     dependencies {
         compile project(':core')
-        compile project(':html')
     }
     dependencies {
         compile "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion"

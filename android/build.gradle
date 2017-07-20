@@ -4,12 +4,12 @@ project.group = 'de.golfgl.gdxgamesvcs'
 
 android {
 
-	compileSdkVersion 25
-	buildToolsVersion "25.0.2"
+	compileSdkVersion compileSdk
+	buildToolsVersion "${buildTools}"
 
 	defaultConfig {
-		minSdkVersion 15
-		targetSdkVersion 25
+		minSdkVersion minSdk
+		targetSdkVersion targetSdk
 	}
 
 	sourceSets {
