@@ -1,0 +1,2 @@
+/*! Copyright 2013 Amazon Digital Services, Inc. All rights reserved. */
+FeatureDetectionServiceProxy=(function(){var a=function(){var b="https://ags-ext.amazon.com/services/featuredetection/";this["getFeaturesUsage"]=function(c){return NativeTransport.guestModeServiceCall({target:"FeatureDetectionService",method:"getFeaturesUsage",httpMethod:"GET",endPoint:b,args:{}})}};return a}());console.log("FeatureDetectionServiceProxy loaded.");

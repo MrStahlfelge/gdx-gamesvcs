@@ -1,0 +1,2 @@
+/*! Copyright 2013 Amazon Digital Services, Inc. All rights reserved. */
+ScoreFormatter=(function(){var a=function(){this["formatScore"]=function(d,c){var b=d.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g,"$1,");if(c!=null){b+=" "+c}return b}};return a}());console.log("ScoreFormatter loaded.");

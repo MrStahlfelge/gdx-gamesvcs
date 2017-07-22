@@ -1,0 +1,1116 @@
+* {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none; /* disable selection/copy */
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+html {
+    font-size:11px; /* base size for rem units, scaled at the bottom with responsive media queries */
+}
+/* General header styles set to scale based on the above */
+h2 {
+    font-size:1.36rem;
+    line-height:1.39rem;
+}
+h3 {
+    font-size:1.27rem;
+    line-height:1.6rem;
+}
+h4 {
+    font-size:1.27rem;
+    line-height:1.6rem;
+}
+h5 {
+    font-size:1rem;
+    line-height:1.1rem;
+}
+input, select {
+    -webkit-user-select: auto !important;
+}
+body {
+    background-color: #ebebeb;
+}
+body#alert-container {
+    background-color: transparent;
+}
+.a-nothanks {
+    color:#636363;
+}
+p {
+    font-size: 1rem;
+    line-height:1.2rem;
+}
+#achTable p {
+    padding-right:12px; 
+}
+#achTable h4 {
+    padding-right:12px;
+}
+.table {
+    margin-bottom: 12px;
+}
+/* Button styles (canceling out bootstrap styles) */
+
+.btn, .btn-group .btn, .btn-group > .btn  {
+    font-size:1.27rem;
+}
+.btn-small, .btn-group .btn-small, .btn-group > .btn-small, .btn.btn-small {
+    font-size:1.08rem;
+}
+/* Top Bar Styles */
+.title-bar {
+    padding-top: 9px; /* default, overriden by media queries at the bottom */
+    padding-left:4px;
+    font-size: 1.27rem;
+    overflow:hidden;
+    white-space:nowrap;
+    max-height:1.6rem; /* based on line-height of this text */
+    text-overflow:ellipsis;
+}
+.btn-nav {
+    padding: 5px 6px 6px 4px;
+}
+.btn-nav-menu-close {
+    margin: 5px 10px 5px 0;
+}
+.btn-nav-beachball {
+    padding: 4px;
+}
+.btn-nav-beachball img {
+    width:34px;
+}
+.btn-group-pagefilter {
+    display:table;
+    margin-bottom: 12px;
+    margin-top: 12px;
+    width:100%;
+}
+.btn-pagefilter {
+    display:table-cell;
+    width:33.3%;
+}
+.btn-ftue {
+    margin: auto auto 5px;
+    max-width:350px;
+}
+.brand-bar {
+    background-color: #00a8e2;
+    background-image: url(../img/gamecircle/brand-bar.png);
+    background-position: right;
+    background-repeat: no-repeat;
+    border-color: #CCC;
+    border-width: thin;
+    border-top-style: solid;
+    border-right-style: none;
+    border-bottom-style: solid;
+    border-left-style: none;
+    height: 16px;
+}
+.navbar {
+    position: relative;
+    z-index: 99;
+    top: 0;
+    left: 0;
+    width: 100%;
+}
+#agc-main-header div.navbar-inner {
+    height:36px;
+    padding:4px;
+}
+#agc-main-header div.navbar-inner button {
+    height:36px;
+    margin:0;
+}
+#agc-main-header div.navbar-inner #agc-menu-button {
+    width:44px;
+}
+.scroll-wrapper {
+    position:absolute; z-index:1;
+    top:0px; bottom:0px; left:0;
+    width:100%;
+    overflow:auto;
+}
+.scroll-wrapper-box {
+    overflow:auto;
+}
+.scroll-content {
+    -webkit-transition-property: -webkit-transform;
+    -webkit-transform-origin-x: 0px;
+    -webkit-transform-origin-y: 0px;
+    -webkit-transform: translate(0px, 0px) translateZ(0px);
+    -webkit-transition-duration: 0ms;
+    min-height: 100%; /* Always stretch to bottom of page */
+}
+.scroll-content-box {
+    padding: 0px 0px 40px 0px
+}
+.hrule {
+    margin-top: 18px;
+    margin-bottom: 20px;
+    height: 1px;
+    background-color: #b7b7b7;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: 1px solid #d7d7d7;
+}
+li {
+    font-size: 1.09rem;
+}
+/* Page Content Styles */
+.page-status-bar, .page-warning-status-bar, .page-error-status-bar {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    z-index: 200;
+    opacity: 0.9;
+    line-height: 25px;
+    height: 25px;
+    background-color: #666;
+    color: #fff;
+    padding: 5px 0;
+    font-size: 15px;
+    text-align: center;
+    display: none;
+}
+.page-content {
+    padding: 10px 10px 34px 10px;
+}
+.page-content-settings {
+    margin: 0px 10px 10px 10px;
+}
+.below-the-navbar {
+    /* This margin moves the top of the scrollable area down to the edge of the fixed nav bar.
+     * In other words, if you set the fixed nav bar to style="display:none", then there will be no scrolling content underneath it.
+     * Having scrollable area underneath the fixed nav bar is undesirable since it hides part of the scroll bar.
+     *
+     * Don't use padding here.  It moves the content down and reduces the visible height
+     * without changing the number of pixels that the page can move vertically.
+     */
+    margin-top: 62px;
+}
+/*
+ * LeaderboardRanks
+ */
+
+table.leaderboardRanks tr.currentPlayer {
+    background-color: #e1e1e1;
+}
+table.leaderboardRanks td.rank {
+    font-weight: bold;
+    text-align: center;
+    width:40px;
+}
+table.leaderboardRanks td.rank p {
+    margin:0;
+}
+table.leaderboardRanks td.rank p.percentile:after {
+    content: "%";
+}
+table.leaderboardRanks td.avatar {
+    width:40px;
+}
+table.leaderboardRanks td.profile {
+    padding-right:10px;
+}
+table.leaderboardRanks td.profile h5.alias {
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+table.leaderboardRanks tr.currentPlayer p.score {
+    color: #be7004;
+}
+#currentPlayerOverlay table {
+    background-color: #e1e1e1;
+    border:1px solid #B7B7B7;
+    border-collapse:collapse;
+    border-radius:0;
+    -webkit-border-radius:0;
+    display:table;
+    margin:0; 
+}
+#currentPlayerOverlay {
+    padding:0 10px;
+    position:absolute;
+}
+/*
+ * End LeaderboardRanks
+ */
+.ftue {
+    text-align: center;
+    padding: 0px;
+    margin: 10px auto;
+    max-width:700px;
+}
+.ftue p {
+    pointer-events:none;
+}
+.ftue a {
+    letter-spacing:1px;
+    pointer-events:all;
+}
+.ftuelogin-holder button {
+    margin:0 2px 5px 2px;
+    min-width:125px;
+}
+.ftueageviolation-holder label {
+    font-weight:normal;
+}
+.ftueageviolation-holder button {
+    width:125px;
+}
+.achievementsigninprompt-holder label {
+    font-weight:normal;
+}
+.achievementsigninprompt-holder button {
+    margin:5px;
+}
+.leaderboardsigninprompt-holder label {
+    font-weight:normal;
+}
+.leaderboardsigninprompt-holder button {
+    margin:5px;
+}
+.ftue > img + p {
+    line-height:14px;
+    max-width:700px;
+    margin:0 auto;
+}
+.logo-ftue {
+    margin-top: 30px;
+}
+/* list services on ftue */
+.list-services-container {
+    list-style:none;
+    margin:5px auto;
+    max-width:350px;
+    padding:5px 5px 5px 26%;
+    text-align:left;
+}
+@media screen and (orientation: landscape) {
+    .list-services-container {
+        padding-left:33%;
+    }
+}
+.list-services {
+    line-height:12px;
+}
+h6.list-services {
+    font-size:1rem;
+}
+li.list-services {
+    display:table;
+}
+p.list-services {
+    margin:0 0 6px;
+}
+li.list-services div {
+    display:table-cell;
+    padding-right:10px;
+    text-align:left;
+    vertical-align:top;
+}
+
+li.list-services img {
+    max-width:21px;
+    padding-top:3px;
+    width:21px;
+}
+.meta {
+    margin: 0px;
+}
+.meta-title {
+    padding-top: 0px;
+}
+.meta-summary {
+    font-weight: bold;
+    font-size: 1.09rem;
+}
+.dark-orange {
+    color: #be7004;
+}
+.light-gray {
+    color: #9a9a9a;
+}
+.orange {
+    color: #F90;
+}
+.white {
+    color: #FFF;
+}
+.table-white {
+    background-color: #FFF;
+}
+/* Page Hero Styles */
+.page-title {
+    text-shadow: 0px 1px 0px #000;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: bold;/* TODO: no condensed font fix. sort this out later...
+    font-stretch: condensed; */
+}
+.daily-title {
+    line-height: 16px;
+}
+.page-carrot {
+    margin-left: 20px;
+}
+.page-hero {
+    background-color: #000;
+    background: #333333; /* Old browsers */
+    background: -moz-linear-gradient(top, #333333 0%, #000000 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #333333), color-stop(100%, #000000)); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top, #333333 0%, #000000 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top, #333333 0%, #000000 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top, #333333 0%, #000000 100%); /* IE10+ */
+    background: linear-gradient(to bottom, #333333 0%, #000000 100%); /* W3C */
+ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#333333', endColorstr='#000000', GradientType=0 ); /* IE6-9 */
+    padding: 10px;
+    height: 84px;
+    overflow: hidden;
+}
+.summary-holder .page-hero img, .profile-holder .page-hero img {
+    border:2px solid #ebebeb;
+}
+.summary-title {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-stretch: condensed;
+    font-weight: bold;
+    text-shadow: 0 1px 0 #FFFFFF;
+    margin: 8px 0 3px;
+}
+.summary-title-sm {
+    font-size: 1.27rem;
+    margin-left: 2px;
+    margin-right: 5px;
+}
+.menu-holder {
+    min-height: 100%;
+}
+.menu-holder ul {
+    background-color:#EBEBEB;
+    list-style:none;
+    margin:0;
+    padding:0;
+}
+.menu-holder li {
+    background-color:#FFFFFF;
+    border-bottom:1px solid #DDDDDD;
+    color: #636363;
+    font-weight: normal;
+    font-size: 1.27rem;
+    line-height: 20px;
+    min-height: 20px;
+    padding:10px 40px 10px 55px;
+    background-size: 21px 21px;
+    background-repeat: no-repeat;
+    background-position: 15px center;
+}
+.menu-holder li#menuSummaryLink {
+    background-image: url(../img/gamecircle/icons-42-summary.png);
+}
+.menu-holder li#menuAchievementsLink {
+    background-image: url(../img/gamecircle/icons-42-achievements.png);
+}
+.menu-holder li#menuLeaderboardsLink {
+    background-image: url(../img/gamecircle/icons-42-leaderboards.png);
+} 
+.menu-holder li .metadata {
+    float: right;
+    margin-right: 30px;
+    color: #aaa;
+}
+.menu-holder a {
+    color: #636363;
+}
+.menu-holder > section > h1 {
+    background-color: #fafafa;
+    background-image: -moz-linear-gradient(top, #ffffff, #d7d7d7);
+    background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ffffff), to(#d7d7d7));
+    background-image: -webkit-linear-gradient(top, #ffffff, #d7d7d7);
+    background-image: -o-linear-gradient(top, #ffffff, #d7d7d7);
+    background-image: linear-gradient(to bottom, #ffffff, #d7d7d7);
+    background-repeat: repeat-x;
+    border-top:1px solid #E3E3E3;
+    border-bottom: 2px solid #CCCCCC;
+    color: #636363;
+    font-size: 1.27rem;
+    font-weight: normal;
+    margin:0px;
+    padding:15px 20px;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.menu-holder > section:first-child > ul > li:last-child {
+    border-bottom:none;
+}
+#agc-profile-title {
+    padding: 5px 20px 5px 8px;
+}
+#agc-profile-title .profile-block {
+    padding: 10px 0 10px 45px;
+    background-image: url(../img/gamecircle/icon-64-beachball.png);
+    background-repeat: no-repeat;
+    background-position: center left;
+    background-size: 35px 35px;
+    float: left;
+    min-height: 30px;
+}
+#agc-profile-title .profile-alias {
+    font-weight: normal;
+    font-size: 0.85rem;
+    position: relative;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    top: 5px;
+}
+#agc-profile-title .profile-image {
+    float: right;
+    margin-right: 45px;
+    width: 45px;
+    height: 45px;
+    border: 3px solid #ccc;
+    box-shadow: 1px 1px #bbb;
+    border-radius: 2px;
+} 
+/* Icon Styles */
+.carrot-right {
+    background-image: url(../img/gamecircle/carrot-right.png);
+    background-repeat: no-repeat;
+    margin: 0px;
+    min-height: 20px;
+    min-width: 20px;
+}
+.btn-x {
+    background-image: url(../img/gamecircle/x.png);
+    background-repeat: no-repeat;
+    background-position: center;
+    max-height: 32px;
+    max-width: 32px;
+}
+.btn-page-hero {
+    margin: 0 0 5px 5px;
+}
+.percent {
+    text-align: center;
+    font-weight: bolder;
+    margin: 0px;
+}
+.img-margin-right {
+    margin-right: 10px;
+}
+.img-profile-hero {
+    border: 5px solid #FFF;
+}
+.meta-profile-hero {
+    text-align: center;
+    font-weight: bold;
+    margin-right: 20px;
+}
+fieldset {
+    margin-bottom: 20px;
+}
+.editProfileAvatarIcon {
+    /* editProfileAvatarIcon must be defined before img-profile-selected so that it has lower priority. */
+    border: 5px solid #FFF;
+}
+.img-profile-selected {
+    border: 5px solid #F90;
+}
+/*
+ * Toast - constants.ToastKeys.TOAST_WIDTH_PIXELS => 320 (width(306) + padding(12) + border(2))
+ *         constants.ToastKeys.TOAST_HEIGHT_PIXELS => 73 (height(67) + padding(4) + border(2))
+ */
+html.toast, html.toast body {
+    background:none;
+    margin:0;
+    padding:0;
+}
+#agc-toast {
+    background-color: #F5F5F5;
+    border: 1px solid #999;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    *border: 1px solid #999;
+    display:table;
+    height:73px;
+    padding:2px 6px;
+    margin:0;
+    width:306px;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    padding:2px 8px;
+    height:63px;
+}
+#agc-toast.darkToast {
+    background:rgba(0,0,0,.6);
+    color:#fff;
+    font-family:"Helvetica Neue",Helvetica,sans-serif;
+    border:none;
+}
+#agc-toast.darkToast p {
+    color:#fff;
+}
+#agc-toast .agc-toast-buttons li {
+    display:inline;
+}
+#agc-toast-title {
+    margin:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+#agc-toast.no-features #agc-toast-title {
+    text-align:center;
+}
+#agc-toast.no-features #agc-toast-features,
+#agc-toast.no-features #agc-toast-description {
+    display:none;
+}
+#agc-toast #agc-toast-xp-container {
+    display: none;
+    text-align: right;
+    position: absolute;
+    max-width: 150px;
+    right: 10px;
+    top: 15px;
+}
+#agc-toast #agc-toast-xp-container span {
+    display: inline-block;
+    vertical-align: middle;
+}
+#agc-toast.show-xp #agc-toast-xp-container {
+    display: table-cell;
+}
+#agc-toast-description {
+    margin:0;
+    overflow:visible;
+    text-overflow:ellipsis;
+}
+#agc-toast-description img.xp_star {
+    width: 13px;
+    height: 13px;
+    position: relative;
+    top: -3px;
+    margin-left: 3px;
+}
+#agc-toast > div {
+    display:table-cell;
+    vertical-align:middle;
+}
+#agc-toast div.agc-toast-icon {
+    width:40px;
+}
+#agc-toast div.agc-toast-body {
+    padding:4px 6px;
+}
+#agc-toast img.agc-icon {
+    height:40px;
+    max-width:40px;
+    width:40px;
+}
+#agc-toast button {
+    margin:0;
+    padding:2px 6px;
+    white-space:nowrap;
+}
+#agc-toast-features {
+    display:inline;
+    list-type:none;
+    margin:0;
+    padding:0;
+    white-space:nowrap;
+}
+#agc-toast-features img {
+    margin:0;
+    max-width:20px;
+    padding:0;
+    width:20px;
+}
+#agc-toast-xp-text {
+     font-size:1.6rem;
+     line-height: 38px;
+     padding-right: 0.5rem;
+     margin-bottom: 0px;
+     text-align: right;
+}
+/*
+ * SignUp Alert
+ */
+.gcalert {
+    margin: 0 auto;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    background-color: #F5F5F5;
+    position: relative;
+    border: 1px solid #999;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    *border: 1px solid #999;
+    display:table;
+    text-align: center;
+}
+div.signup-alert img.agc-signup-alert-logo {
+    margin:4px;
+    width:100px;
+}
+div.signup-alert .button-group {
+    clear: both;
+}
+#agc-signup-alert {
+    margin:0;
+}
+#agc-signup-alert-title {
+    font-size:1.27rem;
+    margin-top: 0 0 15px 0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+#agc-signup-alert-description {
+    margin:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+#agc-signup-alert > div {
+    display:table-cell;
+    vertical-align:middle;
+}
+#agc-signup-alert div.agc-signup-alert-body {
+    padding:6px;
+    text-align: left;
+    vertical-align:top;
+}
+#agc-signup-alert img.agc-lb-icon {
+    margin:4px;
+    max-width:64px;
+    width:64px;
+}
+#agc-signup-alert img.agc-ach-icon {
+    margin:4px;
+    max-width:64px;
+    width:64px;
+}
+#agc-signup-alert button {
+    margin:2px;
+    padding:2px
+    white-space:nowrap;
+    width:105px;
+}
+#agc-signup-alert-features {
+    display:inline;
+    list-type:none;
+    margin:0;
+    padding:0;
+    white-space:nowrap;
+}
+#agc-signup-alert-features img {
+    margin:0;
+    max-width:20px;
+    padding:0;
+    width:20px;
+}
+.agc-signup-alert-icon {
+    float: left;
+}
+/* Alert general style (to avoid text scaling issues) */
+.gcalert {
+    padding:15px;
+    display: block;
+}
+.gcalert #scrollable-content {
+    display: block;
+}
+.gcalert h4 {
+    font-size:1.27rem;
+    margin: 0 0 15px;
+}
+.gcalert p {
+    font-size:1.2rem;
+    margin: 0 0 15px;
+    line-height: 1.7rem;
+}
+.gcalert .btn-small {
+    font-size:1.27rem;
+    min-width: 120px;
+    padding: 0.4rem;
+}
+/* Icon with overlay */
+.iconOverlayContainer {
+    position:relative;
+}
+.iconOverlay {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+}
+.bestleaderboardIcon {
+    border-radius: 10px;
+    width: 60px;
+    height: 60px;
+}
+.bestleaderboardIconOverlay {
+    width: 60px;
+    height: 60px;
+}
+.leaderboardIcon {
+    border-radius: 10px;
+    width: 50px;
+    height: 50px;
+    max-width:50px;
+}
+.leaderboardIconOverlay {
+    width: 50px;
+    height: 50px;
+}
+.leaderboardAvatarIcon {
+    width: 40px;
+    height: 40px;
+}
+.achievementIcon {
+    border-radius:40px;
+    width: 40px;
+    height: 40px;
+}
+.achievementBigIcon {
+    border-radius:60px;
+    width: 60px;
+    height: 60px;
+}
+.achievementBigIconOverlay {
+    width: 60px;
+    height: 60px;
+}
+.pageHeroAvatarIcon {
+    width: 80px;
+    height: 80px;
+}
+td.leaderboard-icon {
+    width:60px;
+}
+td.leaderboard-name {
+    width:auto;
+}
+td.leaderboard-button {
+    width:30px;
+}
+.agc-text-overflow {
+    display:block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-hyphens: auto;
+    word-break: normal;
+}
+/* Toasts */
+.btn-toast {
+    margin: 0px 0px 0px 15px;
+}
+.toast-icon {
+    margin-bottom: 8px;
+    margin-right: 8px;
+}
+.toast-text {
+    max-height: 38px;
+    margin: 3px 0 2px 0;
+    overflow: hidden;
+}
+/* Settings */
+.settings-header {
+    display: block;
+    font-size: 1.27rem;
+    font-weight: bold;
+    line-height: 20px;
+    color: #999999;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+    background-color: #F5F5F5;
+    border: 1px solid #E3E3E3;
+    border-right: none;
+    border-left: none;
+    margin: 0px -35px 10px -35px;
+    min-height: 20px;
+    padding: 10px 20px;
+}
+.alert-header {
+    color: #999999;
+    display: block;
+    font-size: 1.63rem;
+    line-height: 20px;
+    text-align: center;
+    margin: 0 -35px 0 -35px;
+    -moz-border-bottom-colors: none;
+    -moz-border-left-colors: none;
+    -moz-border-right-colors: none;
+    -moz-border-top-colors: none;
+    background-color: #F5F5F5;
+    border-color: #E3E3E3 -moz-use-text-color;
+    border-image: none;
+    border-style: solid none;
+    border-width: 1px medium;
+    margin-bottom: 10px;
+    min-height: 20px;
+    padding: 20px;
+}
+.no-wifi {
+    background-image: url(../img/gamecircle/no-wifi.png);
+    background-repeat: no-repeat;
+    background-position: center;
+    min-height: 260px;
+    padding: 20px;
+}
+.alert-gamecircle {
+    background-color: #F5F5F5;
+    border-color: #E3E3E3;
+    color: #555555;
+}
+.validation-message {
+    display: none;
+}
+.page-hero button {
+    position:absolute;
+    right:10px;
+}
+.page-hero.profile-hidden button {
+    visibility:hidden;
+}
+.page-hero-text {
+    margin:0;
+}
+.page-hero-text > div:first-child {
+	position:absolute;
+	left:103px;
+}
+.page-hero-text h1 {
+    font-size:1.63rem;
+    line-height:120%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+@media screen and (min-width:231px) and (max-width:260px) {
+    .page-hero-text h1 { width:140px; }
+}
+@media screen and (min-width:261px) and (max-width:290px) {
+    .page-hero-text h1 { width:170px; }
+}
+@media screen and (min-width:291px) and (max-width:320px) {
+    .page-hero-text h1 { width:200px; }
+}
+@media screen and (min-width:321px) and (max-width:350px) {
+    .page-hero-text h1 { width:230px; }
+}
+@media screen and (min-width:351px) and (max-width:380px) {
+    .page-hero-text h1 { width:260px; }
+}
+@media screen and (min-width:381px) and (max-width:410px) {
+    .page-hero-text h1 { width:290px; }
+}
+.page-hero-text h2 {
+    font-size:1.09rem;
+    margin:10px 0 5px 0;
+}
+.page-hero-text p {
+    margin:5px 0 0 0;
+}
+.td-achievement-icon {
+    width: 40px;
+}
+.td-leaderboard-avatar-icon {
+    width: 40px;
+}
+.achievements-holder .page-hero {
+    display:table;
+    width:100%;
+}
+.achievements-holder .page-hero .page-hero-icon {
+    display:table-cell;
+    vertical-align:middle;
+    width: 80px;
+}
+.achievements-holder .page-hero .page-hero-header,
+.achievements-holder .page-hero .achievement-header {
+    display:table-cell;
+    padding:0 5px;
+    text-align: left;
+    vertical-align:top;
+}
+.achievements-holder .page-hero .page-hero-header > div {
+    display:table;
+}
+.achievements-holder .page-hero .achievement-icon {
+    display:table-cell;
+    height:60px;
+    vertical-align:top;
+    width:60px;
+}
+/**
+ * Edit Profile
+ **/
+.editprofile-holder input[type='text'] {
+	width:298px;
+}
+#avatars {
+    background-color:#FFFFFF;
+    display:inline-block;
+    border-radius:5px;
+    border:2px solid #B7B7B7;
+}
+#avatars ul {
+    list-style:none;
+    margin:0;
+    padding:0;
+}
+#avatars li {
+    display:inline-block;
+    border-bottom:2px solid #B7B7B7;
+    margin:0 -3px 0 0;
+    padding:0;
+    position:relative;
+    top:1px;
+
+}
+#avatars img {
+    border:4px solid transparent;
+    margin:4px;
+    max-width:80px;
+    width:80px;
+    height:80px;
+}
+#avatars img.img-profile-selected {
+    border: 4px solid #F90;
+}
+fieldset.editprofile {
+	display:block;
+	float:none;
+	padding-left:2px;
+}
+fieldset.editprofile label,
+fieldset.editprofile input {
+	margin:0 10px 5px 0;
+  padding:2px;
+}
+fieldset.editprofile label {
+  padding-left:0;
+}
+.editprofile {
+	display:inline;
+	float:left;
+	margin:0 0 5px 0;
+	padding:0;
+}
+#agc-app {
+  overflow: hidden;
+  position: absolute;
+  height:100%;
+  width:100%;
+}
+#agc-app .wrapper {
+  bottom: 0;
+  left: 0;
+  overflow:auto;
+  position: absolute;
+  top: 61px;
+  width:100%;
+}
+#agc-menu {
+  background: #FFFFFF;
+  min-height:100%;
+  position: absolute;
+  white-space:nowrap;
+}
+#agc-menu-content {
+  height: 100%;
+  overflow: visible !important;
+  top: 0px !important;
+}
+#agc-menu-logo {
+  display: block;
+  height: 40px;
+  margin: 15px auto 0px;
+  padding-right: 30px;
+}
+#agc-main {
+  background-color:#EBEBEB;
+  box-shadow:  0px 0px 4px 1px rgba(0, 0, 0, 0.8);
+  height:100%;
+  overflow: hidden;
+  position: absolute;
+  top:0;
+  width:100%;
+  -webkit-box-shadow:  0px 0px 4px 1px rgba(0, 0, 0, 0.8);
+  z-index: 101;
+}
+#alert-container #agc-main {
+  background-color: transparent;
+}
+#agc-main .wrapper {
+  top:61px;
+}
+#agc-main-content {
+  background-color:#EBEBEB;
+}
+#agc-main-content.transparent {
+  background-color: transparent;
+}
+/* Responsive area for scaling the main root (html) font-size, and some more specific stuff for images */
+
+@media screen and (min-width:480px) {
+    html {
+        font-size:13px;
+    }
+    .achievementIcon {
+        width:45px;
+        height:45px;
+        border-radius:45px;
+    }
+    .leaderboardIcon {
+        border-radius: 15px;
+        width: 55px;
+        height: 55px;
+        max-width:55px;
+    }
+    .leaderboardIconOverlay {
+        width: 55px;
+        height: 55px;
+    }
+    .leaderboardAvatarIcon {
+        width: 45px;
+        height: 45px;
+    }
+    .td-achievement-icon, .leaderboard-icon {
+        width:45px;
+    }
+    table.leaderboardRanks td.avatar {
+        width:45px;
+    }
+    .title-bar {
+        padding-top: 7px; 
+    }
+}
+
+@media screen and (min-width:680px) {
+    html {
+        font-size:15px;
+    }
+    .achievementIcon, .leaderboardIcon {
+        width:50px;
+        height:50px;
+        border-radius:50px;
+    }
+    .td-achievement-icon, .leaderboard-icon {
+        width:50px;
+    }
+    table.leaderboardRanks td.avatar {
+        width:50px;
+    }
+    .leaderboardIcon {
+        border-radius: 20px;
+        width: 60px;
+        height: 60px;
+        max-width:60px;
+    }
+    .leaderboardIconOverlay {
+        width: 60px;
+        height: 60px;
+    }
+    .leaderboardAvatarIcon {
+        width: 50px;
+        height: 50px;
+    }
+    .title-bar {
+        padding-top: 5px;
+    }
+}

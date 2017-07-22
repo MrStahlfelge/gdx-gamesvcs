@@ -1,0 +1,2 @@
+/*! Copyright 2013 Amazon Digital Services, Inc. All rights reserved. (version: SDK2.1.1)*/
+var elementStore={};elementStore.enUS={help_and_feedback_email:"gamecircle-feedback-en@amazon.com"};elementStore.deUS={help_and_feedback_email:"gamecircle-feedback-de@amazon.com"};elementStore.frUS={help_and_feedback_email:"gamecircle-feedback-fr@amazon.com"};elementStore.zhUS={help_and_feedback_email:"gamecircle-feedback-zh@amazon.com"};

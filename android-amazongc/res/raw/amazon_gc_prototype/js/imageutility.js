@@ -1,0 +1,2 @@
+/*! Copyright 2013 Amazon Digital Services, Inc. All rights reserved. */
+ImageUtility=(function(){return{imageURLToLocalPath:function(c){var e="";try{var f="../images/";var a=c.lastIndexOf("/")+1;var b=c.substring(a,c.length);e=f+"/"+b}catch(d){console.log("imageURLToLocalPath called with invalid input: "+c)}return e},refreshImage:function(c,a){var b=$("#"+c);if(b!==undefined&&b!==null){b.attr("src",this.imageURLToLocalPath(a)+"?time="+new Date())}else{console.log("Unable to refresh image: "+a)}}}}());

@@ -1,0 +1,2 @@
+/*! Copyright 2013 Amazon Digital Services, Inc. All rights reserved. */
+GameCircleExperiment=(function(){var a=function(c,f,b,i){var e=c;var d=f;var h=b;var g=i;this["getName"]=function(){return e};this["getTreatment"]=function(){return d};this["getViewKey"]=function(){return h};this["getConversionKey"]=function(){return g}};return a}());
