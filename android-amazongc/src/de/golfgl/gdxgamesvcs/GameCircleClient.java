@@ -30,21 +30,32 @@ public class GameCircleClient implements IGameServiceClient {
     protected boolean achievementsEnabled;
     protected boolean leaderboardsEnabled;
     protected boolean autoStartSignInFlow;
+    // GameCircle does not report if it is suspended, so keep it saved here
+    protected boolean isConnected;
     protected EnumSet<AmazonGamesFeature> agsFeatures;
     protected IGameServiceListener gsListener;
     protected String cachedPlayerAlias;
 
     public GameCircleClient setWhistleSyncEnabled(boolean whistleSyncEnabled) {
+        if (agsFeatures != null)
+            throw new IllegalStateException("Already initialized");
+
         this.whistleSyncEnabled = whistleSyncEnabled;
         return this;
     }
 
     public GameCircleClient setAchievementsEnabled(boolean achievementsEnabled) {
+        if (agsFeatures != null)
+            throw new IllegalStateException("Already initialized");
+
         this.achievementsEnabled = achievementsEnabled;
         return this;
     }
 
     public GameCircleClient setLeaderboardsEnabled(boolean leaderboardsEnabled) {
+        if (agsFeatures != null)
+            throw new IllegalStateException("Already initialized");
+
         this.leaderboardsEnabled = leaderboardsEnabled;
         return this;
     }
@@ -70,7 +81,7 @@ public class GameCircleClient implements IGameServiceClient {
     protected void agcServiceNotReady(AmazonGamesStatus amazonGamesStatus) {
         Gdx.app.error(GS_CLIENT_ID, "onServiceNotReady - " + amazonGamesStatus.name());
         isConnectionPending = false;
-
+        isConnected = false;
         if (gsListener != null) {
             gsListener.gsDisconnected();
             if (!autoStartSignInFlow)
@@ -83,6 +94,7 @@ public class GameCircleClient implements IGameServiceClient {
         Gdx.app.log(GS_CLIENT_ID, "onServiceReady");
         agsClient = amazonGamesClient;
         agsClient.setPopUpLocation(PopUpLocation.TOP_CENTER);
+        isConnected = true;
 
         // Request Alias
         AmazonGamesClient.getInstance().getPlayerClient().getLocalPlayer().setCallback(
@@ -118,7 +130,7 @@ public class GameCircleClient implements IGameServiceClient {
         if (myContext == null || agsFeatures == null)
             throw new IllegalStateException("Call initialize() before connecting");
 
-        if (AmazonGamesClient.isInitialized())
+        if (isConnected())
             return true;
 
         isConnectionPending = true;
@@ -147,6 +159,8 @@ public class GameCircleClient implements IGameServiceClient {
             Log.i(GS_CLIENT_ID, "Disconnecting from GameCircle");
 
             AmazonGamesClient.release();
+            isConnected = false;
+
             if (gsListener != null)
                 gsListener.gsDisconnected();
         }
@@ -171,7 +185,7 @@ public class GameCircleClient implements IGameServiceClient {
 
     @Override
     public boolean isConnected() {
-        return agsClient != null && AmazonGamesClient.isInitialized();
+        return agsClient != null && AmazonGamesClient.isInitialized() && isConnected && !isConnectionPending;
     }
 
     @Override
