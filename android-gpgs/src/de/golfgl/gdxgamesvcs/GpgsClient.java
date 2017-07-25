@@ -467,8 +467,10 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         if (!driveApiEnabled)
             throw new GameServiceException.NotSupportedException();
 
-        if (!isConnected())
+        if (!isConnected()) {
             gameListener.gsGameStateLoaded(null);
+            return;
+        }
 
         AsyncTask<Void, Void, Boolean> task = new AsyncTask<Void, Void, Boolean>() {
             @Override
@@ -487,8 +489,10 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
 
     @NonNull
     public Boolean loadGameStateSync(String id) {
-        if (!isConnected())
+        if (!isConnected()) {
             gameListener.gsGameStateLoaded(null);
+            return false;
+        }
 
         // Open the snapshot, creating if necessary
         Snapshots.OpenSnapshotResult open = Games.Snapshots.open(
