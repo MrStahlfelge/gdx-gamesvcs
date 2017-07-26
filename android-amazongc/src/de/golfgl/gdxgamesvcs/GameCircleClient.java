@@ -1,6 +1,8 @@
 package de.golfgl.gdxgamesvcs;
 
 import android.app.Activity;
+import android.os.AsyncTask;
+import android.os.SystemClock;
 import android.util.Log;
 
 import com.amazon.ags.api.AGResponseCallback;
@@ -10,7 +12,13 @@ import com.amazon.ags.api.AmazonGamesFeature;
 import com.amazon.ags.api.AmazonGamesStatus;
 import com.amazon.ags.api.overlay.PopUpLocation;
 import com.amazon.ags.api.player.RequestPlayerResponse;
+import com.amazon.ags.api.whispersync.FailReason;
+import com.amazon.ags.api.whispersync.GameDataMap;
+import com.amazon.ags.api.whispersync.WhispersyncEventListener;
+import com.amazon.ags.api.whispersync.model.SyncableNumber;
+import com.amazon.ags.api.whispersync.model.SyncableString;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.utils.Base64Coder;
 
 import java.util.EnumSet;
 
@@ -26,21 +34,25 @@ public class GameCircleClient implements IGameServiceClient {
     protected AmazonGamesClient agsClient;
     protected Activity myContext;
     protected boolean isConnectionPending;
-    protected boolean whistleSyncEnabled;
+    protected boolean whisperSyncEnabled;
     protected boolean achievementsEnabled;
     protected boolean leaderboardsEnabled;
     protected boolean autoStartSignInFlow;
     // GameCircle does not report if it is suspended, so keep it saved here
     protected boolean isConnected;
+    // Whispersync syncs after connection is initialized, but reading the data immediately
+    // will return the last local saved value. This member saves if a sync was already done
+    // so that loadGameState will not return before that happened
+    protected boolean loadedFromCloud;
     protected EnumSet<AmazonGamesFeature> agsFeatures;
     protected IGameServiceListener gsListener;
     protected String cachedPlayerAlias;
 
-    public GameCircleClient setWhistleSyncEnabled(boolean whistleSyncEnabled) {
+    public GameCircleClient setWhisperSyncEnabled(boolean whisperSyncEnabled) {
         if (agsFeatures != null)
             throw new IllegalStateException("Already initialized");
 
-        this.whistleSyncEnabled = whistleSyncEnabled;
+        this.whisperSyncEnabled = whisperSyncEnabled;
         return this;
     }
 
@@ -67,7 +79,7 @@ public class GameCircleClient implements IGameServiceClient {
         agsFeatures = EnumSet.noneOf(AmazonGamesFeature.class);
         this.myContext = context;
 
-        if (whistleSyncEnabled)
+        if (whisperSyncEnabled)
             agsFeatures.add(AmazonGamesFeature.Whispersync);
         if (achievementsEnabled)
             agsFeatures.add(AmazonGamesFeature.Achievements);
@@ -109,6 +121,31 @@ public class GameCircleClient implements IGameServiceClient {
                     }
                 }
         );
+
+        if (whisperSyncEnabled)
+            AmazonGamesClient.getWhispersyncClient().setWhispersyncEventListener(new WhispersyncEventListener() {
+                public void onNewCloudData() {
+                    loadedFromCloud = true;
+                    Gdx.app.log(GameCircleClient.GS_CLIENT_ID, "Game data from cloud synced to local.");
+                }
+
+                public void onDataUploadedToCloud() {
+                    Gdx.app.log(GameCircleClient.GS_CLIENT_ID, "Local game data synced to cloud.");
+                }
+
+                @Override
+                public void onAlreadySynchronized() {
+                    loadedFromCloud = true;
+                    Gdx.app.log(GameCircleClient.GS_CLIENT_ID, "Game data is up to date.");
+                }
+
+                @Override
+                public void onSyncFailed(FailReason reason) {
+                    loadedFromCloud = true;
+                    Gdx.app.log(GameCircleClient.GS_CLIENT_ID, "Game data not synced: " + reason.name());
+                }
+            });
+
 
         if (gsListener != null)
             gsListener.gsConnected();
@@ -233,7 +270,7 @@ public class GameCircleClient implements IGameServiceClient {
 
     @Override
     public boolean submitEvent(String eventId, int increment) {
-        Gdx.app.log(GS_CLIENT_ID, "Event " + eventId + " not logged (not supported by this service)");
+        Gdx.app.debug(GS_CLIENT_ID, "Event " + eventId + " not logged (not supported by this service)");
         return false;
     }
 
@@ -253,17 +290,83 @@ public class GameCircleClient implements IGameServiceClient {
 
     @Override
     public void saveGameState(String fileId, byte[] gameState, long progressValue) throws GameServiceException {
-        //TODO
+        if (!whisperSyncEnabled)
+            throw new GameServiceException.NotSupportedException();
+
+        saveGameStateSync(fileId, gameState, progressValue);
+    }
+
+    public Boolean saveGameStateSync(String id, byte[] gameState, long progressValue) {
+        if (!isConnected() || !whisperSyncEnabled)
+            return false;
+
+        GameDataMap gameDataMap = AmazonGamesClient.getWhispersyncClient().getGameData();
+
+        SyncableString savedData = gameDataMap.getLatestString(id);
+        SyncableNumber savedProgress = gameDataMap.getLatestNumber(id + "progress");
+
+        if (!savedProgress.isSet() || savedProgress.asLong() <= progressValue) {
+            savedData.set(new String(Base64Coder.encode(gameState)));
+            savedProgress.set(progressValue);
+            return true;
+        } else {
+            Gdx.app.error(GameCircleClient.GS_CLIENT_ID, "Progress of saved game state higher than current one. Did " +
+                    "not save.");
+            return false;
+        }
     }
 
     @Override
-    public void loadGameState(String fileId) throws GameServiceException {
-        //TODO
+    public void loadGameState(final String fileId) throws GameServiceException {
+        if (!whisperSyncEnabled)
+            throw new GameServiceException.NotSupportedException();
+
+        if (!isConnected()) {
+            gsListener.gsGameStateLoaded(null);
+            return;
+        }
+
+        AsyncTask<Void, Void, Boolean> task = new AsyncTask<Void, Void, Boolean>() {
+            @Override
+            protected Boolean doInBackground(Void... params) {
+                return loadGameStateSync(fileId);
+            }
+        };
+
+        task.execute();
+    }
+
+    protected boolean loadGameStateSync(String fileId) {
+        if (!isConnected() || !whisperSyncEnabled) {
+            gsListener.gsGameStateLoaded(null);
+            return false;
+        }
+
+        // wait some time to get data loaded from cloud
+        int maxWaitTime = 5000;
+        if (!loadedFromCloud)
+            Gdx.app.log(GameCircleClient.GS_CLIENT_ID, "Waiting for cloud data to get synced...");
+
+        while (!loadedFromCloud && maxWaitTime > 0) {
+            SystemClock.sleep(100);
+            maxWaitTime -= 100;
+        }
+
+        GameDataMap gameDataMap = AmazonGamesClient.getWhispersyncClient().getGameData();
+        SyncableString savedData = gameDataMap.getLatestString(fileId);
+        if (!savedData.isSet()) {
+            Gdx.app.log(GameCircleClient.GS_CLIENT_ID, "No data in whispersync for " + fileId);
+            gsListener.gsGameStateLoaded(null);
+            return false;
+        } else {
+            Gdx.app.log(GameCircleClient.GS_CLIENT_ID, "Loaded " + fileId + "from whispersync successfully.");
+            gsListener.gsGameStateLoaded(Base64Coder.decode(savedData.getValue()));
+            return true;
+        }
     }
 
     @Override
     public CloudSaveCapability supportsCloudGameState() {
-        //TODO
-        return CloudSaveCapability.NotSupported;
+        return (whisperSyncEnabled ? CloudSaveCapability.MultipleFilesSupported : CloudSaveCapability.NotSupported);
     }
 }

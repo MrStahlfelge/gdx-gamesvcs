@@ -63,9 +63,9 @@ public interface IGameServiceClient {
     void logOff();
 
     /**
-     * Gets Players display name
+     * Gets Players display name, if possible.
      *
-     * @return Display name
+     * @return Display name, if available. May return null.
      */
     String getPlayerDisplayName();
 
