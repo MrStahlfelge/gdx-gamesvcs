@@ -19,16 +19,27 @@ import de.golfgl.gdxgamesvcs.IGameServiceListener.GsErrorType;
 
 public class GpgsClient implements IGameServiceClient
 {
-
+	private static final String TAG = "GpgsClient";
+	
+	/**
+	 * Shortcut for current user as per Google API doc.
+	 */
 	private static final String ME = "me";
 
-	protected IGameServiceListener gameListener; // TODO call
+	/** current application name */
+	protected String applicationName;
 	
-	private String userID = ME; // TODO uniq ?
+	private IGameServiceListener gameListener;
 	
-	private boolean connected;
+	private Thread authorizationThread;
+
+	private volatile boolean connected;
 	
 	private volatile boolean connecting;
+	
+	private boolean initialized;
+
+	private String playerName;
 	
 	@Override
 	public String getGameServiceId() {
@@ -40,10 +51,58 @@ public class GpgsClient implements IGameServiceClient
 		gameListener = gsListener;
 	}
 	
-	// TODO could not be a file
-	public void initialize(String applicationName, FileHandle clientSecretFile){
+	/**
+	 * Get the data store directory for your app.
+	 * This is where users credential (token) will be stored.
+	 * 
+	 * Subclass may override this method in order to provide another location.
+	 * 
+	 * Default is <USER_HOME>/.store/<APPLICATION_NAME>
+	 * 
+	 * @param dataStoreDirectory where to store users credentials for this application
+	 */
+	protected java.io.File getDataStoreDirectory() {
+		java.io.File dataStoresDirectory = new java.io.File(System.getProperty("user.home"), ".store");
+		return new java.io.File(dataStoresDirectory, applicationName);
+	}
+	
+	/**
+	 * Provide a user identifier for the current user. It is only used to store/restore user
+	 * credentials (API token) during authorization ({@link #connect(boolean)}.
+	 * 
+	 * Subclass may override this method in order to provide dynamically a user ID based on their own
+	 * login system and want to store different credentials for different users.
+	 * 
+	 * Default is the OS user name.
+	 * 
+	 * @return a current user identifier, shouldn't be null.
+	 */
+	protected String getUserId(){
+		return System.getProperty("user.name");
+	}
+	
+	/**
+	 * Initialize connector. Must be called at application startup.
+	 * @param applicationName Application name registered in Google Play.
+	 * @param clientSecret client/secret json data you get from Google Play.
+	 * 
+	 * Format is :
+	 * <pre>
+	 * {
+	 *   "installed": {
+	 *     "client_id": "xxxxxxx-yyyyyyyyyyyyyyyyy.apps.googleusercontent.com",
+	 *     "client_secret": "zzzzzzzzzzzzzzzzzzzzzzzzz"
+	 *   }
+	 * }
+	 * </pre>
+	 * 
+	 * @throws GdxRuntimeException if initialisation fails.
+	 */
+	public void initialize(String applicationName, InputStream clientSecret){
+		this.applicationName = applicationName;
 		try {
-			GAPIGateway.init(applicationName, clientSecretFile);
+			GAPIGateway.init(applicationName, clientSecret, getDataStoreDirectory());
+			initialized = true;
 		} catch (GeneralSecurityException e) {
 			throw new GdxRuntimeException(e);
 		} catch (IOException e) {
@@ -51,44 +110,94 @@ public class GpgsClient implements IGameServiceClient
 		}
 	}
 	
-	@Override
-	public boolean connect(boolean silent) {
+	/**
+	 * Initialize with a clientSecretFile. 
+	 * @see {@link #initialize(String, InputStream)}
+	 * @param applicationName
+	 * @param clientSecretFile
+	 */
+	public void initialize(String applicationName, FileHandle clientSecretFile){
+		initialize(applicationName, clientSecretFile.read());
+	}
+	
+	/**
+	 * Try to authorize user. This method is blocking until user accept
+	 * autorization.
+	 */
+	private void waitForUserAuthorization()
+	{
+		// load user token or open browser for user authorizations.
+		boolean success = false;
 		try {
-			connecting = true;
-			GAPIGateway.authorize(userID);
-			connected = true;
-			gameListener.gsConnected();
-		} catch (Exception e) {
-			gameListener.gsErrorMsg(GsErrorType.errorUnknown, "failed to connect");
-			throw new GdxRuntimeException(e);
-		} finally {
-			connecting = false;
+			GAPIGateway.authorize(getUserId());
+			success = true;
+		} catch (IOException e) {
+			Gdx.app.error(TAG, "failed to get authorization from user", e);
+			if(gameListener != null) gameListener.gsErrorMsg(GsErrorType.errorUnknown, "failed to connect");
 		}
 		
-		return false;
+		// try to retreive palyer name
+		if(success){
+			try {
+				Player player = GAPIGateway.games.players().get(ME).execute();
+				playerName = player.getDisplayName();
+			} catch (IOException e) {
+				Gdx.app.error(TAG, "Failed to retreive player name", e); // TODO silent ?
+				if(gameListener != null) gameListener.gsErrorMsg(GsErrorType.errorUnknown, "Failed to retreive player name");
+			}
+		}
+		
+		connected = success;
+		
+		// dispatch status
+		if(gameListener != null){
+			if(connected){
+				gameListener.gsConnected();
+			}else{
+				gameListener.gsDisconnected();
+			}
+		}
+	}
+	
+	@Override
+	public boolean connect(boolean silent) {
+		if(!connected && !connecting){
+			connecting = true;
+			playerName = null;
+			authorizationThread = new Thread(new Runnable() {
+				@Override
+				public void run() {
+					try{
+						waitForUserAuthorization(); 
+					}finally{
+						connecting = false;
+					}
+				}
+			}, "GpgsAuthorization");
+			authorizationThread.start();
+		}
+		// return false only if client has not been properly initialized.
+		return initialized;
 	}
 
 	@Override
 	public void disconnect() {
-		// TODO add disconnect support ....
-		
+		// nothing special to do here since there is no resources to freeup.
 	}
 
 	@Override
 	public void logOff() {
-		// TODO add logOff support ....
-		
+		disconnect();
+		connected = false;
+		playerName = null;
+		GAPIGateway.closeSession();
+		// TODO should we dispatch this event ?
+		// if(gameListener != null) gameListener.gsDisconnected();
 	}
 
 	@Override
 	public String getPlayerDisplayName() {
-		// TODO cache the result upon connection !
-		try {
-			Player player = GAPIGateway.games.players().get(ME).execute();
-			return player.getDisplayName();
-		} catch (IOException e) {
-			throw new GdxRuntimeException(e);
-		}
+		return playerName;
 	}
 
 	@Override
@@ -103,6 +212,7 @@ public class GpgsClient implements IGameServiceClient
 
 	@Override
 	public boolean providesLeaderboardUI() {
+		// TODO nope but could provides leaderboards data!
 		return false;
 	}
 
@@ -113,6 +223,7 @@ public class GpgsClient implements IGameServiceClient
 
 	@Override
 	public boolean providesAchievementsUI() {
+		// TODO nope but could provides achievements data!
 		return false;
 	}
 
@@ -127,7 +238,7 @@ public class GpgsClient implements IGameServiceClient
 			GAPIGateway.games.scores().submit(leaderboardId, score).execute();
 			return true; 
 		} catch (IOException e) {
-			Gdx.app.error("", "failed submit to leaderboard", e); // TODO TAG
+			Gdx.app.error(TAG, "failed submit to leaderboard", e);
 		}
 		return false;
 	}
@@ -209,6 +320,8 @@ public class GpgsClient implements IGameServiceClient
 	@Override
 	public void loadGameState(String fileId) throws GameServiceException {
 		
+		// TODO call gameListener.gsGameStateLoaded(null); if failed !!!
+		
 		InputStream stream = null;
 		try {
 			// TODO refactor
@@ -228,7 +341,7 @@ public class GpgsClient implements IGameServiceClient
 			
 				byte [] data = StreamUtils.copyStreamToByteArray(stream);
 				
-				gameListener.gsGameStateLoaded(data);
+				if(gameListener != null) gameListener.gsGameStateLoaded(data);
 			}
 		} catch (IOException e) {
 			throw new GdxRuntimeException(e);

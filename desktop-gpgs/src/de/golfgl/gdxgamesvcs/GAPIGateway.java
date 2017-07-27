@@ -2,13 +2,13 @@ package de.golfgl.gdxgamesvcs;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collection;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.files.FileHandle;
 import com.google.api.client.auth.oauth2.AuthorizationCodeRequestUrl;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
@@ -30,7 +30,7 @@ import com.google.api.services.games.GamesScopes;
 class GAPIGateway {
 	
 	private static String applicationName;
-	private static FileHandle clientSecretsFile;
+	private static GoogleClientSecrets clientSecrets;
 	
 	/**
 	 * Global instance of the {@link DataStoreFactory}. The best practice is to
@@ -53,23 +53,20 @@ class GAPIGateway {
 	 * is {@code null} or blank, the application will log a warning. Suggested
 	 * format is "MyCompany-ProductName/1.0".
 	 */
-	public static void init(String applicationName, FileHandle clientSecretsFile) throws GeneralSecurityException, IOException  
+	public static void init(String applicationName, InputStream clientSecret, File dataStoreDirectory) throws GeneralSecurityException, IOException  
 	{
 		GAPIGateway.applicationName = applicationName;
-		GAPIGateway.clientSecretsFile = clientSecretsFile;
+		GAPIGateway.clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(clientSecret));
 		
 		httpTransport = GoogleNetHttpTransport.newTrustedTransport();
 		
-		File dataStoresDirectory = new File(System.getProperty("user.home"), ".store"); // TODO configurable
-		File dataStoreDirectory = new File(dataStoresDirectory, applicationName.toLowerCase()); // TODO why lowercase !
 		dataStoreFactory = new FileDataStoreFactory(dataStoreDirectory);
 	}
 	
 	/** Authorizes the installed application to access user's protected data. */
-	public static void authorize(String userID) throws Exception {
+	public static void authorize(String userID) throws IOException {
 		// load client secrets
-		GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY,
-				new InputStreamReader(clientSecretsFile.read()));
+		
 		// set up authorization code flow
 		Collection<String> scopes = new ArrayList<String>();
 		scopes.add(GamesScopes.GAMES);
@@ -89,6 +86,11 @@ class GAPIGateway {
 		games = new Games.Builder(httpTransport, JSON_FACTORY, credential).setApplicationName(applicationName).build();
 		drive = new Drive.Builder(httpTransport, JSON_FACTORY, credential).setApplicationName(applicationName).build();
 
+	}
+	
+	public static void closeSession(){
+		games = null;
+		drive = null;
 	}
 
 }

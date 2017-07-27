@@ -17,9 +17,14 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
+// TODO wrap every action calls within a thread ?!
 public class GpgsClientTest extends Game
 {
 	private static final String TAG = "GpgsClientTest";
+	
+	private static void background(Runnable runnable){
+		new Thread(runnable).start();
+	}
 	
 	public static void main(String[] args) {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
@@ -55,7 +60,7 @@ public class GpgsClientTest extends Game
 		
 		gpgsClient = new GpgsClient();
 		
-		gpgsClient.setListener(new IGameServiceListener() {
+		gpgsClient.setListener(new GameServiceSafeListener(new IGameServiceListener() {
 			
 			@Override
 			public void gsGameStateLoaded(byte[] gameState) {
@@ -79,7 +84,7 @@ public class GpgsClientTest extends Game
 				Gdx.app.log(TAG, "connected");
 				displayNameStatus.setText(gpgsClient.getPlayerDisplayName());
 			}
-		});
+		}));
 		
 		preferences = Gdx.app.getPreferences("gdx-gamesvcs-desktop-gpgs");
 		
@@ -130,6 +135,7 @@ public class GpgsClientTest extends Game
 		createAction(table, "logOff", new Runnable() {
 			@Override
 			public void run() {
+				displayNameStatus.setText("");
 				gpgsClient.logOff();
 			}
 		});
@@ -150,14 +156,14 @@ public class GpgsClientTest extends Game
 		
 		achievementOrEventId = createField(table, "ach", "Achievement/Event ID", "");
 		
-		createAction(table, "unlockAchievement", new Runnable() {
+		createBgAction(table, "unlockAchievement", new Runnable() {
 			@Override
 			public void run() {
 				gpgsClient.unlockAchievement(achievementOrEventId.getText());
 			}
 		});
 		
-		createAction(table, "incrementAchievement by 1", new Runnable() {
+		createBgAction(table, "incrementAchievement by 1", new Runnable() {
 			@Override
 			public void run() {
 				gpgsClient.incrementAchievement(achievementOrEventId.getText(), 1, 0);
@@ -174,7 +180,7 @@ public class GpgsClientTest extends Game
 				}
 			}
 		});
-		createAction(table, "submitEvent (increment by 1)", new Runnable() {
+		createBgAction(table, "submitEvent (increment by 1)", new Runnable() {
 			@Override
 			public void run() {
 				gpgsClient.submitEvent(achievementOrEventId.getText(), 1);
@@ -186,7 +192,7 @@ public class GpgsClientTest extends Game
 		gameId = createField(table, "game.id", "Game ID", "test.dat");
 		gameDataToSave = createField(table, "game.data", "Game Data to save (as text)", "{level: 5, life:2}");
 		
-		createAction(table, "saveGameState", new Runnable() {
+		createBgAction(table, "saveGameState", new Runnable() {
 			@Override
 			public void run() {
 				try {
@@ -196,11 +202,10 @@ public class GpgsClientTest extends Game
 				}
 			}
 		});
-		createAction(table, "loadGameState", new Runnable() {
+		createBgAction(table, "loadGameState", new Runnable() {
 			@Override
 			public void run() {
 				try {
-					gameDataLoaded.setText("");
 					gpgsClient.loadGameState(gameId.getText());
 				} catch (GameServiceException e) {
 					Gdx.app.error(TAG, "API error", e);
@@ -266,6 +271,14 @@ public class GpgsClientTest extends Game
 				}catch(Throwable e){
 					Gdx.app.error(TAG, "runtime error", e);
 				}
+			}
+		});
+	}
+	private void createBgAction(Table table, String name, final Runnable runnable){
+		createAction(table, name, new Runnable() {
+			@Override
+			public void run() {
+				background(runnable);
 			}
 		});
 	}
