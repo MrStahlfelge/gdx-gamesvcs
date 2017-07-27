@@ -3,7 +3,6 @@ package de.golfgl.gdxgamesvcs;
 import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.SystemClock;
-import android.util.Log;
 
 import com.amazon.ags.api.AGResponseCallback;
 import com.amazon.ags.api.AmazonGamesCallback;
@@ -193,7 +192,7 @@ public class GameCircleClient implements IGameServiceClient {
     @Override
     public void disconnect() {
         if (isConnected()) {
-            Log.i(GS_CLIENT_ID, "Disconnecting from GameCircle");
+            Gdx.app.log(GS_CLIENT_ID, "Disconnecting from GameCircle");
 
             AmazonGamesClient.release();
             isConnected = false;
@@ -206,7 +205,7 @@ public class GameCircleClient implements IGameServiceClient {
     @Override
     public void logOff() {
         if (isConnected()) {
-            Log.i(GS_CLIENT_ID, "Shutting down GameCircle client");
+            Gdx.app.log(GS_CLIENT_ID, "Shutting down GameCircle client");
 
             AmazonGamesClient.shutdown();
             cachedPlayerAlias = null;
