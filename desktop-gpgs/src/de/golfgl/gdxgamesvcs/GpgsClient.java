@@ -17,6 +17,21 @@ import com.google.api.services.games.model.Player;
 import de.golfgl.gdxgamesvcs.GameServiceException.NotSupportedException;
 import de.golfgl.gdxgamesvcs.IGameServiceListener.GsErrorType;
 
+/**
+ * TODO doc
+ * 
+ * As stated in {@link IGameServiceClient} all methods of this interface are thread safe, non blocking
+ * and typically called from GLThread.
+ * 
+ * All *Sync methods are blocking and could be chained each others in a user thread.
+ * TODO are they thread safe ???
+ * 
+ * TODO note about how to implements showAchievements ...
+ * 
+ * 
+ * @author mgsx
+ *
+ */
 public class GpgsClient implements IGameServiceClient
 {
 	private static final String TAG = "GpgsClient";
@@ -40,6 +55,32 @@ public class GpgsClient implements IGameServiceClient
 	private boolean initialized;
 
 	private String playerName;
+	
+	/**
+	 * TODO doc
+	 * @author mgsx
+	 *
+	 */
+	protected static interface SafeRunnable{
+		void run() throws IOException;
+	}
+	
+	/**
+	 * TODO doc
+	 * @param runnable
+	 */
+	protected void background(final SafeRunnable runnable){
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					runnable.run();
+				} catch (IOException e) {
+					if(gameListener != null) gameListener.gsErrorMsg(GsErrorType.errorUnknown, e.getMessage());
+				}
+			}
+		}).start();
+	}
 	
 	@Override
 	public String getGameServiceId() {
@@ -233,96 +274,140 @@ public class GpgsClient implements IGameServiceClient
 	}
 
 	@Override
-	public boolean submitToLeaderboard(String leaderboardId, long score, String tag) {
-		try {
-			GAPIGateway.games.scores().submit(leaderboardId, score).execute();
-			return true; 
-		} catch (IOException e) {
-			Gdx.app.error(TAG, "failed submit to leaderboard", e);
-		}
-		return false;
+	public boolean submitToLeaderboard(final String leaderboardId, final long score, final String tag) {
+		background(new SafeRunnable() {
+			@Override
+			public void run() throws IOException {
+				submitToLeaderboardSync(leaderboardId, score, tag);
+			}
+		});
+		return initialized;
+	}
+	
+	protected void submitToLeaderboardSync(String leaderboardId, long score, String tag) throws IOException {
+		GAPIGateway.games.scores().submit(leaderboardId, score).execute();
 	}
 
+
 	@Override
-	public boolean submitEvent(String eventId, int increment) {
+	public boolean submitEvent(final String eventId, final int increment) {
+		background(new SafeRunnable() {
+			@Override
+			public void run() throws IOException {
+				submitEventSync(eventId, increment);
+			}
+		});
+		return initialized;
+	}
+	protected void submitEventSync(String eventId, int increment) {
 		// TODO don't know the API ...
-		return false;
 	}
+	
 
 	@Override
-	public boolean unlockAchievement(String achievementId) {
-		try {
-			GAPIGateway.games.achievements().unlock(achievementId).execute();
-		} catch (IOException e) {
-			throw new GdxRuntimeException(e);
-		}
-		return false;
-	}
-
-	@Override
-	public boolean incrementAchievement(String achievementId, int incNum, float completionPercentage) {
-		try {
-			GAPIGateway.games.achievements().increment(achievementId, incNum).execute();
-		} catch (IOException e) {
-			throw new GdxRuntimeException(e);
-		}
-		return false;
-	}
-
-	@Override
-	public void saveGameState(String fileId, byte[] gameState, long progressValue) throws GameServiceException {
-		try {
-			
-			java.io.File file = java.io.File.createTempFile("games", "dat");
-			new FileHandle(file).writeBytes(gameState, false);
-			
-			// no type since it is binary data
-			FileContent mediaContent = new FileContent(null, file);
-			
-			// find file on server
-			
-			// TODO escape some chars (') see : https://developers.google.com/drive/v3/web/search-parameters#fn1
-			List<File> files = GAPIGateway.drive.files().list().setSpaces("appDataFolder").setQ("name='" + fileId + "'").execute().getFiles();
-			if(files.size() > 1){
-				throw new GdxRuntimeException("multiple files with name " + fileId + " exists.");
+	public boolean unlockAchievement(final String achievementId) {
+		background(new SafeRunnable() {
+			@Override
+			public void run() throws IOException {
+				unlockAchievementSync(achievementId);
 			}
-			
-			// file exists then update it
-			if(files.size() > 0){
-				
-				File remoteFile = files.get(0);
-				// just update content, leave metadata intact.
-				
-				GAPIGateway.drive.files().update(remoteFile.getId(), null, mediaContent).execute();
-				
-				Gdx.app.log("GAPI", "File updated ID: " + remoteFile.getId());
-			}
-			// file doesn't exists then create it
-			else{
-				File fileMetadata = new File();
-				fileMetadata.setName(fileId);
-				
-				// app folder is a reserved keyyword for current application private folder.
-				fileMetadata.setParents(Collections.singletonList("appDataFolder"));
-				
-				File remoteFile = GAPIGateway.drive.files().create(fileMetadata, mediaContent)
-						.setFields("id")
-						.execute();
-				
-				Gdx.app.log("GAPI", "File created ID: " + remoteFile.getId());
-			}
-			
-		} catch (IOException e) {
-			throw new GdxRuntimeException(e);
-		}
+		});
+		return initialized;
+	}
+	protected void unlockAchievementSync(String achievementId) throws IOException {
+		GAPIGateway.games.achievements().unlock(achievementId).execute();
 	}
 
 	@Override
-	public void loadGameState(String fileId) throws GameServiceException {
+	public boolean incrementAchievement(final String achievementId, final int incNum, final float completionPercentage) {
+		background(new SafeRunnable() {
+			@Override
+			public void run() throws IOException {
+				incrementAchievementSync(achievementId, incNum, completionPercentage);
+			}
+		});
+		return initialized;
+	}
+	
+	protected void incrementAchievementSync(String achievementId, int incNum, float completionPercentage) throws IOException {
+		GAPIGateway.games.achievements().increment(achievementId, incNum).execute();
+	}
+
+	@Override
+	public void saveGameState(final String fileId, final byte[] gameState, final long progressValue) throws GameServiceException {
+		background(new SafeRunnable() {
+			@Override
+			public void run() throws IOException {
+				saveGameStateSync(fileId, gameState, progressValue);
+			}
+		});
+	}
+	protected void saveGameStateSync(String fileId, byte[] gameState, long progressValue) throws IOException {
+			
+		java.io.File file = java.io.File.createTempFile("games", "dat");
+		new FileHandle(file).writeBytes(gameState, false);
+		
+		// no type since it is binary data
+		FileContent mediaContent = new FileContent(null, file);
+		
+		// find file on server
+		
+		// TODO escape some chars (') see : https://developers.google.com/drive/v3/web/search-parameters#fn1
+		List<File> files = GAPIGateway.drive.files().list().setSpaces("appDataFolder").setQ("name='" + fileId + "'").execute().getFiles();
+		if(files.size() > 1){
+			throw new GdxRuntimeException("multiple files with name " + fileId + " exists.");
+		}
+		
+		// file exists then update it
+		if(files.size() > 0){
+			
+			File remoteFile = files.get(0);
+			// just update content, leave metadata intact.
+			
+			GAPIGateway.drive.files().update(remoteFile.getId(), null, mediaContent).execute();
+			
+			Gdx.app.log("GAPI", "File updated ID: " + remoteFile.getId());
+		}
+		// file doesn't exists then create it
+		else{
+			File fileMetadata = new File();
+			fileMetadata.setName(fileId);
+			
+			// app folder is a reserved keyyword for current application private folder.
+			fileMetadata.setParents(Collections.singletonList("appDataFolder"));
+			
+			File remoteFile = GAPIGateway.drive.files().create(fileMetadata, mediaContent)
+					.setFields("id")
+					.execute();
+			
+			Gdx.app.log("GAPI", "File created ID: " + remoteFile.getId());
+		}
+			
+	}
+
+	@Override
+	public void loadGameState(final String fileId) throws GameServiceException {
+		background(new SafeRunnable() {
+			
+			@Override
+			public void run() throws IOException {
+				try{
+					byte[] data = loadGameStateSync(fileId);
+					if(gameListener != null) gameListener.gsGameStateLoaded(data);
+				}catch(IOException e){
+					if(gameListener != null) gameListener.gsGameStateLoaded(null);
+					throw e;
+				}
+			}
+		});
+	}
+	
+	protected byte [] loadGameStateSync(String fileId) throws IOException {
 		
 		// TODO call gameListener.gsGameStateLoaded(null); if failed !!!
 		
 		InputStream stream = null;
+		byte [] data = null;
 		try {
 			// TODO refactor
 			List<File> files = GAPIGateway.drive.files().list().setSpaces("appDataFolder").setQ("name='" + fileId + "'").execute().getFiles();
@@ -339,15 +424,12 @@ public class GpgsClient implements IGameServiceClient
 				
 				stream = GAPIGateway.drive.files().get(remoteFile.getId()).executeMediaAsInputStream();
 			
-				byte [] data = StreamUtils.copyStreamToByteArray(stream);
-				
-				if(gameListener != null) gameListener.gsGameStateLoaded(data);
+				data = StreamUtils.copyStreamToByteArray(stream);
 			}
-		} catch (IOException e) {
-			throw new GdxRuntimeException(e);
 		} finally {
 			StreamUtils.closeQuietly(stream);
 		}
+		return data;
 	}
 
 	@Override
