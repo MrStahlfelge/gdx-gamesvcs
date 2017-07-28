@@ -23,10 +23,6 @@ public class GpgsClientTest extends Game
 {
 	private static final String TAG = "GpgsClientTest";
 	
-	private static void background(Runnable runnable){
-		new Thread(runnable).start();
-	}
-	
 	public static void main(String[] args) {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
 		config.width = 800;
@@ -159,21 +155,21 @@ public class GpgsClientTest extends Game
 		
 		achievementOrEventId = createField(table, "ach", "Achievement/Event ID", "");
 		
-		createBgAction(table, "unlockAchievement", new Runnable() {
+		createAction(table, "unlockAchievement", new Runnable() {
 			@Override
 			public void run() {
 				gpgsClient.unlockAchievement(achievementOrEventId.getText());
 			}
 		});
 		
-		createBgAction(table, "incrementAchievement by 1", new Runnable() {
+		createAction(table, "incrementAchievement by 1", new Runnable() {
 			@Override
 			public void run() {
 				gpgsClient.incrementAchievement(achievementOrEventId.getText(), 1, 0);
 			}
 		});
 		
-		createBgAction(table, "submitEvent (increment by 1)", new Runnable() {
+		createAction(table, "submitEvent (increment by 1)", new Runnable() {
 			@Override
 			public void run() {
 				gpgsClient.submitEvent(achievementOrEventId.getText(), 1);
@@ -218,7 +214,7 @@ public class GpgsClientTest extends Game
 			}
 		});
 		
-		createBgAction(table, "saveGameState", new Runnable() {
+		createAction(table, "saveGameState", new Runnable() {
 			@Override
 			public void run() {
 				try {
@@ -228,7 +224,7 @@ public class GpgsClientTest extends Game
 				}
 			}
 		});
-		createBgAction(table, "loadGameState", new Runnable() {
+		createAction(table, "loadGameState", new Runnable() {
 			@Override
 			public void run() {
 				try {
@@ -305,14 +301,6 @@ public class GpgsClientTest extends Game
 				}catch(Throwable e){
 					Gdx.app.error(TAG, "runtime error", e);
 				}
-			}
-		});
-	}
-	private void createBgAction(Table table, String name, final Runnable runnable){
-		createAction(table, name, new Runnable() {
-			@Override
-			public void run() {
-				background(runnable);
 			}
 		});
 	}
