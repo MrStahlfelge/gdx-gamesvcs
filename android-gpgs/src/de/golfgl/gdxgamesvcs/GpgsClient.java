@@ -15,8 +15,6 @@ import com.google.android.gms.drive.Drive;
 import com.google.android.gms.games.Games;
 import com.google.android.gms.games.GamesActivityResultCodes;
 import com.google.android.gms.games.GamesStatusCodes;
-import com.google.android.gms.games.multiplayer.Invitation;
-import com.google.android.gms.games.multiplayer.Multiplayer;
 import com.google.android.gms.games.snapshot.Snapshot;
 import com.google.android.gms.games.snapshot.SnapshotMetadataChange;
 import com.google.android.gms.games.snapshot.Snapshots;
@@ -164,17 +162,6 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         firstConnectAttempt = MAX_CONNECTFAIL_RETRIES;
         isConnectionPending = false;
         gameListener.gsConnected();
-
-        // TODO Erhaltene Einladungen... gleich in Multiplayer gehen
-        if (bundle != null) {
-            Invitation inv =
-                    bundle.getParcelable(Multiplayer.EXTRA_INVITATION);
-
-            if (inv != null)
-                Log.i(GAMESERVICE_ID, "Multiplayer Invitation: " + inv.getInvitationId() + " from "
-                        + inv.getInviter().getParticipantId());
-        }
-
     }
 
     @Override
