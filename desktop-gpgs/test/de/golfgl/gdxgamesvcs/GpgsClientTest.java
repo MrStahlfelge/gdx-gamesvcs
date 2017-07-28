@@ -17,7 +17,8 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
-// TODO wrap every action calls within a thread ?!
+// TODO DO NOT wrap action calls within a thread !!!!
+
 public class GpgsClientTest extends Game
 {
 	private static final String TAG = "GpgsClientTest";
@@ -29,7 +30,7 @@ public class GpgsClientTest extends Game
 	public static void main(String[] args) {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
 		config.width = 800;
-		config.height = 800;
+		config.height = 900;
 		new LwjglApplication(new GpgsClientTest(), config);
 	}
 	
@@ -40,7 +41,7 @@ public class GpgsClientTest extends Game
 	private TextField clientSecretPath;
 	private Preferences preferences;
 	private Label connectedStatus;
-	private GpgsClient gpgsClient;
+	private GpgsClientDemo gpgsClient;
 	private Label connectionPendingStatus;
 	private Label displayNameStatus;
 	private TextField achievementOrEventId;
@@ -192,6 +193,13 @@ public class GpgsClientTest extends Game
 		gameId = createField(table, "game.id", "Game ID", "test.dat");
 		gameDataToSave = createField(table, "game.data", "Game Data to save (as text)", "{level: 5, life:2}");
 		
+		createAction(table, "showGameStates", new Runnable() {
+			@Override
+			public void run() {
+				gpgsClient.showGameStates();
+			}
+		});
+		
 		createBgAction(table, "saveGameState", new Runnable() {
 			@Override
 			public void run() {
@@ -212,6 +220,14 @@ public class GpgsClientTest extends Game
 				}
 			}
 		});
+		createAction(table, "deleteGameState", new Runnable() {
+			@Override
+			public void run() {
+				gpgsClient.deleteGameState(gameId.getText());
+			}
+		});
+		
+
 		gameDataLoaded = createStatus(table, "Game Data loaded");
 		
 	}

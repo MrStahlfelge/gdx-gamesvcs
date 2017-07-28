@@ -41,12 +41,7 @@ public class GpgsClientDemo extends GpgsClient
 		
 	}
 	
-	@Override
-	public boolean providesAchievementsUI() {
-		return true;
-	}
-	@Override
-	public void showAchievements() throws GameServiceException {
+	private void showWait(){
 		popup = new Table(skin);
 		popup.setFillParent(true);
 		popup.setTouchable(Touchable.enabled);
@@ -61,7 +56,16 @@ public class GpgsClientDemo extends GpgsClient
 			}
 		});
 		stage.addActor(popup);
-		
+	}
+	
+	@Override
+	public boolean providesAchievementsUI() {
+		return true;
+	}
+	
+	@Override
+	public void showAchievements() throws GameServiceException {
+		showWait();
 		background(new SafeRunnable() {
 			@Override
 			public void run() throws IOException {
@@ -134,6 +138,49 @@ public class GpgsClientDemo extends GpgsClient
 				for(Texture texture : textures){
 					texture.dispose();
 				}
+			}
+		});
+	}
+	
+	public void showGameStates(){
+		showWait();
+		background(new SafeRunnable() {
+			@Override
+			public void run() throws IOException {
+				showGameStatesSync();
+			}
+		});
+	}
+	
+	private void showGameStatesSync() throws IOException{
+		final Array<String> gameStates = listGamesSync();
+		
+		Gdx.app.postRunnable(new Runnable() {
+			@Override
+			public void run() {
+				showGameStatesGUI(gameStates);
+			}
+		});
+	}
+
+	protected void showGameStatesGUI(Array<String> gameStates) {
+		final Table table = new Table(skin);
+		table.defaults().center().pad(1, 5, 1, 5);
+		popup.reset();
+		popup.add(new ScrollPane(table, skin));
+		
+		TextButton btClose = new TextButton("Close", skin);
+		table.add(btClose).row();
+		
+		for(String gameState : gameStates){
+			table.add(gameState).row();
+		}
+		
+		btClose.addListener(new ChangeListener() {
+			@Override
+			public void changed(ChangeEvent event, Actor actor) {
+				popup.remove();
+				popup = null;
 			}
 		});
 	}

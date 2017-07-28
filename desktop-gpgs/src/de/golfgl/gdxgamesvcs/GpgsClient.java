@@ -17,6 +17,7 @@ import com.badlogic.gdx.utils.ObjectMap;
 import com.badlogic.gdx.utils.StreamUtils;
 import com.google.api.client.http.FileContent;
 import com.google.api.services.drive.model.File;
+import com.google.api.services.drive.model.FileList;
 import com.google.api.services.games.model.AchievementDefinition;
 import com.google.api.services.games.model.Player;
 import com.google.api.services.games.model.PlayerAchievement;
@@ -340,6 +341,39 @@ public class GpgsClient implements IGameServiceClient
 		GAPIGateway.games.achievements().increment(achievementId, incNum).execute();
 	}
 
+	public Array<String> listGamesSync() throws IOException {
+		
+		Array<String> games = new Array<String>();
+
+		FileList l = GAPIGateway.drive.files().list()
+				.setSpaces("appDataFolder")
+				.setFields("files(name)")
+				.execute();
+		
+		for(File f : l.getFiles()){
+			games.add(f.getName());
+		}
+		
+		return games;
+	}
+	
+	// TODO return true (aka supported by this implementation)
+	public void deleteGameState(final String fileId) {
+		background(new SafeRunnable() {
+			@Override
+			public void run() throws IOException {
+				deleteGameStateSync(fileId);
+			}
+		});
+	}
+	public void deleteGameStateSync(String fileId) throws IOException {
+		File remoteFile = findFileByNameSync(fileId);
+		if(remoteFile != null){
+			GAPIGateway.drive.files().delete(remoteFile.getId()).execute();
+		}
+	}
+
+	
 	@Override
 	public void saveGameState(final String fileId, final byte[] gameState, final long progressValue) throws GameServiceException {
 		background(new SafeRunnable() {
@@ -349,6 +383,19 @@ public class GpgsClient implements IGameServiceClient
 			}
 		});
 	}
+	
+	private File findFileByNameSync(String name) throws IOException{
+		// escape some chars (') see : https://developers.google.com/drive/v3/web/search-parameters#fn1
+		List<File> files = GAPIGateway.drive.files().list().setSpaces("appDataFolder").setQ("name='" + name + "'").execute().getFiles();
+		if(files.size() > 1){
+			throw new GdxRuntimeException("multiple files with name " + name + " exists.");
+		} else if(files.size() < 1) {
+			return null;
+		} else {
+			return files.get(0);
+		}
+	}
+	
 	protected void saveGameStateSync(String fileId, byte[] gameState, long progressValue) throws IOException {
 			
 		java.io.File file = java.io.File.createTempFile("games", "dat");
@@ -358,17 +405,11 @@ public class GpgsClient implements IGameServiceClient
 		FileContent mediaContent = new FileContent(null, file);
 		
 		// find file on server
-		
-		// TODO escape some chars (') see : https://developers.google.com/drive/v3/web/search-parameters#fn1
-		List<File> files = GAPIGateway.drive.files().list().setSpaces("appDataFolder").setQ("name='" + fileId + "'").execute().getFiles();
-		if(files.size() > 1){
-			throw new GdxRuntimeException("multiple files with name " + fileId + " exists.");
-		}
+		File remoteFile = findFileByNameSync(fileId);
 		
 		// file exists then update it
-		if(files.size() > 0){
+		if(remoteFile != null){
 			
-			File remoteFile = files.get(0);
 			// just update content, leave metadata intact.
 			
 			GAPIGateway.drive.files().update(remoteFile.getId(), null, mediaContent).execute();
@@ -383,7 +424,7 @@ public class GpgsClient implements IGameServiceClient
 			// app folder is a reserved keyyword for current application private folder.
 			fileMetadata.setParents(Collections.singletonList("appDataFolder"));
 			
-			File remoteFile = GAPIGateway.drive.files().create(fileMetadata, mediaContent)
+			remoteFile = GAPIGateway.drive.files().create(fileMetadata, mediaContent)
 					.setFields("id")
 					.execute();
 			
@@ -411,23 +452,11 @@ public class GpgsClient implements IGameServiceClient
 	
 	protected byte [] loadGameStateSync(String fileId) throws IOException {
 		
-		// TODO call gameListener.gsGameStateLoaded(null); if failed !!!
-		
 		InputStream stream = null;
 		byte [] data = null;
 		try {
-			// TODO refactor
-			List<File> files = GAPIGateway.drive.files().list().setSpaces("appDataFolder").setQ("name='" + fileId + "'").execute().getFiles();
-			if(files.size() > 1){
-				throw new GdxRuntimeException("multiple files with name " + fileId + " exists.");
-			}
-			if(files.size() < 1){
-				
-			}
-			else
-			{
-				File remoteFile = files.get(0);
-				// note that size metadata can be null ...
+			File remoteFile = findFileByNameSync(fileId);
+			if(remoteFile != null){
 				
 				stream = GAPIGateway.drive.files().get(remoteFile.getId()).executeMediaAsInputStream();
 			
