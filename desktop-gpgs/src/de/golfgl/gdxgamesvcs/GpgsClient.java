@@ -6,6 +6,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import com.badlogic.gdx.Gdx;
@@ -19,14 +20,21 @@ import com.google.api.client.http.FileContent;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
 import com.google.api.services.games.model.AchievementDefinition;
+import com.google.api.services.games.model.Leaderboard;
+import com.google.api.services.games.model.LeaderboardEntry;
+import com.google.api.services.games.model.LeaderboardScores;
 import com.google.api.services.games.model.Player;
 import com.google.api.services.games.model.PlayerAchievement;
 
 import de.golfgl.gdxgamesvcs.GameServiceException.NotSupportedException;
 import de.golfgl.gdxgamesvcs.IGameServiceListener.GsErrorType;
+import de.golfgl.gdxgamesvcs.LeaderBoard.Score;
 
 /**
  * TODO doc
+ * 
+ * Google Play Games Services Desktop implementation based on REST API :
+ * https://developers.google.com/games/services/web/api/
  * 
  * As stated in {@link IGameServiceClient} all methods of this interface are thread safe, non blocking
  * and typically called from GLThread.
@@ -84,6 +92,8 @@ public class GpgsClient implements IGameServiceClient
 				try {
 					runnable.run();
 				} catch (IOException e) {
+					// Always log errors to be able to analize stacktrace.
+					Gdx.app.error(TAG, "GpgsClient Error", e);
 					if(gameListener != null) gameListener.gsErrorMsg(GsErrorType.errorUnknown, e.getMessage());
 				}
 			}
@@ -498,7 +508,11 @@ public class GpgsClient implements IGameServiceClient
 			PlayerAchievement p = playerAchievements.get(def.getId());
 			String state = null;
 			if(p != null){
-				a.currentSteps = a.isIncremental ? p.getCurrentSteps().intValue() : a.unlocked ? 1 : 0;
+				if(a.isIncremental){
+					a.currentSteps = p.getCurrentSteps() != null ? p.getCurrentSteps().intValue() : 0;
+				}else{
+					a.currentSteps = a.unlocked ? 1 : 0;
+				}
 				state = p.getAchievementState();
 			}
 			
@@ -530,6 +544,69 @@ public class GpgsClient implements IGameServiceClient
 		}
 		
 		return achievements;
+	}
+	
+	/**
+	 * @param leaderBoardId
+	 * @throws IOException
+	 */
+	public LeaderBoard fetchLeaderboardsSync(String leaderBoardId, boolean aroundPlayer, boolean friendsOnly, boolean fetchIcons) throws IOException
+	{
+		LeaderBoard result = new LeaderBoard();
+		Leaderboard lb = GAPIGateway.games.leaderboards().get(leaderBoardId).execute();
+		result.id = lb.getId();
+		result.name = lb.getName();
+		result.scores = new Array<LeaderBoard.Score>();
+		result.iconUrl = lb.getIconUrl();
+		if(fetchIcons && result.iconUrl != null){
+			result.icon = downloadIconSyn(result.iconUrl);
+		}
+		
+		LeaderboardScores r; 
+		if(aroundPlayer){
+			r = GAPIGateway.games.scores().listWindow(leaderBoardId, friendsOnly ? "SOCIAL" : "PUBLIC", "ALL_TIME").execute();
+		}else{
+			r = GAPIGateway.games.scores().list(leaderBoardId, friendsOnly ? "SOCIAL" : "PUBLIC", "ALL_TIME").execute();
+		}
+		LeaderboardEntry playerScore = r.getPlayerScore();
+		// player may not have a score yet.
+		if(playerScore != null){
+			LeaderBoard.Score ps = mapPlayerScore(r.getPlayerScore(), fetchIcons);
+			ps.currrentPlayer = true;
+			result.scores.add(ps);
+		}
+		// r.getItems is null when no score has been submitted yet.
+		if(r.getItems() != null){
+			for(LeaderboardEntry score : r.getItems()){
+				LeaderBoard.Score s = mapPlayerScore(score, fetchIcons);
+				s.currrentPlayer = false;
+				result.scores.add(s);
+			}
+		}
+		
+		// TODO maybe already sorted ?! API doesn't say anything : https://developers.google.com/games/services/web/api/scores/list
+		// sort list depending of score meaning.
+		final int order = "SMALLER_IS_BETTER".equals(lb.getOrder()) ? 1 : -1; // TODO sure ?
+		result.scores.sort(new Comparator<LeaderBoard.Score>() {
+			@Override
+			public int compare(Score o1, Score o2) {
+				return order * Long.compare(o1.sortKey, o2.sortKey);
+			}
+		});
+		return result;
+	}
+	
+	private LeaderBoard.Score mapPlayerScore(LeaderboardEntry score, boolean fetchAvatar) throws IOException{
+		LeaderBoard.Score s = new LeaderBoard.Score();
+		s.name = score.getPlayer().getDisplayName();
+		s.rank = score.getFormattedScoreRank();
+		s.score = score.getFormattedScore();
+		s.avatarUrl = score.getPlayer().getAvatarImageUrl();
+		s.sortKey = score.getScoreValue() != null ? score.getScoreValue().longValue() : 0;
+		if(fetchAvatar && s.avatarUrl != null){
+			s.avatar = downloadIconSyn(s.avatarUrl);
+		}
+		return s;
 	}
 	
 	protected Pixmap downloadIconSyn(String iconUrl) throws IOException{

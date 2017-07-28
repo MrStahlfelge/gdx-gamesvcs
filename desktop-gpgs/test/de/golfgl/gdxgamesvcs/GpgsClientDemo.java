@@ -19,6 +19,8 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Scaling;
 
+import de.golfgl.gdxgamesvcs.LeaderBoard.Score;
+
 /**
  * Here is an example of {@link GpgsClient} client override.
  * 
@@ -61,6 +63,92 @@ public class GpgsClientDemo extends GpgsClient
 	@Override
 	public boolean providesAchievementsUI() {
 		return true;
+	}
+	
+	@Override
+	public void showLeaderboards(final String leaderBoardId) throws GameServiceException {
+		showWait();
+		background(new SafeRunnable() {
+			@Override
+			public void run() throws IOException {
+				showLeaderboardsSync(leaderBoardId);
+			}
+		});
+	}
+	
+	protected void showLeaderboardsSync(String leaderBoardId) throws IOException {
+		final LeaderBoard lb = fetchLeaderboardsSync(leaderBoardId, false, false, true);
+		Gdx.app.postRunnable(new Runnable() {
+			@Override
+			public void run() {
+				showLeaderboardsGUI(lb);
+			}
+		});
+	}
+
+	private void showLeaderboardsGUI(LeaderBoard lb){
+		final Array<Texture> textures = new Array<Texture>();
+		
+		final Table table = new Table(skin);
+		table.defaults().pad(1, 5, 1, 5);
+		
+		popup.reset();
+		popup.add(new ScrollPane(table, skin));
+		
+		TextButton btClose = new TextButton("Close", skin);
+		table.add(btClose).center().colspan(4).row();
+		
+		// leader board header
+		Texture iconTexture = new Texture(lb.icon);
+		textures.add(iconTexture);
+		Image image = new Image(iconTexture);
+		image.setScaling(Scaling.fit);
+		table.add(image).size(32);
+		
+		table.add(lb.name).colspan(3);
+		table.row();
+		
+		// leaderboard table header
+		table.add("Player").colspan(2);
+		table.add("Rank");
+		table.add("Score");
+		table.row();
+		
+		// leaderboard table body
+		for(Score score : lb.scores){
+			
+			if(score.avatar != null){
+				Texture avatarTexture = new Texture(score.avatar);
+				textures.add(avatarTexture);
+				Image avatar = new Image(avatarTexture);
+				avatar.setScaling(Scaling.fit);
+				table.add(avatar).size(32);
+			}else{
+				table.add().size(32);
+			}
+			
+			Label name = new Label(score.name, skin);
+			if(score.currrentPlayer){
+				name.setColor(Color.RED);
+			}
+			
+			table.add(name);
+			table.add(score.rank);
+			table.add(score.score);
+			table.row();
+		}
+		
+		btClose.addListener(new ChangeListener() {
+			@Override
+			public void changed(ChangeEvent event, Actor actor) {
+				popup.remove();
+				popup = null;
+				// TODO leader board and achievements could be disposable !
+				for(Texture texture : textures){
+					texture.dispose();
+				}
+			}
+		});
 	}
 	
 	@Override

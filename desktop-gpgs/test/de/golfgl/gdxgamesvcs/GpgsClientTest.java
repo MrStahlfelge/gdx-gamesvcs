@@ -30,7 +30,7 @@ public class GpgsClientTest extends Game
 	public static void main(String[] args) {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
 		config.width = 800;
-		config.height = 900;
+		config.height = 950;
 		new LwjglApplication(new GpgsClientTest(), config);
 	}
 	
@@ -48,6 +48,8 @@ public class GpgsClientTest extends Game
 	private TextField gameId;
 	private TextField gameDataToSave;
 	private Label gameDataLoaded;
+	private TextField leaderboardId;
+	private TextField leaderboardScore;
 
 	@Override
 	public void create() {
@@ -142,7 +144,7 @@ public class GpgsClientTest extends Game
 		});
 
 		
-		createTitle(table, "Achievements / Leaderboard / Events");
+		createTitle(table, "Achievements");
 		
 		createAction(table, "showAchievements", new Runnable() {
 			@Override
@@ -171,22 +173,38 @@ public class GpgsClientTest extends Game
 			}
 		});
 		
-		createAction(table, "showLeaderboards", new Runnable() {
-			@Override
-			public void run() {
-				try {
-					gpgsClient.showLeaderboards("");
-				} catch (GameServiceException e) {
-					Gdx.app.error(TAG, "API error", e);
-				}
-			}
-		});
 		createBgAction(table, "submitEvent (increment by 1)", new Runnable() {
 			@Override
 			public void run() {
 				gpgsClient.submitEvent(achievementOrEventId.getText(), 1);
 			}
 		});
+		
+		
+		createTitle(table, "Leaderboards");
+		
+		leaderboardId = createField(table, "leaderboard.id", "Leaderboard ID", "");
+		
+		createAction(table, "showLeaderboards", new Runnable() {
+			@Override
+			public void run() {
+				try {
+					gpgsClient.showLeaderboards(leaderboardId.getText());
+				} catch (GameServiceException e) {
+					Gdx.app.error(TAG, "API error", e);
+				}
+			}
+		});
+		
+		leaderboardScore = createField(table, "leaderboard.score", "Leaderboard Score", "");
+		
+		createAction(table, "submitToLeaderboard", new Runnable() {
+			@Override
+			public void run() {
+				gpgsClient.submitToLeaderboard(leaderboardId.getText(), Long.valueOf(leaderboardScore.getText()), null);
+			}
+		});
+		
 		
 		createTitle(table, "Saved Games");
 		
