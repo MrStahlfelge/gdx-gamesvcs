@@ -58,7 +58,7 @@ public class GpgsClientTest extends Game
 		table.setFillParent(true);
 		stage.addActor(table);
 		
-		gpgsClient = new GpgsClient();
+		gpgsClient = new GpgsClientDemo(stage, skin);
 		
 		gpgsClient.setListener(new GameServiceSafeListener(new IGameServiceListener() {
 			

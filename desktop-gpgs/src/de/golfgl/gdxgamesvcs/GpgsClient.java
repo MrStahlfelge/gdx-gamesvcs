@@ -2,17 +2,24 @@ package de.golfgl.gdxgamesvcs;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.List;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.GdxRuntimeException;
+import com.badlogic.gdx.utils.ObjectMap;
 import com.badlogic.gdx.utils.StreamUtils;
 import com.google.api.client.http.FileContent;
 import com.google.api.services.drive.model.File;
+import com.google.api.services.games.model.AchievementDefinition;
 import com.google.api.services.games.model.Player;
+import com.google.api.services.games.model.PlayerAchievement;
 
 import de.golfgl.gdxgamesvcs.GameServiceException.NotSupportedException;
 import de.golfgl.gdxgamesvcs.IGameServiceListener.GsErrorType;
@@ -437,4 +444,85 @@ public class GpgsClient implements IGameServiceClient
 		return CloudSaveCapability.MultipleFilesSupported;
 	}
 
+	
+	/**
+	 * TODO doc
+	 * @param fetchIcons
+	 * @return
+	 * @throws IOException
+	 */
+	public Array<Achievement> fetchAchievementsSync(boolean fetchIcons) throws IOException {
+		Array<Achievement> achievements = new Array<Achievement>();
+		ObjectMap<String, PlayerAchievement> playerAchievements = new ObjectMap<String, PlayerAchievement>();
+		for(PlayerAchievement a : GAPIGateway.games.achievements().list(ME).execute().getItems()){
+			playerAchievements.put(a.getId(), a);
+		}
+		for(AchievementDefinition def : GAPIGateway.games.achievementDefinitions().list().execute().getItems()){
+			
+			Achievement a = new Achievement();
+			a.id = def.getId();
+			a.name = def.getName();
+			a.description = def.getDescription();
+			
+			a.isIncremental = "INCREMENTAL".equals(def.getAchievementType());
+			
+			PlayerAchievement p = playerAchievements.get(def.getId());
+			String state = null;
+			if(p != null){
+				a.currentSteps = a.isIncremental ? p.getCurrentSteps().intValue() : a.unlocked ? 1 : 0;
+				state = p.getAchievementState();
+			}
+			
+			if("UNLOCKED".equals(state)){
+				a.unlocked = true;
+				a.hidden = false;
+				a.iconUrl = def.getUnlockedIconUrl();
+			}
+			else if("REVEALED".equals(state))
+			{
+				a.unlocked = false;
+				a.hidden = false;
+				a.iconUrl = def.getRevealedIconUrl();
+			}
+			else if("HIDDEN".equals(state))
+			{
+				a.unlocked = false;
+				a.hidden = true;
+			}
+			
+			a.totalSteps = a.isIncremental ? def.getTotalSteps().intValue() : 1;
+			
+			
+			if(fetchIcons && a.iconUrl != null){
+				a.icon = downloadIconSyn(a.iconUrl);
+			}
+			
+			achievements.add(a);
+		}
+		
+		return achievements;
+	}
+	
+	protected Pixmap downloadIconSyn(String iconUrl) throws IOException{
+		byte[] bytes = downloadSync(iconUrl);
+		return new Pixmap(bytes, 0, bytes.length);
+	}
+	
+	private static byte[] downloadSync(String url) throws IOException {
+		InputStream in = null;
+		try {
+			HttpURLConnection conn = (HttpURLConnection)new URL(url).openConnection();
+			conn.setDoInput(true);
+			conn.setDoOutput(false);
+			conn.setUseCaches(true);
+			conn.connect();
+			in = conn.getInputStream();
+			return StreamUtils.copyStreamToByteArray(in);
+		} catch (IOException ex) {
+			throw ex;
+		} finally {
+			StreamUtils.closeQuietly(in);
+		}
+	}
+	
 }
