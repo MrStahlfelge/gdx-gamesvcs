@@ -58,7 +58,7 @@ and add a line to `GdxDefinition.gwt.xml` and `GdxDefinitionSuperdev.gwt.xml`:
 
     <inherits name="de.golfgl.gdxgamesvcs.gdx_gamesvcs_gwt" />
 
-After including the dependencies and refreshing, you can use the `NoGameServiceClient` in your project. For using another Gameservice, add its dependencies according to its [wiki page](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki)or implement your own client against `IGameServiceClient`.
+After including the dependencies and refreshing, you can use the `NoGameServiceClient` in your project. For using another Gameservice, add its dependencies according to its [wiki page](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki) or implement your own client against `IGameServiceClient`.
 
 ### Building from source
 To build from source, clone or download this repository, then open it in Android Studio. Perform the following command to compile and upload the library in your local repository:
@@ -156,7 +156,7 @@ The interface provides a method for open up an API's default leaderboard or achi
     gsClient.showAchievements();
     // same for leaderboards
 
-At the moment, such a default UI is only provided by Google Play Games API on Android.
+At the moment, such a default UI is only provided by Google Play Games and GameCircle on Android.
 
 Fetching scores and achievement status to show in your own UI is currently not supported. If you implement it, please contribute.
     
