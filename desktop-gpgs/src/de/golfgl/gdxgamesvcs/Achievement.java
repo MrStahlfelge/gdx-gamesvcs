@@ -4,23 +4,22 @@ import com.badlogic.gdx.graphics.Pixmap;
 
 public class Achievement 
 {
-	// definition part
-	public String id, name, description;
+	public String id;
+	
+	public String name;
+	
+	public String description;
 	
 	/** icon url, may varying depending on locking state */
 	public String iconUrl;
 	
-	/** icon pixels or null if icon has not been fetched or achievement is hidden. */
+	/** icon pixels or null if no icon has not been fetched or achievement. */
 	public Pixmap icon;
 	
-	public boolean isIncremental;
-	
-	public boolean unlocked;
-	public boolean hidden;
-	
-	/** current step for incremental achievements, 0/1 for standard achievements based on lock state */
-	public int currentSteps;
-	
-	/** total steps for incremental achievements, 1 for standard achievements */
-	public int totalSteps;
+	/**
+	 * Progression rate in percents ranges from 0 to 100.
+	 * For non incremental achievements (locked/unlocked), this value is 0 when locked, 100 when unlocked.
+	 * Interger is used (in favor to float) to easily check if this achievement is completed (== 100)
+	 */
+	public int progress;
 }

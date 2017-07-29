@@ -12,6 +12,7 @@ import java.util.List;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.badlogic.gdx.utils.ObjectMap;
@@ -32,6 +33,9 @@ import de.golfgl.gdxgamesvcs.LeaderBoard.Score;
 
 /**
  * TODO doc
+ * 
+ * https://developers.google.com/identity/protocols/OAuth2#scenarios
+ * https://developers.google.com/api-client-library/java/google-api-java-client/oauth2
  * 
  * Google Play Games Services Desktop implementation based on REST API :
  * https://developers.google.com/games/services/web/api/
@@ -491,50 +495,51 @@ public class GpgsClient implements IGameServiceClient
 	 * @throws IOException
 	 */
 	public Array<Achievement> fetchAchievementsSync(boolean fetchIcons) throws IOException {
+		
+		// TODO to avoid null check, list is based on player achievement.
+		// definitions couldn't be null.
 		Array<Achievement> achievements = new Array<Achievement>();
-		ObjectMap<String, PlayerAchievement> playerAchievements = new ObjectMap<String, PlayerAchievement>();
-		for(PlayerAchievement a : GAPIGateway.games.achievements().list(ME).execute().getItems()){
-			playerAchievements.put(a.getId(), a);
-		}
+		
+		// fetch all definitions
+		ObjectMap<String, AchievementDefinition> defs = new ObjectMap<String, AchievementDefinition>();
 		for(AchievementDefinition def : GAPIGateway.games.achievementDefinitions().list().execute().getItems()){
+			defs.put(def.getId(), def);
+		}
+		
+		// Fetch player achievements
+		for(PlayerAchievement p : GAPIGateway.games.achievements().list(ME).execute().getItems()){
+			AchievementDefinition def = defs.get(p.getId());
+			
+			String state = p.getAchievementState();
+			
+			// filter hidden achievements : there is no reasons to display these
+			// to the player. User code could unlock/increment it anyway and user code
+			// can check if this achievement is hidden by its absence in the returned list.
+			if("HIDDEN".equals(state)) continue;
 			
 			Achievement a = new Achievement();
 			a.id = def.getId();
 			a.name = def.getName();
 			a.description = def.getDescription();
 			
-			a.isIncremental = "INCREMENTAL".equals(def.getAchievementType());
+			boolean isIncremental = "INCREMENTAL".equals(def.getAchievementType());
+			boolean unlocked = "UNLOCKED".equals(state);
 			
-			PlayerAchievement p = playerAchievements.get(def.getId());
-			String state = null;
-			if(p != null){
-				if(a.isIncremental){
-					a.currentSteps = p.getCurrentSteps() != null ? p.getCurrentSteps().intValue() : 0;
-				}else{
-					a.currentSteps = a.unlocked ? 1 : 0;
+			if(unlocked){
+				a.progress = 100;
+			}
+			else if(isIncremental){
+				int currentSteps = 0;
+				if(p.getCurrentSteps() != null){
+					currentSteps =  p.getCurrentSteps().intValue();
 				}
-				state = p.getAchievementState();
+				// total steps range between 2 and 10.000
+				int totalSteps = def.getTotalSteps().intValue();
+				a.progress = MathUtils.floorPositive((float)currentSteps * 100 / (float)totalSteps);
+			}else{
+				a.progress = 0;
 			}
-			
-			if("UNLOCKED".equals(state)){
-				a.unlocked = true;
-				a.hidden = false;
-				a.iconUrl = def.getUnlockedIconUrl();
-			}
-			else if("REVEALED".equals(state))
-			{
-				a.unlocked = false;
-				a.hidden = false;
-				a.iconUrl = def.getRevealedIconUrl();
-			}
-			else if("HIDDEN".equals(state))
-			{
-				a.unlocked = false;
-				a.hidden = true;
-			}
-			
-			a.totalSteps = a.isIncremental ? def.getTotalSteps().intValue() : 1;
-			
+			a.iconUrl = unlocked ? def.getUnlockedIconUrl() : def.getRevealedIconUrl();
 			
 			if(fetchIcons && a.iconUrl != null){
 				a.icon = downloadIconSyn(a.iconUrl);

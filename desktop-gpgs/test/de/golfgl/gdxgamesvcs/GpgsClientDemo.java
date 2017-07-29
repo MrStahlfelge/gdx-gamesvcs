@@ -16,6 +16,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Scaling;
 
@@ -191,8 +192,6 @@ public class GpgsClientDemo extends GpgsClient
 		
 		for(Achievement a : achievements){
 			
-			if(a.hidden) continue;
-			
 			Texture iconTexture = new Texture(a.icon);
 			textures.add(iconTexture);
 			Image image = new Image(iconTexture);
@@ -203,17 +202,10 @@ public class GpgsClientDemo extends GpgsClient
 			table.add(a.description);
 			
 			Label statusLabel = new Label("", skin);
-			statusLabel.setColor(a.unlocked ? Color.GREEN : Color.GRAY);
+			statusLabel.setAlignment(Align.right);
+			statusLabel.setColor(a.progress < 100 ? Color.GRAY : Color.GREEN);
+			statusLabel.setText(a.progress + " %");
 			table.add(statusLabel);
-			
-			if(a.isIncremental) 
-			{
-				statusLabel.setText(a.currentSteps + " / " + a.totalSteps);
-			}
-			else
-			{
-				statusLabel.setText(a.unlocked ? "Unlocked" : "Locked");
-			}
 			
 			table.row();
 		}
