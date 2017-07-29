@@ -19,7 +19,11 @@ public class Achievement
 	/** icon url, may varying depending on locking state */
 	public String iconUrl;
 	
-	/** icon pixels or null if no icon has not been fetched or achievement. */
+	/**
+	 * achievement icon pixel if fetch icon has been requested.
+	 * caller is responsible to dispose this resource.
+	 * Note : icon can be different depending on {@link #progress} completeness.
+	 */
 	public Pixmap icon;
 	
 	/**

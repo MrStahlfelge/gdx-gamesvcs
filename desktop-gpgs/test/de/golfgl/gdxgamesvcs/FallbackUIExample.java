@@ -1,6 +1,7 @@
 package de.golfgl.gdxgamesvcs;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -40,6 +41,9 @@ public class FallbackUIExample
 	
 	private Table popup;
 	
+	private Array<Texture> texturesToDispose = new Array<Texture>();
+	private Array<Pixmap> pixmapToDispose = new Array<Pixmap>();
+	
 	public FallbackUIExample(Stage stage, Skin skin, IGameServiceClientEx gsClient) {
 		super();
 		this.stage = stage;
@@ -76,10 +80,31 @@ public class FallbackUIExample
 		btClose.addListener(new ChangeListener() {
 			@Override
 			public void changed(ChangeEvent event, Actor actor) {
-				popup.remove();
-				popup = null;
+				dismiss();
 			}
 		});
+	}
+	private void dismiss(){
+		popup.remove();
+		
+		for(Texture texture : texturesToDispose){
+			texture.dispose();
+		}
+		texturesToDispose.clear();
+		
+		for(Pixmap pixmap : pixmapToDispose){
+			pixmap.dispose();
+		}
+		pixmapToDispose.clear();
+		
+		popup = null;
+	}
+	
+	private Texture createTexture(Pixmap pixmap){
+		Texture texture = new Texture(pixmap);
+		pixmapToDispose.add(pixmap);
+		texturesToDispose.add(texture);
+		return texture;
 	}
 	
 	public void showLeaderboards(final String leaderBoardId) throws GameServiceException {
@@ -96,9 +121,7 @@ public class FallbackUIExample
 		});
 	}
 	
-
 	private void showLeaderboardsGUI(LeaderBoard lb){
-		final Array<Texture> textures = new Array<Texture>();
 		
 		final Table table = new Table(skin);
 		table.defaults().pad(1, 5, 1, 5);
@@ -110,9 +133,7 @@ public class FallbackUIExample
 		table.add(btClose).center().colspan(4).row();
 		
 		// leader board header
-		Texture iconTexture = new Texture(lb.icon);
-		textures.add(iconTexture);
-		Image image = new Image(iconTexture);
+		Image image = new Image(createTexture(lb.icon));
 		image.setScaling(Scaling.fit);
 		table.add(image).size(32);
 		
@@ -129,9 +150,7 @@ public class FallbackUIExample
 		for(Score score : lb.scores){
 			
 			if(score.avatar != null){
-				Texture avatarTexture = new Texture(score.avatar);
-				textures.add(avatarTexture);
-				Image avatar = new Image(avatarTexture);
+				Image avatar = new Image(createTexture(score.avatar));
 				avatar.setScaling(Scaling.fit);
 				table.add(avatar).size(32);
 			}else{
@@ -152,12 +171,7 @@ public class FallbackUIExample
 		btClose.addListener(new ChangeListener() {
 			@Override
 			public void changed(ChangeEvent event, Actor actor) {
-				popup.remove();
-				popup = null;
-				// TODO leader board and achievements could be disposable !
-				for(Texture texture : textures){
-					texture.dispose();
-				}
+				dismiss();
 			}
 		});
 	}
@@ -178,8 +192,6 @@ public class FallbackUIExample
 	
 	private void showAchievementsGUI(Array<Achievement> achievements){
 		
-		final Array<Texture> textures = new Array<Texture>();
-		
 		final Table table = new Table(skin);
 		popup.reset();
 		
@@ -193,9 +205,7 @@ public class FallbackUIExample
 		
 		for(Achievement a : achievements){
 			
-			Texture iconTexture = new Texture(a.icon);
-			textures.add(iconTexture);
-			Image image = new Image(iconTexture);
+			Image image = new Image(createTexture(a.icon));
 			image.setScaling(Scaling.fit);
 			
 			table.add(image).size(32);
@@ -214,11 +224,7 @@ public class FallbackUIExample
 		btClose.addListener(new ChangeListener() {
 			@Override
 			public void changed(ChangeEvent event, Actor actor) {
-				popup.remove();
-				popup = null;
-				for(Texture texture : textures){
-					texture.dispose();
-				}
+				dismiss();
 			}
 		});
 	}
@@ -253,8 +259,7 @@ public class FallbackUIExample
 		btClose.addListener(new ChangeListener() {
 			@Override
 			public void changed(ChangeEvent event, Actor actor) {
-				popup.remove();
-				popup = null;
+				dismiss();
 			}
 		});
 	}

@@ -24,6 +24,11 @@ public class LeaderBoard {
 		public String name, rank;
 		public String score;
 		public String avatarUrl;
+		
+		/**
+		 * player avatar pixel if fetch icon has been requested.
+		 * caller is responsible to dispose this resource.
+		 */
 		public Pixmap avatar;
 
 		long sortKey;
@@ -31,6 +36,11 @@ public class LeaderBoard {
 	
 	public String id, name;
 	public String iconUrl;
+	
+	/**
+	 * leader board icon pixel if fetch icon has been requested.
+	 * caller is responsible to dispose this resource.
+	 */
 	public Pixmap icon;
 	
 	/**
