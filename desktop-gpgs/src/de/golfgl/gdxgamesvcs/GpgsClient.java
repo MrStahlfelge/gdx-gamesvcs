@@ -52,7 +52,7 @@ import de.golfgl.gdxgamesvcs.LeaderBoard.Score;
  * @author mgsx
  *
  */
-public class GpgsClient implements IGameServiceClient
+public class GpgsClient implements IGameServiceClientEx
 {
 	private static final String TAG = "GpgsClient";
 	
@@ -355,6 +355,27 @@ public class GpgsClient implements IGameServiceClient
 		GAPIGateway.games.achievements().increment(achievementId, incNum).execute();
 	}
 
+	@Override
+	public void listGameStates(final IGameStatesCallback callback) {
+		background(new SafeRunnable() {
+			@Override
+			public void run() throws IOException {
+				Array<String> result = null;
+				try{
+					result = listGamesSync();
+				}finally{
+					final Array<String> fresult = result;
+					Gdx.app.postRunnable(new Runnable() {
+						@Override
+						public void run() {
+							callback.onGameStatesResponse(fresult);
+						}
+					});
+				}
+			}
+		});
+	}
+	
 	public Array<String> listGamesSync() throws IOException {
 		
 		Array<String> games = new Array<String>();
@@ -371,7 +392,7 @@ public class GpgsClient implements IGameServiceClient
 		return games;
 	}
 	
-	// TODO return true (aka supported by this implementation)
+	@Override
 	public void deleteGameState(final String fileId) {
 		background(new SafeRunnable() {
 			@Override
@@ -487,6 +508,27 @@ public class GpgsClient implements IGameServiceClient
 		return CloudSaveCapability.MultipleFilesSupported;
 	}
 
+	@Override
+	public void fetchAchievements(final boolean fetchIcons, final IAchievementCallback callback)
+	{
+		background(new SafeRunnable() {
+			@Override
+			public void run() throws IOException {
+				Array<Achievement> result = null;
+				try{
+					result = fetchAchievementsSync(fetchIcons);
+				}finally{
+					final Array<Achievement> fresult = result;
+					Gdx.app.postRunnable(new Runnable() {
+						@Override
+						public void run() {
+							callback.onAchievementsResponse(fresult);
+						}
+					});
+				}
+			}
+		});
+	}
 	
 	/**
 	 * TODO doc
@@ -551,11 +593,33 @@ public class GpgsClient implements IGameServiceClient
 		return achievements;
 	}
 	
+	@Override
+	public void fetchLeaderboard(final String leaderBoardId, final boolean aroundPlayer, final boolean friendsOnly, final boolean fetchIcons, final ILeaderBoardCallback callback)
+	{
+		background(new SafeRunnable() {
+			@Override
+			public void run() throws IOException {
+				LeaderBoard result = null;
+				try{
+					result = fetchLeaderboardSync(leaderBoardId, aroundPlayer, friendsOnly, fetchIcons);
+				}finally{
+					final LeaderBoard fresult = result;
+					Gdx.app.postRunnable(new Runnable() {
+						@Override
+						public void run() {
+							callback.onLeaderBoardResponse(fresult);
+						}
+					});
+				}
+			}
+		});
+	}
+	
 	/**
 	 * @param leaderBoardId
 	 * @throws IOException
 	 */
-	public LeaderBoard fetchLeaderboardsSync(String leaderBoardId, boolean aroundPlayer, boolean friendsOnly, boolean fetchIcons) throws IOException
+	public LeaderBoard fetchLeaderboardSync(String leaderBoardId, boolean aroundPlayer, boolean friendsOnly, boolean fetchIcons) throws IOException
 	{
 		LeaderBoard result = new LeaderBoard();
 		Leaderboard lb = GAPIGateway.games.leaderboards().get(leaderBoardId).execute();
@@ -634,6 +698,28 @@ public class GpgsClient implements IGameServiceClient
 		} finally {
 			StreamUtils.closeQuietly(in);
 		}
+	}
+
+	@Override
+	public void showGameStates() {
+		throw new IllegalStateException("not supported");
+	}
+
+	@Override
+	public boolean isFeatureSupported(GameServiceFeature feature) {
+		switch(feature){
+		case achievementsList: 
+			return true;
+		case gameStatesList: 
+			return true;
+		case gameStatesUI: 
+			return false;
+		case leaderBoardList: 
+			return true;
+		case gameStateDelete:
+			return true;
+		}
+		return false;
 	}
 	
 }

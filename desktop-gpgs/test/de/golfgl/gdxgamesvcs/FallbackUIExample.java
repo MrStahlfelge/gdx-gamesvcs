@@ -1,8 +1,5 @@
 package de.golfgl.gdxgamesvcs;
 
-import java.io.IOException;
-
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.MathUtils;
@@ -23,25 +20,31 @@ import com.badlogic.gdx.utils.Scaling;
 import de.golfgl.gdxgamesvcs.LeaderBoard.Score;
 
 /**
- * Here is an example of {@link GpgsClient} client override.
+ * Here is an example of fallback UI.
  * 
- * It demonstrate how to implements non native features like {@link IGameServiceClient#showAchievements()}
- * and {@link IGameServiceClient#showLeaderboards(String)} as well as .. TODO showSavedGames
+ * It demonstrate how to implements non native features like : 
+ * <ul>
+ * <li>{@link IGameServiceClient#showAchievements()}</li>
+ * <li>{@link IGameServiceClient#showLeaderboards(String)}</li>
+ * <li>{@link IGameServiceClientEx#showGameStates()}</li>
+ * </ul>
  * 
  * @author mgsx
- *
+ * 
  */
-public class GpgsClientDemo extends GpgsClient
+public class FallbackUIExample
 {
-	private Stage stage;
-	private Skin skin;
+	final private Stage stage;
+	final private Skin skin;
+	final private IGameServiceClientEx gsClient;
+	
 	private Table popup;
 	
-	public GpgsClientDemo(Stage stage, Skin skin) {
+	public FallbackUIExample(Stage stage, Skin skin, IGameServiceClientEx gsClient) {
 		super();
 		this.stage = stage;
 		this.skin = skin;
-		
+		this.gsClient = gsClient;
 	}
 	
 	private void showWait(){
@@ -60,32 +63,39 @@ public class GpgsClientDemo extends GpgsClient
 		});
 		stage.addActor(popup);
 	}
-	
-	@Override
-	public boolean providesAchievementsUI() {
-		return true;
+	private void showError(){
+		popup.reset();
+		Table table = new Table(skin);
+		popup.add(table);
+		
+		table.add("Sorry, an error occured, please retry later...").row();
+		
+		TextButton btClose = new TextButton("OK", skin);
+		table.add(btClose).expandX().center();
+		
+		btClose.addListener(new ChangeListener() {
+			@Override
+			public void changed(ChangeEvent event, Actor actor) {
+				popup.remove();
+				popup = null;
+			}
+		});
 	}
 	
-	@Override
 	public void showLeaderboards(final String leaderBoardId) throws GameServiceException {
 		showWait();
-		background(new SafeRunnable() {
+		gsClient.fetchLeaderboard(leaderBoardId, false, false, true, new ILeaderBoardCallback() {
 			@Override
-			public void run() throws IOException {
-				showLeaderboardsSync(leaderBoardId);
+			public void onLeaderBoardResponse(LeaderBoard leaderBoard) {
+				if(leaderBoard != null){
+					showLeaderboardsGUI(leaderBoard);
+				}else{
+					showError();
+				}
 			}
 		});
 	}
 	
-	protected void showLeaderboardsSync(String leaderBoardId) throws IOException {
-		final LeaderBoard lb = fetchLeaderboardsSync(leaderBoardId, false, false, true);
-		Gdx.app.postRunnable(new Runnable() {
-			@Override
-			public void run() {
-				showLeaderboardsGUI(lb);
-			}
-		});
-	}
 
 	private void showLeaderboardsGUI(LeaderBoard lb){
 		final Array<Texture> textures = new Array<Texture>();
@@ -152,25 +162,16 @@ public class GpgsClientDemo extends GpgsClient
 		});
 	}
 	
-	@Override
-	public void showAchievements() throws GameServiceException {
+	public void showAchievements() {
 		showWait();
-		background(new SafeRunnable() {
+		gsClient.fetchAchievements(true, new IAchievementCallback() {
 			@Override
-			public void run() throws IOException {
-				showAchievementsSync();
-			}
-		});
-	}
-	
-	protected void showAchievementsSync() throws IOException 
-	{
-		final Array<Achievement> achievements = fetchAchievementsSync(true);
-		
-		Gdx.app.postRunnable(new Runnable() {
-			@Override
-			public void run() {
-				showAchievementsGUI(achievements);
+			public void onAchievementsResponse(Array<Achievement> achievements) {
+				if(achievements != null){
+					showAchievementsGUI(achievements);
+				}else{
+					showError();
+				}
 			}
 		});
 	}
@@ -224,26 +225,19 @@ public class GpgsClientDemo extends GpgsClient
 	
 	public void showGameStates(){
 		showWait();
-		background(new SafeRunnable() {
+		gsClient.listGameStates(new IGameStatesCallback() {
 			@Override
-			public void run() throws IOException {
-				showGameStatesSync();
+			public void onGameStatesResponse(Array<String> gameStates) {
+				if(gameStates != null){
+					showGameStatesGUI(gameStates);
+				}else{
+					showError();
+				}
 			}
 		});
 	}
 	
-	private void showGameStatesSync() throws IOException{
-		final Array<String> gameStates = listGamesSync();
-		
-		Gdx.app.postRunnable(new Runnable() {
-			@Override
-			public void run() {
-				showGameStatesGUI(gameStates);
-			}
-		});
-	}
-
-	protected void showGameStatesGUI(Array<String> gameStates) {
+	private void showGameStatesGUI(Array<String> gameStates) {
 		final Table table = new Table(skin);
 		table.defaults().center().pad(1, 5, 1, 5);
 		popup.reset();

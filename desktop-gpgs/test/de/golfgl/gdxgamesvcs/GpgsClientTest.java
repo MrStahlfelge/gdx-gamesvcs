@@ -17,7 +17,9 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
-// TODO DO NOT wrap action calls within a thread !!!!
+import de.golfgl.gdxgamesvcs.IGameServiceClientEx.GameServiceFeature;
+
+// TODO separate implementation specific UI from GpgsClient (mainly initialization fields)
 
 public class GpgsClientTest extends Game
 {
@@ -37,7 +39,7 @@ public class GpgsClientTest extends Game
 	private TextField clientSecretPath;
 	private Preferences preferences;
 	private Label connectedStatus;
-	private GpgsClientDemo gpgsClient;
+	private GpgsClient gpgsClient;
 	private Label connectionPendingStatus;
 	private Label displayNameStatus;
 	private TextField achievementOrEventId;
@@ -46,6 +48,8 @@ public class GpgsClientTest extends Game
 	private Label gameDataLoaded;
 	private TextField leaderboardId;
 	private TextField leaderboardScore;
+	
+	private FallbackUIExample fallbackUI;
 
 	@Override
 	public void create() {
@@ -57,14 +61,19 @@ public class GpgsClientTest extends Game
 		table.setFillParent(true);
 		stage.addActor(table);
 		
-		gpgsClient = new GpgsClientDemo(stage, skin);
+		gpgsClient = new GpgsClient();
+		
+		fallbackUI = new FallbackUIExample(stage, skin, gpgsClient);
 		
 		gpgsClient.setListener(new GameServiceSafeListener(new IGameServiceListener() {
 			
 			@Override
 			public void gsGameStateLoaded(byte[] gameState) {
-				Gdx.app.log(TAG, "game loaded " + gameState.length + " bytes");
-				gameDataLoaded.setText(new String(gameState));
+				if(gameState != null){
+					gameDataLoaded.setText("game state loaded : " + gameState.length + " bytes");
+				}else{
+					gameDataLoaded.setText("game state loading failed");
+				}
 			}
 			
 			@Override
@@ -146,7 +155,11 @@ public class GpgsClientTest extends Game
 			@Override
 			public void run() {
 				try {
-					gpgsClient.showAchievements();
+					if(gpgsClient.providesAchievementsUI()){
+						gpgsClient.showAchievements();
+					}else{
+						fallbackUI.showAchievements();
+					}
 				} catch (GameServiceException e) {
 					Gdx.app.error(TAG, "API error", e);
 				}
@@ -185,7 +198,11 @@ public class GpgsClientTest extends Game
 			@Override
 			public void run() {
 				try {
-					gpgsClient.showLeaderboards(leaderboardId.getText());
+					if(gpgsClient.providesLeaderboardUI()){
+						gpgsClient.showLeaderboards(leaderboardId.getText());
+					}else{
+						fallbackUI.showLeaderboards(leaderboardId.getText());
+					}
 				} catch (GameServiceException e) {
 					Gdx.app.error(TAG, "API error", e);
 				}
@@ -210,7 +227,11 @@ public class GpgsClientTest extends Game
 		createAction(table, "showGameStates", new Runnable() {
 			@Override
 			public void run() {
-				gpgsClient.showGameStates();
+				if(gpgsClient.isFeatureSupported(GameServiceFeature.gameStatesUI)){
+					gpgsClient.showGameStates();
+				}else{
+					fallbackUI.showGameStates();
+				}
 			}
 		});
 		
@@ -228,6 +249,7 @@ public class GpgsClientTest extends Game
 			@Override
 			public void run() {
 				try {
+					gameDataLoaded.setText("Loading...");
 					gpgsClient.loadGameState(gameId.getText());
 				} catch (GameServiceException e) {
 					Gdx.app.error(TAG, "API error", e);
