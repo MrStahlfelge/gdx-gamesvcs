@@ -2,6 +2,12 @@ package de.golfgl.gdxgamesvcs;
 
 import com.badlogic.gdx.graphics.Pixmap;
 
+/**
+ * Achievement data
+ * 
+ * @author mgsx
+ *
+ */
 public class Achievement 
 {
 	public String id;

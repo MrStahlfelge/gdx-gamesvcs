@@ -32,22 +32,28 @@ import de.golfgl.gdxgamesvcs.IGameServiceListener.GsErrorType;
 import de.golfgl.gdxgamesvcs.LeaderBoard.Score;
 
 /**
- * TODO doc
- * 
- * https://developers.google.com/identity/protocols/OAuth2#scenarios
- * https://developers.google.com/api-client-library/java/google-api-java-client/oauth2
- * 
  * Google Play Games Services Desktop implementation based on REST API :
  * https://developers.google.com/games/services/web/api/
+ * 
+ * "Installed Application" authentication method is used as described here :
+ * https://developers.google.com/identity/protocols/OAuth2#scenarios
+ * 
+ * Implementation based on Java API :
+ * https://developers.google.com/api-client-library/java/google-api-java-client/oauth2
  * 
  * As stated in {@link IGameServiceClient} all methods of this interface are thread safe, non blocking
  * and typically called from GLThread.
  * 
- * All *Sync methods are blocking and could be chained each others in a user thread.
- * TODO are they thread safe ???
+ * All *Sync methods are blocking and could be chained each others in a user-defined thread
+ * for advanced usage.
  * 
- * TODO note about how to implements showAchievements ...
+ * Service must be initialized prior to call other methods except features querying
+ * {@link #isFeatureSupported(de.golfgl.gdxgamesvcs.IGameServiceClientEx.GameServiceFeature)}
+ * It is recommended to call one of {@link #initialize(String, FileHandle)} or {@link #initialize(String, InputStream)}
+ * at application startup.
  * 
+ * Credential storage default behavior can be overridden by subclasses, see :
+ * {@link #getDataStoreDirectory()} and {@link #getUserId()}
  * 
  * @author mgsx
  *
@@ -76,26 +82,17 @@ public class GpgsClient implements IGameServiceClientEx
 
 	private String playerName;
 	
-	/**
-	 * TODO doc
-	 * @author mgsx
-	 *
-	 */
-	protected static interface SafeRunnable{
+	private static interface SafeRunnable{
 		void run() throws IOException;
 	}
 	
-	/**
-	 * TODO doc
-	 * @param runnable
-	 */
-	protected void background(final SafeRunnable runnable){
+	private void background(final SafeRunnable runnable){
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
 				try {
 					runnable.run();
-				} catch (IOException e) {
+				} catch (Throwable e) {
 					// Always log errors to be able to analize stacktrace.
 					Gdx.app.error(TAG, "GpgsClient Error", e);
 					if(gameListener != null) gameListener.gsErrorMsg(GsErrorType.errorUnknown, e.getMessage());
@@ -205,7 +202,7 @@ public class GpgsClient implements IGameServiceClientEx
 				Player player = GAPIGateway.games.players().get(ME).execute();
 				playerName = player.getDisplayName();
 			} catch (IOException e) {
-				Gdx.app.error(TAG, "Failed to retreive player name", e); // TODO silent ?
+				Gdx.app.error(TAG, "Failed to retreive player name", e);
 				if(gameListener != null) gameListener.gsErrorMsg(GsErrorType.errorUnknown, "Failed to retreive player name");
 			}
 		}
@@ -254,8 +251,6 @@ public class GpgsClient implements IGameServiceClientEx
 		connected = false;
 		playerName = null;
 		GAPIGateway.closeSession();
-		// TODO should we dispatch this event ?
-		// if(gameListener != null) gameListener.gsDisconnected();
 	}
 
 	@Override
@@ -275,8 +270,8 @@ public class GpgsClient implements IGameServiceClientEx
 
 	@Override
 	public boolean providesLeaderboardUI() {
-		// TODO nope but could provides leaderboards data!
-		return false;
+		// for backward compatibility.
+		return isFeatureSupported(GameServiceFeature.leaderboardsUI);
 	}
 
 	@Override
@@ -286,8 +281,8 @@ public class GpgsClient implements IGameServiceClientEx
 
 	@Override
 	public boolean providesAchievementsUI() {
-		// TODO nope but could provides achievements data!
-		return false;
+		// for backward compatibility.
+		return isFeatureSupported(GameServiceFeature.achievementsUI);
 	}
 
 	@Override
@@ -306,7 +301,14 @@ public class GpgsClient implements IGameServiceClientEx
 		return initialized;
 	}
 	
-	protected void submitToLeaderboardSync(String leaderboardId, long score, String tag) throws IOException {
+	/**
+	 * Blocking version of {@link #submitToLeaderboard(String, long, String)}
+	 * @param leaderboardId
+	 * @param score
+	 * @param tag
+	 * @throws IOException
+	 */
+	public void submitToLeaderboardSync(String leaderboardId, long score, String tag) throws IOException {
 		GAPIGateway.games.scores().submit(leaderboardId, score).execute();
 	}
 
@@ -321,8 +323,15 @@ public class GpgsClient implements IGameServiceClientEx
 		});
 		return initialized;
 	}
-	protected void submitEventSync(String eventId, int increment) {
-		// TODO don't know the API ...
+	
+	/**
+	 * Blocking version of {@link #submitEvent(String, int)}
+	 * @param eventId
+	 * @param increment
+	 */
+	public void submitEventSync(String eventId, int increment) {
+		// TODO don't know the API for this use case
+		throw new IllegalStateException("Not implemented");
 	}
 	
 
@@ -336,7 +345,13 @@ public class GpgsClient implements IGameServiceClientEx
 		});
 		return initialized;
 	}
-	protected void unlockAchievementSync(String achievementId) throws IOException {
+	
+	/**
+	 * Blocking version of {@link #unlockAchievement(String)}
+	 * @param achievementId
+	 * @throws IOException
+	 */
+	public void unlockAchievementSync(String achievementId) throws IOException {
 		GAPIGateway.games.achievements().unlock(achievementId).execute();
 	}
 
@@ -351,18 +366,25 @@ public class GpgsClient implements IGameServiceClientEx
 		return initialized;
 	}
 	
-	protected void incrementAchievementSync(String achievementId, int incNum, float completionPercentage) throws IOException {
+	/**
+	 * Blocking version of {@link #incrementAchievement(String, int, float)}
+	 * @param achievementId
+	 * @param incNum
+	 * @param completionPercentage
+	 * @throws IOException
+	 */
+	public void incrementAchievementSync(String achievementId, int incNum, float completionPercentage) throws IOException {
 		GAPIGateway.games.achievements().increment(achievementId, incNum).execute();
 	}
 
 	@Override
-	public void listGameStates(final IGameStatesCallback callback) {
+	public void fetchGameStates(final IGameStatesCallback callback) {
 		background(new SafeRunnable() {
 			@Override
 			public void run() throws IOException {
 				Array<String> result = null;
 				try{
-					result = listGamesSync();
+					result = fetchGamesSync();
 				}finally{
 					final Array<String> fresult = result;
 					Gdx.app.postRunnable(new Runnable() {
@@ -376,7 +398,12 @@ public class GpgsClient implements IGameServiceClientEx
 		});
 	}
 	
-	public Array<String> listGamesSync() throws IOException {
+	/**
+	 * Blocking version of {@link #fetchGamesSync()}
+	 * @return
+	 * @throws IOException
+	 */
+	public Array<String> fetchGamesSync() throws IOException {
 		
 		Array<String> games = new Array<String>();
 
@@ -431,7 +458,14 @@ public class GpgsClient implements IGameServiceClientEx
 		}
 	}
 	
-	protected void saveGameStateSync(String fileId, byte[] gameState, long progressValue) throws IOException {
+	/**
+	 * Blocking version of {@link #saveGameState(String, byte[], long)}
+	 * @param fileId
+	 * @param gameState
+	 * @param progressValue
+	 * @throws IOException
+	 */
+	public void saveGameStateSync(String fileId, byte[] gameState, long progressValue) throws IOException {
 			
 		java.io.File file = java.io.File.createTempFile("games", "dat");
 		new FileHandle(file).writeBytes(gameState, false);
@@ -485,7 +519,13 @@ public class GpgsClient implements IGameServiceClientEx
 		});
 	}
 	
-	protected byte [] loadGameStateSync(String fileId) throws IOException {
+	/**
+	 * Blocking version of {@link #loadGameState(String)}
+	 * @param fileId
+	 * @return
+	 * @throws IOException
+	 */
+	public byte [] loadGameStateSync(String fileId) throws IOException {
 		
 		InputStream stream = null;
 		byte [] data = null;
@@ -505,6 +545,7 @@ public class GpgsClient implements IGameServiceClientEx
 
 	@Override
 	public CloudSaveCapability supportsCloudGameState() {
+		// for backward compatibility.
 		return CloudSaveCapability.MultipleFilesSupported;
 	}
 
@@ -531,15 +572,13 @@ public class GpgsClient implements IGameServiceClientEx
 	}
 	
 	/**
-	 * TODO doc
+	 * Blocking version of {@link #fetchAchievements(boolean, IAchievementCallback)}
 	 * @param fetchIcons
 	 * @return
 	 * @throws IOException
 	 */
 	public Array<Achievement> fetchAchievementsSync(boolean fetchIcons) throws IOException {
 		
-		// TODO to avoid null check, list is based on player achievement.
-		// definitions couldn't be null.
 		Array<Achievement> achievements = new Array<Achievement>();
 		
 		// fetch all definitions
@@ -616,6 +655,7 @@ public class GpgsClient implements IGameServiceClientEx
 	}
 	
 	/**
+	 * Blocking version of {@link #fetchLeaderboard(String, boolean, boolean, boolean, ILeaderBoardCallback)}
 	 * @param leaderBoardId
 	 * @throws IOException
 	 */
@@ -653,9 +693,11 @@ public class GpgsClient implements IGameServiceClientEx
 			}
 		}
 		
-		// TODO maybe already sorted ?! API doesn't say anything : https://developers.google.com/games/services/web/api/scores/list
-		// sort list depending of score meaning.
-		final int order = "SMALLER_IS_BETTER".equals(lb.getOrder()) ? 1 : -1; // TODO sure ?
+		// TODO maybe already sorted but API doesn't say anything : 
+		// https://developers.google.com/games/services/web/api/scores/list
+		// And test is required to se if it is OK ...
+		// so we sort list depending of score meaning.
+		final int order = "SMALLER_IS_BETTER".equals(lb.getOrder()) ? 1 : -1;
 		result.scores.sort(new Comparator<LeaderBoard.Score>() {
 			@Override
 			public int compare(Score o1, Score o2) {
@@ -678,7 +720,7 @@ public class GpgsClient implements IGameServiceClientEx
 		return s;
 	}
 	
-	protected Pixmap downloadIconSyn(String iconUrl) throws IOException{
+	private Pixmap downloadIconSyn(String iconUrl) throws IOException{
 		byte[] bytes = downloadSync(iconUrl);
 		return new Pixmap(bytes, 0, bytes.length);
 	}
@@ -709,17 +751,15 @@ public class GpgsClient implements IGameServiceClientEx
 	public boolean isFeatureSupported(GameServiceFeature feature) {
 		switch(feature){
 		case achievementsList: 
-			return true;
 		case gameStatesList: 
-			return true;
-		case gameStatesUI: 
-			return false;
 		case leaderBoardList: 
-			return true;
 		case gameStateDelete:
+		case gameStateMultiple:
+		case gameStateStorage:
 			return true;
+		default:
+			return false;
 		}
-		return false;
 	}
 	
 }

@@ -225,7 +225,7 @@ public class FallbackUIExample
 	
 	public void showGameStates(){
 		showWait();
-		gsClient.listGameStates(new IGameStatesCallback() {
+		gsClient.fetchGameStates(new IGameStatesCallback() {
 			@Override
 			public void onGameStatesResponse(Array<String> gameStates) {
 				if(gameStates != null){
