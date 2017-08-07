@@ -2,6 +2,11 @@ package de.golfgl.gdxgamesvcs;
 
 /**
  * This is the main interface for gdx-gamesvcs. Use this in your game core.
+ * See the readme file for further information how to use this interface: https://github.com/MrStahlfelge/gdx-gamesvcs
+ * <p>
+ * Game service client classes implementing this interface are not thread-safe, so you should use references to it
+ * either in your UI render thread only or synchronize calls yourself. Using the methods on your render thread is
+ * safe and will not block the responsiveness of your game: Blocking calls are done asynchronous.
  * <p>
  * Created by Benjamin Schulte on 16.06.2017.
  */
