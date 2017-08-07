@@ -33,6 +33,7 @@ See the corresponding demo app https://github.com/MrStahlfelge/gdx-gamesvcs-app 
 ## Working demos
 
 * Google Play Games: no published demo app, but my game [Falling Lightblocks](https://play.google.com/store/apps/details?id=de.golfgl.lightblocks&referrer=utm_source%3Dgh) is using this lib with GPGS
+* Amazon GameCircle: no published demo app, but my game [Falling Lightblocks](https://www.amazon.com/gp/mas/dl/android?p=de.golfgl.lightblocks) is using this lib with GameCircle.
 * [GameJolt HTML5 demo app](http://gamejolt.com/games/gdx-gamesvcs-gj/263351)
 * [Newgrounds HTML5 demo app](http://www.newgrounds.com/projects/games/1110754/preview)
 
@@ -44,15 +45,15 @@ into your project by just adding the dependencies to your `build.gradle` file.
 Define the version of this API right after the gdxVersion: 
    
     gdxVersion = '1.9.6'
-    gamsvcsVersion = '0.0.1'
+    gamesvcsVersion = '0.0.1'
 
 Core:
 
-    compile "de.golfgl.gdxgamesvcs:gdx-gamesvcs-core:$gamsvcsVersion"
+    compile "de.golfgl.gdxgamesvcs:gdx-gamesvcs-core:$gamesvcsVersion"
     
 For the HTML5 project, you also have to include the sources
 
-    compile "de.golfgl.gdxgamesvcs:gdx-gamesvcs-core:$gamsvcsVersion:sources"
+    compile "de.golfgl.gdxgamesvcs:gdx-gamesvcs-core:$gamesvcsVersion:sources"
 
 and add a line to `GdxDefinition.gwt.xml` and `GdxDefinitionSuperdev.gwt.xml`:
 
