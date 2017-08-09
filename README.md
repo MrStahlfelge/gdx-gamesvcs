@@ -18,7 +18,7 @@ Further contributes are very welcome! Very wanted: Steam, Apple GameCenter. :-)
 
 When I wrote my first libGDX game, I realized there was no good library for Google Play Games (GPGS) integration available. So I implemented all the stuff myself. Luckily, because GPGS is basically Android-only, I kept things clean and implemented against an interface. Nevertheless, testing was a pain. I had no desktop implementation for the interface, so I always had to test on Android and check for `null` everywhere.
 
-When I then published my HTML5 release to Newgrounds users complained that their highscores were not posted to the Newgrounds system. And they were right. That was the starting signal for me to feel in charge to make something.
+When I then published my HTML5 release, users complained that their highscores were not posted to the hosting site's highscore system. Not to mention releasing to the Amazon App Store where GameCircle support is needed. So I felt in charge to do something.
 
 ## Basic concept
 
@@ -45,7 +45,7 @@ into your project by just adding the dependencies to your `build.gradle` file.
 Define the version of this API right after the gdxVersion: 
    
     gdxVersion = '1.9.6'
-    gamesvcsVersion = '0.0.1'
+    gamesvcsVersion = '0.1.1'
 
 Core:
 
