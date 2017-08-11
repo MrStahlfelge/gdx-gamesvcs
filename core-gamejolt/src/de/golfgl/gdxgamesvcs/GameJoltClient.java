@@ -28,11 +28,12 @@ import java.util.Map;
 
 public class GameJoltClient implements IGameServiceClient {
     public static final String GAMESERVICE_ID = IGameServiceClient.GS_GAMEJOLT_ID;
-    public static final String GJ_GATEWAY = "http://gamejolt.com/api/game/v1/";
     public static final String GJ_USERNAME_PARAM = "gjapi_username";
     public static final String GJ_USERTOKEN_PARAM = "gjapi_token";
     protected static final int GJ_PING_INTERVAL = 30;
 
+    // This is not static and not final for overriding reasons
+    public String GJ_GATEWAY = "https://gamejolt.com/api/game/v1/";
     protected IGameServiceListener gsListener;
     protected String userName;
     protected String userToken;
