@@ -170,7 +170,8 @@ public class NoGameServiceClient implements IGameServiceClient {
 
     @Override
     public boolean incrementAchievement(String achievementId, int incNum, float completionPercentage) {
-        Gdx.app.log(GAMESERVICE_ID, "Increment achievement " + incNum + " (" + completionPercentage + "%)");
+        Gdx.app.log(GAMESERVICE_ID, "Increment achievement "+ achievementId
+                + " by " + incNum + " (" + completionPercentage + "%)");
         return isConnected();
     }
 
