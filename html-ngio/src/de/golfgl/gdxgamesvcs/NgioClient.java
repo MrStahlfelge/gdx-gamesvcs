@@ -5,6 +5,12 @@ import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.JsonWriter;
 
+import de.golfgl.gdxgamesvcs.achievement.IFetchAchievementsResponseListener;
+import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
+import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
+import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
+import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
+
 /**
  * Newgrounds.io client.
  * <p>
@@ -245,23 +251,18 @@ public class NgioClient implements IGameServiceClient {
     }
 
     @Override
-    public boolean providesLeaderboardUI() {
-        return false;
-    }
-
-    @Override
     public void showLeaderboards(String leaderBoardId) throws GameServiceException {
         throw new GameServiceException.NotSupportedException();
     }
 
     @Override
-    public boolean providesAchievementsUI() {
-        return false;
+    public void showAchievements() throws GameServiceException {
+        throw new GameServiceException.NotSupportedException();
     }
 
     @Override
-    public void showAchievements() throws GameServiceException {
-        throw new GameServiceException.NotSupportedException();
+    public boolean fetchAchievements(IFetchAchievementsResponseListener callback) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -286,6 +287,12 @@ public class NgioClient implements IGameServiceClient {
         sendToGateway("ScoreBoard.postScore", parameters, null);
 
         return true;
+    }
+
+    @Override
+    public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
+                                           IFetchLeaderBoardEntriesResponseListener callback) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -345,19 +352,39 @@ public class NgioClient implements IGameServiceClient {
     }
 
     @Override
-    public void saveGameState(String fileId, byte[] gameState, long progressValue) throws GameServiceException
-            .NotSupportedException {
-        throw new GameServiceException.NotSupportedException();
+    public void saveGameState(String fileId, byte[] gameState, long progressValue) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public void loadGameState(String fileId) throws GameServiceException.NotSupportedException {
-        throw new GameServiceException.NotSupportedException();
+    public void saveGameState(String fileId, byte[] gameState, long progressValue, ISaveGameStateResponseListener
+            listener) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public CloudSaveCapability supportsCloudGameState() {
-        return CloudSaveCapability.NotSupported;
+    public void loadGameState(String fileId, ILoadGameStateResponseListener listener) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean deleteGameState(String fileId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean deleteGameState(String fileId, ISaveGameStateResponseListener success) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean fetchGameStates(IFetchGameStatesListResponseListener callback) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isFeatureSupported(GameServiceFeature feature) {
+        return feature.equals(GameServiceFeature.SubmitEvents);
     }
 
     /**

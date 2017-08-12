@@ -240,13 +240,6 @@ public interface IGameServiceClient {
     boolean fetchGameStates(IFetchGameStatesListResponseListener callback);
 
     /**
-     * Show all player game states.
-     * Should only be called when {@link GameServiceFeature#ShowGameStatesUI} is supported,
-     * check {@link #isFeatureSupported(GameServiceFeature)} prior to call this method.
-     */
-    boolean showGameStates();
-
-    /**
      * Queries if a certain feature is available for this Game Service
      *
      * @param feature
