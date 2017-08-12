@@ -1,5 +1,11 @@
 package de.golfgl.gdxgamesvcs;
 
+import de.golfgl.gdxgamesvcs.achievement.IFetchAchievementsResponseListener;
+import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
+import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
+import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
+import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
+
 /**
  * This is the main interface for gdx-gamesvcs. Use this in your game core.
  * See the readme file for further information how to use this interface: https://github.com/MrStahlfelge/gdx-gamesvcs
@@ -89,14 +95,6 @@ public interface IGameServiceClient {
     boolean isConnectionPending();
 
     /**
-     * Some game service libraries provide an own UI for leaderboards so you don't have to implement one.
-     * Use this to check before calling showLeaderboards() to prevent UnsupportedOperationExceptions.
-     *
-     * @return true, if UI for leaderboard is provided. false otherwise
-     */
-    boolean providesLeaderboardUI();
-
-    /**
      * Opens user interface for leader boards, if available.
      *
      * @param leaderBoardId if null, then overview is opened (when supported)
@@ -105,19 +103,21 @@ public interface IGameServiceClient {
     void showLeaderboards(String leaderBoardId) throws GameServiceException;
 
     /**
-     * Some game service libraries provide an own UI for achievements so you don't have to implement one.
-     * Use this to check before calling showAchievements() to prevent UnsupportedOperationExceptions.
-     *
-     * @return true, if UI for achievements is provided. false otherwise
-     */
-    boolean providesAchievementsUI();
-
-    /**
      * Opens user interface for achievements, if available.
      *
      * @throws GameServiceException if not connected to service or operation not supported by client
      */
     void showAchievements() throws GameServiceException;
+
+    /**
+     * Fetch current player's achievements.
+     * <p>
+     * Should only be called when {@link GameServiceFeature#FetchAchievements} is supported,
+     * check {@link #isFeatureSupported(GameServiceFeature)} prior to call this method.
+     *
+     * @param callback
+     */
+    boolean fetchAchievements(final IFetchAchievementsResponseListener callback);
 
     /**
      * Submits to given leaderboard.
@@ -132,6 +132,20 @@ public interface IGameServiceClient {
      * @return false if submission couldn't be made. true if submit request was made (regardless if it was successful)
      */
     boolean submitToLeaderboard(String leaderboardId, long score, String tag);
+
+    /**
+     * Fetch a leader board.
+     * Should only be called when {@link GameServiceFeature#FetchLeaderBoardEntries} is supported,
+     * check {@link #isFeatureSupported(GameServiceFeature)} prior to call this method.
+     *
+     * @param leaderBoardId   leaderboard to fetch
+     * @param limit           limit how many entries to retrieve
+     * @param relatedToPlayer only fetch scores around current player score or by current player (depending on Game
+     *                        Service)
+     * @param callback
+     */
+    boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
+                                    IFetchLeaderBoardEntriesResponseListener callback);
 
     /**
      * Posts an event to the API.
@@ -178,31 +192,82 @@ public interface IGameServiceClient {
      * Saves game state to the cloud.
      * <p>
      * This method may throw an UnsupportedOperationException when cloud save is not supported. Check with
-     * {@link #supportsCloudGameState()} before calling.
+     * {@link GameServiceFeature#GameStateStorage} before calling.
      *
      * @param fileId        file id to save to when multiple files are supported. Ignored otherwise
      * @param gameState     State to save
      * @param progressValue A value indicating player's progress. Used for conflict handling: if game state already
      *                      saved is higher than this value, the gameState is not saved
      */
-    void saveGameState(String fileId, byte[] gameState, long progressValue) throws GameServiceException;
+    void saveGameState(String fileId, byte[] gameState, long progressValue);
+
+    /**
+     * same as {@link #saveGameState(String, byte[], long) but with possibility to give a success response listener}
+     */
+    void saveGameState(String fileId, byte[] gameState, long progressValue, ISaveGameStateResponseListener listener);
 
     /**
      * Loads game state from the cloud and calls gsGameStateLoaded method of the listener set.
      * <p>
      * This method may throw an UnsupportedOperationException when cloud save is not supported. Check with
-     * {@link #supportsCloudGameState()} before calling.
+     * {@link GameServiceFeature#GameStateStorage} ()} before calling.
      *
      * @param fileId file id to load from when multiple files are supported. Ignored otherwise
      */
-    void loadGameState(String fileId) throws GameServiceException;
+    void loadGameState(String fileId, ILoadGameStateResponseListener responseListener);
 
     /**
-     * use this to check if your game service - or the API client - supports cloud save feature
+     * Delete an existing game state.
+     * Should only be called when {@link GameServiceFeature#GameStateDelete} is supported,
+     * check {@link #isFeatureSupported(GameServiceFeature)} prior to call this method.
      *
-     * @return enum CloudSaveCapability
+     * @param fileId game state Id
      */
-    CloudSaveCapability supportsCloudGameState();
+    boolean deleteGameState(final String fileId);
 
-    enum CloudSaveCapability {NotSupported, SingleFileSupported, MultipleFilesSupported}
+    /**
+     * same as {@link #deleteGameState(String)} but with possibility to get a success response
+     */
+    boolean deleteGameState(final String fileId, ISaveGameStateResponseListener success);
+
+    /**
+     * Fetch current player's game states.
+     * Should only be called when {@link GameServiceFeature#FetchGameStates} is supported,
+     * check {@link #isFeatureSupported(GameServiceFeature)} prior to call this method.
+     *
+     * @param callback
+     */
+    boolean fetchGameStates(IFetchGameStatesListResponseListener callback);
+
+    /**
+     * Show all player game states.
+     * Should only be called when {@link GameServiceFeature#ShowGameStatesUI} is supported,
+     * check {@link #isFeatureSupported(GameServiceFeature)} prior to call this method.
+     */
+    boolean showGameStates();
+
+    /**
+     * Queries if a certain feature is available for this Game Service
+     *
+     * @param feature
+     * @return true if feature is supported by implementation and game service
+     */
+    boolean isFeatureSupported(GameServiceFeature feature);
+
+    public static enum GameServiceFeature {
+        ShowGameStatesUI,
+        FetchGameStates,
+        GameStateStorage,
+        GameStateDelete,
+        GameStateMultipleFiles,
+
+        FetchAchievements,
+        ShowAchievementsUI,
+
+        SubmitEvents,
+
+        FetchLeaderBoardEntries,
+        ShowLeaderboardUI,
+        ShowAllLeaderboardsUI
+    }
 }
