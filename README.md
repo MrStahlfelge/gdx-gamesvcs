@@ -18,7 +18,7 @@ Further contributes are very welcome! Very wanted: Steam, Apple GameCenter. :-)
 
 When I wrote my first libGDX game, I realized there was no good library for Google Play Games (GPGS) integration available. So I implemented all the stuff myself. Luckily, because GPGS is basically Android-only, I kept things clean and implemented against an interface. Nevertheless, testing was a pain. I had no desktop implementation for the interface, so I always had to test on Android and check for `null` everywhere.
 
-When I then published my HTML5 release to Newgrounds users complained that their highscores were not posted to the Newgrounds system. And they were right. That was the starting signal for me to feel in charge to make something.
+When I then published my HTML5 release, users complained that their highscores were not posted to the hosting site's highscore system. Not to mention releasing to the Amazon App Store where GameCircle support is needed. So I felt in charge to do something.
 
 ## Basic concept
 
@@ -33,6 +33,7 @@ See the corresponding demo app https://github.com/MrStahlfelge/gdx-gamesvcs-app 
 ## Working demos
 
 * Google Play Games: no published demo app, but my game [Falling Lightblocks](https://play.google.com/store/apps/details?id=de.golfgl.lightblocks&referrer=utm_source%3Dgh) is using this lib with GPGS
+* Amazon GameCircle: no published demo app, but my game [Falling Lightblocks](https://www.amazon.com/gp/mas/dl/android?p=de.golfgl.lightblocks) is using this lib with GameCircle.
 * [GameJolt HTML5 demo app](http://gamejolt.com/games/gdx-gamesvcs-gj/263351)
 * [Newgrounds HTML5 demo app](http://www.newgrounds.com/projects/games/1110754/preview)
 
@@ -44,21 +45,21 @@ into your project by just adding the dependencies to your `build.gradle` file.
 Define the version of this API right after the gdxVersion: 
    
     gdxVersion = '1.9.6'
-    gamsvcsVersion = '0.0.1'
+    gamesvcsVersion = '0.1.1'
 
 Core:
 
-    compile "de.golfgl.gdxgamesvcs:gdx-gamesvcs-core:$gamsvcsVersion"
+    compile "de.golfgl.gdxgamesvcs:gdx-gamesvcs-core:$gamesvcsVersion"
     
 For the HTML5 project, you also have to include the sources
 
-    compile "de.golfgl.gdxgamesvcs:gdx-gamesvcs-core:$gamsvcsVersion:sources"
+    compile "de.golfgl.gdxgamesvcs:gdx-gamesvcs-core:$gamesvcsVersion:sources"
 
 and add a line to `GdxDefinition.gwt.xml` and `GdxDefinitionSuperdev.gwt.xml`:
 
     <inherits name="de.golfgl.gdxgamesvcs.gdx_gamesvcs_gwt" />
 
-After including the dependencies and refreshing, you can use the `NoGameServiceClient` in your project. For using another Gameservice, add its dependencies according to its [wiki page](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki)or implement your own client against `IGameServiceClient`.
+After including the dependencies and refreshing, you can use the `NoGameServiceClient` in your project. For using another Gameservice, add its dependencies according to its [wiki page](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki) or implement your own client against `IGameServiceClient`.
 
 ### Building from source
 To build from source, clone or download this repository, then open it in Android Studio. Perform the following command to compile and upload the library in your local repository:
@@ -156,7 +157,7 @@ The interface provides a method for open up an API's default leaderboard or achi
     gsClient.showAchievements();
     // same for leaderboards
 
-At the moment, such a default UI is only provided by Google Play Games API on Android.
+At the moment, such a default UI is only provided by Google Play Games and GameCircle on Android.
 
 Fetching scores and achievement status to show in your own UI is currently not supported. If you implement it, please contribute.
     

@@ -2,6 +2,12 @@ package de.golfgl.gdxgamesvcs;
 
 import com.badlogic.gdx.Gdx;
 
+import de.golfgl.gdxgamesvcs.achievement.IFetchAchievementsResponseListener;
+import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
+import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
+import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
+import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
+
 /**
  * NoGameServiceClient is an implementation for IGameServiceClient available on any platform.
  * <p>
@@ -110,11 +116,6 @@ public class NoGameServiceClient implements IGameServiceClient {
     }
 
     @Override
-    public boolean providesLeaderboardUI() {
-        return this.providesLeaderboardUI;
-    }
-
-    @Override
     public void showLeaderboards(String leaderBoardId) throws GameServiceException {
         Gdx.app.log(GAMESERVICE_ID, "Show leaderboards called: " + leaderBoardId);
 
@@ -129,11 +130,6 @@ public class NoGameServiceClient implements IGameServiceClient {
     }
 
     @Override
-    public boolean providesAchievementsUI() {
-        return providesAchievementsUI;
-    }
-
-    @Override
     public void showAchievements() throws GameServiceException {
         Gdx.app.log(GAMESERVICE_ID, "Show achievements called.");
 
@@ -142,10 +138,21 @@ public class NoGameServiceClient implements IGameServiceClient {
     }
 
     @Override
+    public boolean fetchAchievements(IFetchAchievementsResponseListener callback) {
+        return false;
+    }
+
+    @Override
     public boolean submitToLeaderboard(String leaderboardId, long score, String tag) {
         Gdx.app.log(GAMESERVICE_ID, "Submit to leaderboard " + leaderboardId + ", score " + score + ", tag " + tag);
 
         return isConnected();
+    }
+
+    @Override
+    public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
+                                           IFetchLeaderBoardEntriesResponseListener callback) {
+        return false;
     }
 
     @Override
@@ -163,7 +170,8 @@ public class NoGameServiceClient implements IGameServiceClient {
 
     @Override
     public boolean incrementAchievement(String achievementId, int incNum, float completionPercentage) {
-        Gdx.app.log(GAMESERVICE_ID, "Increment achievement " + incNum + " (" + completionPercentage + "%)");
+        Gdx.app.log(GAMESERVICE_ID, "Increment achievement "+ achievementId
+                + " by " + incNum + " (" + completionPercentage + "%)");
         return isConnected();
     }
 
@@ -173,13 +181,37 @@ public class NoGameServiceClient implements IGameServiceClient {
     }
 
     @Override
-    public void loadGameState(String fileId) {
+    public void saveGameState(String fileId, byte[] gameState, long progressValue, ISaveGameStateResponseListener
+            listener) {
+
+    }
+
+    @Override
+    public void loadGameState(String fileId, ILoadGameStateResponseListener listener) {
         Gdx.app.log(GAMESERVICE_ID, "Called load game state " + fileId);
     }
 
     @Override
-    public CloudSaveCapability supportsCloudGameState() {
-        return CloudSaveCapability.NotSupported;
+    public boolean deleteGameState(String fileId) {
+        return false;
+    }
+
+    @Override
+    public boolean deleteGameState(String fileId, ISaveGameStateResponseListener success) {
+        return false;
+    }
+
+    @Override
+    public boolean fetchGameStates(IFetchGameStatesListResponseListener callback) {
+        return false;
+    }
+
+    @Override
+    public boolean isFeatureSupported(GameServiceFeature feature) {
+        return feature.equals(GameServiceFeature.SubmitEvents)
+                || feature.equals(GameServiceFeature.ShowAchievementsUI) && providesAchievementsUI
+                || feature.equals(GameServiceFeature.ShowLeaderboardUI) && providesLeaderboardUI
+                || feature.equals(GameServiceFeature.ShowAllLeaderboardsUI) && providesLeaderboardUI;
     }
 
 }

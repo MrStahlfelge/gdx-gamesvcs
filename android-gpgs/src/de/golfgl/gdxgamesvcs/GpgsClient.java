@@ -15,12 +15,16 @@ import com.google.android.gms.drive.Drive;
 import com.google.android.gms.games.Games;
 import com.google.android.gms.games.GamesActivityResultCodes;
 import com.google.android.gms.games.GamesStatusCodes;
-import com.google.android.gms.games.multiplayer.Invitation;
-import com.google.android.gms.games.multiplayer.Multiplayer;
 import com.google.android.gms.games.snapshot.Snapshot;
 import com.google.android.gms.games.snapshot.SnapshotMetadataChange;
 import com.google.android.gms.games.snapshot.Snapshots;
 import com.google.example.games.basegameutils.BaseGameUtils;
+
+import de.golfgl.gdxgamesvcs.achievement.IFetchAchievementsResponseListener;
+import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
+import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
+import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
+import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
 
 /**
  * Client for Google Play Games
@@ -164,17 +168,6 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         firstConnectAttempt = MAX_CONNECTFAIL_RETRIES;
         isConnectionPending = false;
         gameListener.gsConnected();
-
-        // TODO Erhaltene Einladungen... gleich in Multiplayer gehen
-        if (bundle != null) {
-            Invitation inv =
-                    bundle.getParcelable(Multiplayer.EXTRA_INVITATION);
-
-            if (inv != null)
-                Log.i(GAMESERVICE_ID, "Multiplayer Invitation: " + inv.getInvitationId() + " from "
-                        + inv.getInviter().getParticipantId());
-        }
-
     }
 
     @Override
@@ -194,11 +187,6 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     @Override
     public boolean isConnectionPending() {
         return isConnectionPending;
-    }
-
-    @Override
-    public boolean providesLeaderboardUI() {
-        return true;
     }
 
     @Override
@@ -322,11 +310,6 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     }
 
     @Override
-    public boolean providesAchievementsUI() {
-        return true;
-    }
-
-    @Override
     public void showAchievements() throws GameServiceException {
         if (isConnected())
             myContext.startActivityForResult(Games.Achievements.getAchievementsIntent(mGoogleApiClient),
@@ -334,6 +317,12 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         else
             throw new GameServiceException.NotConnectedException();
 
+    }
+
+    @Override
+    public boolean fetchAchievements(IFetchAchievementsResponseListener callback) {
+        //TODO supported by GPGS
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -346,6 +335,13 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
             return true;
         } else
             return false;
+    }
+
+    @Override
+    public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
+                                           IFetchLeaderBoardEntriesResponseListener callback) {
+        //TODO supported by GPGS
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -384,17 +380,22 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     }
 
     @Override
-    public void saveGameState(final String id, final byte[] gameState, final long progressValue)
-            throws GameServiceException {
+    public void saveGameState(String id, byte[] gameState, long progressValue) {
+        saveGameState(id, gameState, progressValue, null);
+    }
+
+    @Override
+    public void saveGameState(final String fileId, final byte[] gameState, final long progressValue,
+                              final ISaveGameStateResponseListener listener) {
         if (!driveApiEnabled)
-            throw new GameServiceException.NotSupportedException();
+            throw new UnsupportedOperationException();
 
         if (isConnected()) {
 
             AsyncTask<Void, Void, Boolean> task = new AsyncTask<Void, Void, Boolean>() {
                 @Override
                 protected Boolean doInBackground(Void... params) {
-                    return saveGameStateSync(id, gameState, progressValue);
+                    return saveGameStateSync(fileId, gameState, progressValue, listener);
                 }
             };
 
@@ -403,9 +404,13 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     }
 
     @NonNull
-    public Boolean saveGameStateSync(String id, byte[] gameState, long progressValue) {
-        if (!isConnected())
+    public Boolean saveGameStateSync(String id, byte[] gameState, long progressValue,
+                                     ISaveGameStateResponseListener listener) {
+        if (!isConnected()) {
+            if (listener != null)
+                listener.onGameStateSaved(false, "NOT_CONNECTED");
             return false;
+        }
 
         // Open the snapshot, creating if necessary
         Snapshots.OpenSnapshotResult open = Games.Snapshots.open(
@@ -415,11 +420,15 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
 
         if (snapshot == null) {
             Log.w(GAMESERVICE_ID, "Could not open Snapshot.");
+            if (listener != null)
+                listener.onGameStateSaved(false, "Could not open Snapshot.");
             return false;
         }
 
         if (progressValue < snapshot.getMetadata().getProgressValue()) {
             Log.e(GAMESERVICE_ID, "Progress of saved game state higher than current one. Did not save.");
+            if (listener != null)
+                listener.onGameStateSaved(true, null);
             return false;
         }
 
@@ -437,12 +446,15 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
 
         if (!commit.getStatus().isSuccess()) {
             Log.w(GAMESERVICE_ID, "Failed to commit Snapshot:" + commit.getStatus().getStatusMessage());
-
+            if (listener != null)
+                listener.onGameStateSaved(false, commit.getStatus().getStatusMessage());
             return false;
         }
 
         // No failures
         Log.i(GAMESERVICE_ID, "Successfully saved gamestate with " + gameState.length + "B");
+        if (listener != null)
+            listener.onGameStateSaved(true, null);
         return true;
     }
 
@@ -462,20 +474,20 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     }
 
     @Override
-    public void loadGameState(final String id) throws GameServiceException {
+    public void loadGameState(final String id, final ILoadGameStateResponseListener listener) {
 
         if (!driveApiEnabled)
-            throw new GameServiceException.NotSupportedException();
+            throw new UnsupportedOperationException();
 
         if (!isConnected()) {
-            gameListener.gsGameStateLoaded(null);
+            listener.gsGameStateLoaded(null);
             return;
         }
 
         AsyncTask<Void, Void, Boolean> task = new AsyncTask<Void, Void, Boolean>() {
             @Override
             protected Boolean doInBackground(Void... params) {
-                return loadGameStateSync(id);
+                return loadGameStateSync(id, listener);
             }
         };
 
@@ -483,14 +495,37 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     }
 
     @Override
-    public CloudSaveCapability supportsCloudGameState() {
-        return (driveApiEnabled ? CloudSaveCapability.MultipleFilesSupported : CloudSaveCapability.NotSupported);
+    public boolean deleteGameState(String fileId) {
+        //TODO supported by GPGS
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean deleteGameState(String fileId, ISaveGameStateResponseListener success) {
+        //TODO supported by GPGS
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean fetchGameStates(IFetchGameStatesListResponseListener callback) {
+        //TODO supported by GPGS
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isFeatureSupported(GameServiceFeature feature) {
+        return feature.equals(GameServiceFeature.GameStateStorage) && driveApiEnabled
+                || feature.equals(GameServiceFeature.GameStateMultipleFiles) && driveApiEnabled
+                || feature.equals(GameServiceFeature.ShowAchievementsUI)
+                || feature.equals(GameServiceFeature.ShowAllLeaderboardsUI)
+                || feature.equals(GameServiceFeature.ShowLeaderboardUI)
+                || feature.equals(GameServiceFeature.SubmitEvents);
     }
 
     @NonNull
-    public Boolean loadGameStateSync(String id) {
+    public Boolean loadGameStateSync(String id, ILoadGameStateResponseListener listener) {
         if (!isConnected()) {
-            gameListener.gsGameStateLoaded(null);
+            listener.gsGameStateLoaded(null);
             return false;
         }
 
@@ -502,7 +537,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
 
         if (snapshot == null) {
             Log.w(GAMESERVICE_ID, "Could not open Snapshot.");
-            gameListener.gsGameStateLoaded(null);
+            listener.gsGameStateLoaded(null);
             return false;
         }
 
@@ -510,11 +545,11 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         try {
             byte[] mSaveGameData = null;
             mSaveGameData = snapshot.getSnapshotContents().readFully();
-            gameListener.gsGameStateLoaded(mSaveGameData);
+            listener.gsGameStateLoaded(mSaveGameData);
             return true;
         } catch (Throwable t) {
             Log.e(GAMESERVICE_ID, "Error while reading Snapshot.", t);
-            gameListener.gsGameStateLoaded(null);
+            listener.gsGameStateLoaded(null);
             return false;
         }
 

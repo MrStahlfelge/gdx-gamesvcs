@@ -13,6 +13,12 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
+import de.golfgl.gdxgamesvcs.achievement.IFetchAchievementsResponseListener;
+import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
+import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
+import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
+import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
+
 /**
  * GameServiceClient for GameJolt API
  * <p>
@@ -28,11 +34,12 @@ import java.util.Map;
 
 public class GameJoltClient implements IGameServiceClient {
     public static final String GAMESERVICE_ID = IGameServiceClient.GS_GAMEJOLT_ID;
-    public static final String GJ_GATEWAY = "http://gamejolt.com/api/game/v1/";
     public static final String GJ_USERNAME_PARAM = "gjapi_username";
     public static final String GJ_USERTOKEN_PARAM = "gjapi_token";
     protected static final int GJ_PING_INTERVAL = 30;
 
+    // This is not static and not final for overriding reasons
+    public String GJ_GATEWAY = "https://gamejolt.com/api/game/v1/";
     protected IGameServiceListener gsListener;
     protected String userName;
     protected String userToken;
@@ -322,23 +329,19 @@ public class GameJoltClient implements IGameServiceClient {
     }
 
     @Override
-    public boolean providesLeaderboardUI() {
-        return false;
-    }
-
-    @Override
     public void showLeaderboards(String leaderBoardId) throws GameServiceException {
         throw new GameServiceException.NotSupportedException();
     }
 
     @Override
-    public boolean providesAchievementsUI() {
-        return false;
+    public void showAchievements() throws GameServiceException {
+        throw new GameServiceException.NotSupportedException();
     }
 
     @Override
-    public void showAchievements() throws GameServiceException {
-        throw new GameServiceException.NotSupportedException();
+    public boolean fetchAchievements(IFetchAchievementsResponseListener callback) {
+        //TODO Supported by GameJolt
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -385,6 +388,13 @@ public class GameJoltClient implements IGameServiceClient {
         Gdx.net.sendHttpRequest(http, new NoOpResponseListener());
 
         return true;
+    }
+
+    @Override
+    public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
+                                           IFetchLeaderBoardEntriesResponseListener callback) {
+        //TODO Supported by GameJolt
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -505,12 +515,39 @@ public class GameJoltClient implements IGameServiceClient {
     }
 
     @Override
-    public void saveGameState(String fileId, byte[] gameState, long progressValue) throws GameServiceException
-            .NotSupportedException {
-        //TODO - it is supported by Gamejolt, but not by this client
-        //see storeData
+    public void saveGameState(String fileId, byte[] gameState, long progressValue) {
+        //TODO Supported by GameJolt
+        throw new UnsupportedOperationException();
+    }
 
-        throw new GameServiceException.NotSupportedException();
+    @Override
+    public void saveGameState(String fileId, byte[] gameState, long progressValue, ISaveGameStateResponseListener
+            listener) {
+        //TODO Supported by GameJolt
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean deleteGameState(String fileId) {
+        //TODO Supported by GameJolt
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean deleteGameState(String fileId, ISaveGameStateResponseListener success) {
+        //TODO Supported by GameJolt
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean fetchGameStates(IFetchGameStatesListResponseListener callback) {
+        //TODO Supported by GameJolt
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isFeatureSupported(GameServiceFeature feature) {
+        return feature.equals(GameServiceFeature.SubmitEvents);
     }
 
     protected void storeData(String dataKey, boolean globalKey, String content) {
@@ -540,16 +577,9 @@ public class GameJoltClient implements IGameServiceClient {
     }
 
     @Override
-    public void loadGameState(String fileId) throws GameServiceException {
+    public void loadGameState(String fileId, ILoadGameStateResponseListener listener) {
         //TODO - it is supported by Gamejolt, but not by this client
-
-        throw new GameServiceException.NotSupportedException();
-    }
-
-    @Override
-    public CloudSaveCapability supportsCloudGameState() {
-        //TODO - it is supported by Gamejolt, but not by this client
-        return CloudSaveCapability.NotSupported;
+        throw new UnsupportedOperationException();
     }
 
     protected void addGameIDUserNameUserToken(Map<String, String> params) {

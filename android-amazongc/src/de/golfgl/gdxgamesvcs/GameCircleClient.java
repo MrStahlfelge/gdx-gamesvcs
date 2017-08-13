@@ -3,7 +3,6 @@ package de.golfgl.gdxgamesvcs;
 import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.SystemClock;
-import android.util.Log;
 
 import com.amazon.ags.api.AGResponseCallback;
 import com.amazon.ags.api.AmazonGamesCallback;
@@ -21,6 +20,12 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.utils.Base64Coder;
 
 import java.util.EnumSet;
+
+import de.golfgl.gdxgamesvcs.achievement.IFetchAchievementsResponseListener;
+import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
+import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
+import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
+import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
 
 /**
  * Client implementation for Amazon GameCircle
@@ -193,7 +198,7 @@ public class GameCircleClient implements IGameServiceClient {
     @Override
     public void disconnect() {
         if (isConnected()) {
-            Log.i(GS_CLIENT_ID, "Disconnecting from GameCircle");
+            Gdx.app.log(GS_CLIENT_ID, "Disconnecting from GameCircle");
 
             AmazonGamesClient.release();
             isConnected = false;
@@ -206,7 +211,7 @@ public class GameCircleClient implements IGameServiceClient {
     @Override
     public void logOff() {
         if (isConnected()) {
-            Log.i(GS_CLIENT_ID, "Shutting down GameCircle client");
+            Gdx.app.log(GS_CLIENT_ID, "Shutting down GameCircle client");
 
             AmazonGamesClient.shutdown();
             cachedPlayerAlias = null;
@@ -231,11 +236,6 @@ public class GameCircleClient implements IGameServiceClient {
     }
 
     @Override
-    public boolean providesLeaderboardUI() {
-        return true;
-    }
-
-    @Override
     public void showLeaderboards(String leaderBoardId) throws GameServiceException {
         if (isConnected()) {
             if (leaderBoardId != null)
@@ -247,16 +247,17 @@ public class GameCircleClient implements IGameServiceClient {
     }
 
     @Override
-    public boolean providesAchievementsUI() {
-        return true;
-    }
-
-    @Override
     public void showAchievements() throws GameServiceException {
         if (isConnected())
             agsClient.getAchievementsClient().showAchievementsOverlay();
         else
             throw new GameServiceException.NotConnectedException();
+    }
+
+    @Override
+    public boolean fetchAchievements(IFetchAchievementsResponseListener callback) {
+        //TODO supported by GameCircle
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -266,6 +267,13 @@ public class GameCircleClient implements IGameServiceClient {
 
         agsClient.getLeaderboardsClient().submitScore(leaderboardId, score);
         return true;
+    }
+
+    @Override
+    public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
+                                           IFetchLeaderBoardEntriesResponseListener callback) {
+        //TODO supported by GameCircle
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -289,14 +297,22 @@ public class GameCircleClient implements IGameServiceClient {
     }
 
     @Override
-    public void saveGameState(String fileId, byte[] gameState, long progressValue) throws GameServiceException {
-        if (!whisperSyncEnabled)
-            throw new GameServiceException.NotSupportedException();
-
-        saveGameStateSync(fileId, gameState, progressValue);
+    public void saveGameState(String fileId, byte[] gameState, long progressValue) {
+        saveGameState(fileId, gameState, progressValue, null);
     }
 
-    public Boolean saveGameStateSync(String id, byte[] gameState, long progressValue) {
+    @Override
+    public void saveGameState(String fileId, byte[] gameState, long progressValue,
+                              ISaveGameStateResponseListener listener) {
+        if (!whisperSyncEnabled)
+            throw new UnsupportedOperationException();
+
+        //Whispersync caches and is asynchronous anyway
+        saveGameStateSync(fileId, gameState, progressValue, listener);
+    }
+
+    public Boolean saveGameStateSync(String id, byte[] gameState, long progressValue,
+                                     ISaveGameStateResponseListener listener) {
         if (!isConnected() || !whisperSyncEnabled)
             return false;
 
@@ -308,37 +324,68 @@ public class GameCircleClient implements IGameServiceClient {
         if (!savedProgress.isSet() || savedProgress.asLong() <= progressValue) {
             savedData.set(new String(Base64Coder.encode(gameState)));
             savedProgress.set(progressValue);
+            if (listener != null)
+                listener.onGameStateSaved(true, null);
             return true;
         } else {
             Gdx.app.error(GameCircleClient.GS_CLIENT_ID, "Progress of saved game state higher than current one. Did " +
                     "not save.");
+            if (listener != null)
+                listener.onGameStateSaved(true, null);
             return false;
         }
     }
 
     @Override
-    public void loadGameState(final String fileId) throws GameServiceException {
+    public void loadGameState(final String fileId, final ILoadGameStateResponseListener listener) {
         if (!whisperSyncEnabled)
-            throw new GameServiceException.NotSupportedException();
+            throw new UnsupportedOperationException();
 
         if (!isConnected()) {
-            gsListener.gsGameStateLoaded(null);
+            listener.gsGameStateLoaded(null);
             return;
         }
 
         AsyncTask<Void, Void, Boolean> task = new AsyncTask<Void, Void, Boolean>() {
             @Override
             protected Boolean doInBackground(Void... params) {
-                return loadGameStateSync(fileId);
+                return loadGameStateSync(fileId, listener);
             }
         };
 
         task.execute();
     }
 
-    protected boolean loadGameStateSync(String fileId) {
+    @Override
+    public boolean deleteGameState(String fileId) {
+        //TODO supported by GameCircle
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean deleteGameState(String fileId, ISaveGameStateResponseListener success) {
+        //TODO supported by GameCircle
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean fetchGameStates(IFetchGameStatesListResponseListener callback) {
+        //TODO supported by GameCircle
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isFeatureSupported(GameServiceFeature feature) {
+        return feature.equals(GameServiceFeature.GameStateStorage) && whisperSyncEnabled
+                || feature.equals(GameServiceFeature.GameStateMultipleFiles) && whisperSyncEnabled
+                || feature.equals(GameServiceFeature.ShowAchievementsUI)
+                || feature.equals(GameServiceFeature.ShowAllLeaderboardsUI)
+                || feature.equals(GameServiceFeature.ShowLeaderboardUI);
+    }
+
+    protected boolean loadGameStateSync(String fileId, ILoadGameStateResponseListener listener) {
         if (!isConnected() || !whisperSyncEnabled) {
-            gsListener.gsGameStateLoaded(null);
+            listener.gsGameStateLoaded(null);
             return false;
         }
 
@@ -356,17 +403,13 @@ public class GameCircleClient implements IGameServiceClient {
         SyncableString savedData = gameDataMap.getLatestString(fileId);
         if (!savedData.isSet()) {
             Gdx.app.log(GameCircleClient.GS_CLIENT_ID, "No data in whispersync for " + fileId);
-            gsListener.gsGameStateLoaded(null);
+            listener.gsGameStateLoaded(null);
             return false;
         } else {
             Gdx.app.log(GameCircleClient.GS_CLIENT_ID, "Loaded " + fileId + "from whispersync successfully.");
-            gsListener.gsGameStateLoaded(Base64Coder.decode(savedData.getValue()));
+            listener.gsGameStateLoaded(Base64Coder.decode(savedData.getValue()));
             return true;
         }
     }
 
-    @Override
-    public CloudSaveCapability supportsCloudGameState() {
-        return (whisperSyncEnabled ? CloudSaveCapability.MultipleFilesSupported : CloudSaveCapability.NotSupported);
-    }
 }
