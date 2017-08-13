@@ -3,6 +3,7 @@ package de.golfgl.gdxgamesvcs;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Net;
 import com.badlogic.gdx.net.HttpParametersUtils;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.Timer;
@@ -18,6 +19,7 @@ import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
+import de.golfgl.gdxgamesvcs.leaderboard.LeaderBoardEntry;
 
 /**
  * GameServiceClient for GameJolt API
@@ -392,9 +394,78 @@ public class GameJoltClient implements IGameServiceClient {
 
     @Override
     public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
-                                           IFetchLeaderBoardEntriesResponseListener callback) {
-        //TODO Supported by GameJolt
-        throw new UnsupportedOperationException();
+                                           final IFetchLeaderBoardEntriesResponseListener callback) {
+        if (!initialized) {
+            Gdx.app.error(GAMESERVICE_ID, "Cannot fetch leaderboard: set app ID via initialize() first");
+            return false;
+        }
+
+        Map<String, String> params = new HashMap<String, String>();
+        // no user name or token added! We want to use the global storage.
+        // http://gamejolt.com/api/doc/game/data-store/update
+        if (relatedToPlayer && isConnected())
+            addGameIDUserNameUserToken(params);
+        else
+            params.put("game_id", gjAppId);
+
+        params.put("limit", String.valueOf(limit));
+
+        if (leaderBoardId != null) {
+            Integer boardId = scoreTableMapper.mapToGsId(leaderBoardId);
+            if (boardId != null)
+                params.put("table_id", String.valueOf(boardId));
+        }
+
+        final Net.HttpRequest http = buildJsonRequest("scores/", params);
+        if (http == null)
+            return false;
+
+        Gdx.net.sendHttpRequest(http, new Net.HttpResponseListener() {
+            @Override
+            public void handleHttpResponse(Net.HttpResponse httpResponse) {
+
+                JsonValue response = null;
+                String json = httpResponse.getResultAsString();
+                try {
+                    response = new JsonReader().parse(json).get("response");
+                } catch (Throwable t) {
+                    // eat
+                }
+
+                if (response == null || !response.getBoolean("success")) {
+                    Gdx.app.error(GAMESERVICE_ID, "Could not parse answer from GameJolt: " + json);
+                    callback.onLeaderBoardResponse(null);
+                } else {
+                    try {
+                        JsonValue scores = response.get("scores");
+                        int rank = 0;
+                        Array<LeaderBoardEntry> les = new Array<LeaderBoardEntry>();
+                        for (JsonValue score = scores.child; score != null; score = score.next) {
+                            rank++;
+                            GjScoreboardEntry gje = GjScoreboardEntry.fromJson(score, rank);
+                            if (gje != null)
+                                les.add(gje);
+                        }
+                        callback.onLeaderBoardResponse(les);
+                    } catch (Throwable t) {
+                        Gdx.app.error(GAMESERVICE_ID, "Could not parse answer from GameJolt", t);
+                        callback.onLeaderBoardResponse(null);
+                    }
+                }
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                callback.onLeaderBoardResponse(null);
+            }
+
+            @Override
+            public void cancelled() {
+                callback.onLeaderBoardResponse(null);
+            }
+        });
+
+        return true;
     }
 
     /**
@@ -535,7 +606,8 @@ public class GameJoltClient implements IGameServiceClient {
 
     @Override
     public boolean isFeatureSupported(GameServiceFeature feature) {
-        return feature.equals(GameServiceFeature.SubmitEvents);
+        return feature.equals(GameServiceFeature.SubmitEvents)
+                || feature.equals(GameServiceFeature.FetchLeaderBoardEntries);
     }
 
     protected void storeData(String dataKey, boolean globalKey, String content) {

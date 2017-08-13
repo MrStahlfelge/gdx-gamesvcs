@@ -11,7 +11,7 @@ public class LeaderBoardEntry {
     protected String scoreTag;
     protected String userDisplayName;
     protected String userId;
-    protected int scoreRank;
+    protected String scoreRank;
 
     /**
      * Leaderboard entryformatted value
@@ -63,7 +63,7 @@ public class LeaderBoardEntry {
      *
      * @return rank on leaderboard
      */
-    public int getScoreRank() {
+    public String getScoreRank() {
         return scoreRank;
     }
 }
