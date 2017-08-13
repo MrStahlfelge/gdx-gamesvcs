@@ -1,5 +1,6 @@
 package de.golfgl.gdxgamesvcs;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
@@ -13,16 +14,20 @@ public class GpgsClientTest extends GameServiceClientTest<GpgsClient>
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
 		config.width = 800;
 		config.height = 950;
-		new LwjglApplication(new GpgsClientTest(), config);
+		
+		GpgsClient client = new GpgsClient();
+		client.setLogLevel(Application.LOG_ERROR);
+		
+		new LwjglApplication(new GpgsClientTest(client), config);
 	}
 	
 	private TextField appName;
 	private TextField clientSecretPath;
-
-	public GpgsClientTest() {
-		super(new GpgsClient());
-	}
 	
+	public GpgsClientTest(GpgsClient gsClient) {
+		super(gsClient);
+	}
+
 	@Override
 	protected void createServiceSpecificInitialization(Table table) 
 	{
