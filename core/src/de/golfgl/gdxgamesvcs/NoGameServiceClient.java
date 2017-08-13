@@ -12,8 +12,10 @@ import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListene
  * NoGameServiceClient is an implementation for IGameServiceClient available on any platform.
  * <p>
  * It always performs no ops, but is logging its actions.
- * You can use it for testing purposes in your desktop project, but also in your productive game to avoid checking
- * for null pointers on every call. See {@link #setDebugConnectEnabled(boolean)} option.
+ * You can use it in your productive game to avoid checking for null pointers on every call.
+ * <p>
+ * For testing purposes in your desktop project, it's recommended to use {@link MockGameServiceClient} instead
+ * which provides more testing features.
  * <p>
  * And of course you can extend it for your own implementation of a game service - contributions are very welcome!
  * <p>
@@ -27,25 +29,6 @@ public class NoGameServiceClient implements IGameServiceClient {
     protected IGameServiceListener gsListener;
 
     protected boolean connected;
-    private boolean providesLeaderboardUI;
-    private boolean providesAchievementsUI;
-    private boolean debugConnectEnabled = true;
-
-    /**
-     * Set to false if you don't want the NoGameServiceClient to emulate to be connected. While this can be useful
-     * in development, it could be better for productive environments to ensure that isConnected() is always false.
-     *
-     * @param debugConnectEnabled
-     * @return this, for method chaining
-     */
-    public NoGameServiceClient setDebugConnectEnabled(boolean debugConnectEnabled) {
-        if (isConnected())
-            throw new IllegalStateException();
-
-        this.debugConnectEnabled = debugConnectEnabled;
-
-        return this;
-    }
 
     @Override
     public String getGameServiceId() {
@@ -63,9 +46,6 @@ public class NoGameServiceClient implements IGameServiceClient {
 
         if (connected)
             return true;
-
-        if (!debugConnectEnabled)
-            return false;
 
         connected = true;
 
@@ -107,34 +87,16 @@ public class NoGameServiceClient implements IGameServiceClient {
         return false;
     }
 
-    /**
-     * for testing purposes
-     */
-    public NoGameServiceClient setProvidesLeaderboardUI(boolean providesLeaderboardUI) {
-        this.providesLeaderboardUI = providesLeaderboardUI;
-        return this;
-    }
-
     @Override
     public void showLeaderboards(String leaderBoardId) throws GameServiceException {
         Gdx.app.log(GAMESERVICE_ID, "Show leaderboards called: " + leaderBoardId);
-
-        if (!this.providesLeaderboardUI)
-            throw new GameServiceException.NotSupportedException();
-    }
-
-    public NoGameServiceClient setProvidesAchievementsUI(boolean providesAchievementsUI) {
-        this.providesAchievementsUI = providesAchievementsUI;
-
-        return this;
+        throw new GameServiceException.NotSupportedException();
     }
 
     @Override
     public void showAchievements() throws GameServiceException {
         Gdx.app.log(GAMESERVICE_ID, "Show achievements called.");
-
-        if (!this.providesAchievementsUI)
-            throw new GameServiceException.NotSupportedException();
+        throw new GameServiceException.NotSupportedException();
     }
 
     @Override
@@ -208,10 +170,7 @@ public class NoGameServiceClient implements IGameServiceClient {
 
     @Override
     public boolean isFeatureSupported(GameServiceFeature feature) {
-        return feature.equals(GameServiceFeature.SubmitEvents)
-                || feature.equals(GameServiceFeature.ShowAchievementsUI) && providesAchievementsUI
-                || feature.equals(GameServiceFeature.ShowLeaderboardUI) && providesLeaderboardUI
-                || feature.equals(GameServiceFeature.ShowAllLeaderboardsUI) && providesLeaderboardUI;
+        return false;
     }
 
 }
