@@ -23,7 +23,11 @@ import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.badlogic.gdx.utils.ObjectMap;
 import com.badlogic.gdx.utils.Scaling;
 
-import de.golfgl.gdxgamesvcs.LeaderBoard.Score;
+import de.golfgl.gdxgamesvcs.achievement.Achievement;
+import de.golfgl.gdxgamesvcs.achievement.IFetchAchievementsResponseListener;
+import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
+import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
+import de.golfgl.gdxgamesvcs.leaderboard.LeaderBoardEntry;
 
 /**
  * Here is an example of fallback UI.
@@ -42,14 +46,14 @@ public class FallbackUIExample
 {
 	final private Stage stage;
 	final private Skin skin;
-	final private IGameServiceClientEx gsClient;
+	final private IGameServiceClient gsClient;
 	
 	private Table popup;
 	
 	final private ObjectMap<String, Texture> textureCache = new ObjectMap<String, Texture>();
 	final private ObjectMap<String, Pixmap> pixmapCache = new ObjectMap<String, Pixmap>();
 	
-	public FallbackUIExample(Stage stage, Skin skin, IGameServiceClientEx gsClient) {
+	public FallbackUIExample(Stage stage, Skin skin, IGameServiceClient gsClient) {
 		super();
 		this.stage = stage;
 		this.skin = skin;
@@ -128,21 +132,21 @@ public class FallbackUIExample
 	
 	public void showLeaderboards(final String leaderBoardId) throws GameServiceException {
 		showWait();
-		gsClient.fetchLeaderboard(leaderBoardId, false, false, new ILeaderBoardCallback() {
+		gsClient.fetchLeaderboardEntries(leaderBoardId, 100, false, new IFetchLeaderBoardEntriesResponseListener() {
 			@Override
-			public void onLeaderBoardResponse(final LeaderBoard leaderBoard) {
+			public void onLeaderBoardResponse(final Array<LeaderBoardEntry> entries) {
 				// download some icons
-				if(leaderBoard != null){
-					loadPixmap(leaderBoard.iconUrl);
-					for(Score score : leaderBoard.scores){
-						loadPixmap(score.avatarUrl);
+				if(entries != null){
+					// XXX loadPixmap(leaderBoard.iconUrl);
+					for(LeaderBoardEntry score : entries){
+						loadPixmap(score.getAvatarUrl());
 					}
 				}
 				Gdx.app.postRunnable(new Runnable() {
 					@Override
 					public void run() {
-						if(leaderBoard != null){
-							showLeaderboardsGUI(leaderBoard);
+						if(entries != null){
+							showLeaderboardsGUI(entries);
 						}else{
 							showError();
 						}
@@ -152,7 +156,7 @@ public class FallbackUIExample
 		});
 	}
 	
-	private void showLeaderboardsGUI(LeaderBoard lb){
+	private void showLeaderboardsGUI(Array<LeaderBoardEntry> entries){
 		
 		final Table table = new Table(skin);
 		table.defaults().pad(1, 5, 1, 5);
@@ -164,12 +168,13 @@ public class FallbackUIExample
 		table.add(btClose).center().colspan(4).row();
 		
 		// leader board header
-		Image image = new Image(getTexture(lb.iconUrl));
-		image.setScaling(Scaling.fit);
-		table.add(image).size(32);
-		
-		table.add(lb.name).colspan(3);
-		table.row();
+		// XXX no more leader board header ...
+//		Image image = new Image(getTexture(lb.iconUrl));
+//		image.setScaling(Scaling.fit);
+//		table.add(image).size(32);
+//		
+//		table.add(lb.name).colspan(3);
+//		table.row();
 		
 		// leaderboard table header
 		table.add("Player").colspan(2);
@@ -178,24 +183,24 @@ public class FallbackUIExample
 		table.row();
 		
 		// leaderboard table body
-		for(Score score : lb.scores){
+		for(LeaderBoardEntry score : entries){
 			
-			if(score.avatarUrl != null){
-				Image avatar = new Image(getTexture(score.avatarUrl));
+			if(score.getAvatarUrl() != null){
+				Image avatar = new Image(getTexture(score.getAvatarUrl()));
 				avatar.setScaling(Scaling.fit);
 				table.add(avatar).size(32);
 			}else{
 				table.add().size(32);
 			}
 			
-			Label name = new Label(score.name, skin);
-			if(score.currrentPlayer){
+			Label name = new Label(score.getUserDisplayName(), skin);
+			if(score.isCurrentPlayer()){
 				name.setColor(Color.RED);
 			}
 			
 			table.add(name);
-			table.add(score.rank);
-			table.add(score.score);
+			table.add(score.getScoreRank());
+			table.add(score.getFormattedValue());
 			table.row();
 		}
 		
@@ -209,13 +214,14 @@ public class FallbackUIExample
 	
 	public void showAchievements() {
 		showWait();
-		gsClient.fetchAchievements(new IAchievementCallback() {
+		gsClient.fetchAchievements(new IFetchAchievementsResponseListener() {
+			
 			@Override
-			public void onAchievementsResponse(final Array<Achievement> achievements) {
+			public void onFetchAchievementsResponse(final Array<Achievement> achievements) {
 				// download some icons
 				if(achievements != null){
 					for(Achievement a : achievements){
-						loadPixmap(a.iconUrl);
+						loadPixmap(a.getIconUrl());
 					}
 				}
 				Gdx.app.postRunnable(new Runnable() {
@@ -248,17 +254,17 @@ public class FallbackUIExample
 		
 		for(Achievement a : achievements){
 			
-			Image image = new Image(getTexture(a.iconUrl));
+			Image image = new Image(getTexture(a.getIconUrl()));
 			image.setScaling(Scaling.fit);
 			
 			table.add(image).size(32);
-			table.add(a.name);
-			table.add(a.description);
+			table.add(a.getTitle());
+			table.add(a.getDescription());
 			
 			Label statusLabel = new Label("", skin);
 			statusLabel.setAlignment(Align.right);
-			statusLabel.setColor(a.progress < 100 ? Color.GRAY : Color.GREEN);
-			statusLabel.setText(a.progress + " %");
+			statusLabel.setColor(a.isUnlocked() ? Color.GREEN : Color.GRAY);
+			statusLabel.setText(MathUtils.roundPositive(100 * a.getCompletionPercentage()) + " %");
 			table.add(statusLabel);
 			
 			table.row();
@@ -274,9 +280,10 @@ public class FallbackUIExample
 	
 	public void showGameStates(){
 		showWait();
-		gsClient.fetchGameStates(new IGameStatesCallback() {
+		gsClient.fetchGameStates(new IFetchGameStatesListResponseListener() {
+			
 			@Override
-			public void onGameStatesResponse(final Array<String> gameStates) {
+			public void onFetchGameStatesListResponse(final Array<String> gameStates) {
 				Gdx.app.postRunnable(new Runnable() {
 					@Override
 					public void run() {

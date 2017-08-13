@@ -15,9 +15,10 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
-import de.golfgl.gdxgamesvcs.IGameServiceClientEx.GameServiceFeature;
+import de.golfgl.gdxgamesvcs.IGameServiceClient.GameServiceFeature;
+import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
 
-abstract public class GameServiceClientTest<T extends IGameServiceClientEx> extends Game
+abstract public class GameServiceClientTest<T extends IGameServiceClient> extends Game
 {
 	private static final String TAG = "GameServiceClientTest";
 	
@@ -58,17 +59,8 @@ abstract public class GameServiceClientTest<T extends IGameServiceClientEx> exte
 		
 		fallbackUI = new FallbackUIExample(stage, skin, gsClient);
 		
-		gsClient.setListener(new GameServiceSafeListener(new IGameServiceListener() {
-			
-			@Override
-			public void gsGameStateLoaded(byte[] gameState) {
-				if(gameState != null){
-					gameDataLoaded.setText("game state loaded : " + gameState.length + " bytes");
-				}else{
-					gameDataLoaded.setText("game state loading failed");
-				}
-			}
-			
+		gsClient.setListener(new GameServiceRenderThreadListener(new IGameServiceListener() {
+
 			@Override
 			public void gsErrorMsg(GsErrorType et, String msg) {
 				Gdx.app.error(TAG, et.toString() + " : " + msg);
@@ -94,9 +86,6 @@ abstract public class GameServiceClientTest<T extends IGameServiceClientEx> exte
 		createTitle(table, "Connector Information");
 		
 		createInfo(table, "GameServiceId", gsClient.getGameServiceId());
-		createInfo(table, "providesAchievementsUI", String.valueOf(gsClient.providesAchievementsUI()));
-		createInfo(table, "providesLeaderboardUI", String.valueOf(gsClient.providesLeaderboardUI()));
-		createInfo(table, "supportsCloudGameState", String.valueOf(gsClient.supportsCloudGameState()));
 		
 		createTitle(table, "Service Specific Initialization");
 		
@@ -139,7 +128,7 @@ abstract public class GameServiceClientTest<T extends IGameServiceClientEx> exte
 			@Override
 			public void run() {
 				try {
-					if(gsClient.providesAchievementsUI()){
+					if(gsClient.isFeatureSupported(GameServiceFeature.ShowAchievementsUI)){
 						gsClient.showAchievements();
 					}else{
 						fallbackUI.showAchievements();
@@ -182,7 +171,7 @@ abstract public class GameServiceClientTest<T extends IGameServiceClientEx> exte
 			@Override
 			public void run() {
 				try {
-					if(gsClient.providesLeaderboardUI()){
+					if(gsClient.isFeatureSupported(GameServiceFeature.ShowLeaderboardUI)){
 						gsClient.showLeaderboards(leaderboardId.getText());
 					}else{
 						fallbackUI.showLeaderboards(leaderboardId.getText());
@@ -211,33 +200,35 @@ abstract public class GameServiceClientTest<T extends IGameServiceClientEx> exte
 		createAction(table, "showGameStates", new Runnable() {
 			@Override
 			public void run() {
-				if(gsClient.isFeatureSupported(GameServiceFeature.gameStatesUI)){
-					gsClient.showGameStates();
-				}else{
-					fallbackUI.showGameStates();
-				}
+				fallbackUI.showGameStates();
 			}
 		});
 		
 		createAction(table, "saveGameState", new Runnable() {
 			@Override
 			public void run() {
-				try {
-					gsClient.saveGameState(gameId.getText(), gameDataToSave.getText().getBytes(), 0);
-				} catch (GameServiceException e) {
-					Gdx.app.error(TAG, "API error", e);
-				}
+				gsClient.saveGameState(gameId.getText(), gameDataToSave.getText().getBytes(), 0);
 			}
 		});
 		createAction(table, "loadGameState", new Runnable() {
 			@Override
 			public void run() {
-				try {
-					gameDataLoaded.setText("Loading...");
-					gsClient.loadGameState(gameId.getText());
-				} catch (GameServiceException e) {
-					Gdx.app.error(TAG, "API error", e);
-				}
+				gameDataLoaded.setText("Loading...");
+				gsClient.loadGameState(gameId.getText(), new ILoadGameStateResponseListener() {
+					@Override
+					public void gsGameStateLoaded(final byte[] gameState) {
+						Gdx.app.postRunnable(new Runnable() {
+							@Override
+							public void run() {
+								if(gameState != null){
+									gameDataLoaded.setText("game state loaded : " + gameState.length + " bytes");
+								}else{
+									gameDataLoaded.setText("game state loading failed");
+								}
+							}
+						});
+					}
+				});
 			}
 		});
 		createAction(table, "deleteGameState", new Runnable() {
