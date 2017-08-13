@@ -248,7 +248,6 @@ public interface IGameServiceClient {
     boolean isFeatureSupported(GameServiceFeature feature);
 
     public static enum GameServiceFeature {
-        ShowGameStatesUI,
         FetchGameStates,
         GameStateStorage,
         GameStateDelete,
