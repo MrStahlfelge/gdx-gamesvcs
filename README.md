@@ -159,7 +159,7 @@ The interface provides a method for open up an API's default leaderboard or achi
 
 At the moment, such a default UI is only provided by Google Play Games and GameCircle on Android.
 
-Fetching scores and achievement status to show in your own UI is currently not supported. If you implement it, please contribute.
+Fetching scores and achievement status to show in your own UI is work in progress in v0.2.x.
     
 
 ## Updates & News
