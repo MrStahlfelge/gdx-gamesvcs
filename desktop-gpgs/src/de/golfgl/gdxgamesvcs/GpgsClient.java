@@ -8,7 +8,10 @@ import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -101,6 +104,26 @@ public class GpgsClient implements IGameServiceClientEx
 		}).start();
 	}
 	
+	/**
+	 * Configure underlying service log level
+	 * @param logLevel log level as defined in {@link Application} LOG_* constants.
+	 */
+	public void setLogLevel(int logLevel){
+		// configure root java logger to gdx log level.
+		Logger.getLogger("").setLevel(getLogLevel(logLevel));
+	}
+	
+	/** Gdx to Log4j log level mapping */
+	private static Level getLogLevel(int logLevel){
+		switch(logLevel){
+		case Application.LOG_NONE: return Level.OFF;
+		case Application.LOG_ERROR : return Level.SEVERE;
+		case Application.LOG_INFO : return Level.INFO;
+		case Application.LOG_DEBUG : return Level.FINEST;
+		default: return Level.ALL;
+		}
+	}
+
 	@Override
 	public String getGameServiceId() {
 		return IGameServiceClient.GS_GOOGLEPLAYGAMES_ID;
