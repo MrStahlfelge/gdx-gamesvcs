@@ -77,7 +77,7 @@ abstract public class GameServiceClientTest<T extends IGameServiceClientEx> exte
 			@Override
 			public void gsDisconnected() {
 				Gdx.app.log(TAG, "disconnected");
-				displayNameStatus.setText("");
+				if(!gsClient.isConnected()) displayNameStatus.setText("");
 			}
 			
 			@Override

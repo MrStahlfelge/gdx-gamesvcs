@@ -244,7 +244,7 @@ public class GpgsClient implements IGameServiceClientEx
 	
 	@Override
 	public boolean connect(boolean silent) {
-		if(!connected && !connecting){
+		if(initialized && !connected && !connecting){
 			connecting = true;
 			playerName = null;
 			authorizationThread = new Thread(new Runnable() {
@@ -316,13 +316,15 @@ public class GpgsClient implements IGameServiceClientEx
 
 	@Override
 	public boolean submitToLeaderboard(final String leaderboardId, final long score, final String tag) {
-		background(new SafeRunnable() {
-			@Override
-			public void run() throws IOException {
-				submitToLeaderboardSync(leaderboardId, score, tag);
-			}
-		});
-		return initialized;
+		if(connected){
+			background(new SafeRunnable() {
+				@Override
+				public void run() throws IOException {
+					submitToLeaderboardSync(leaderboardId, score, tag);
+				}
+			});
+		}
+		return connected;
 	}
 	
 	/**
@@ -339,13 +341,15 @@ public class GpgsClient implements IGameServiceClientEx
 
 	@Override
 	public boolean submitEvent(final String eventId, final int increment) {
-		background(new SafeRunnable() {
-			@Override
-			public void run() throws IOException {
-				submitEventSync(eventId, increment);
-			}
-		});
-		return initialized;
+		if(connected){
+			background(new SafeRunnable() {
+				@Override
+				public void run() throws IOException {
+					submitEventSync(eventId, increment);
+				}
+			});
+		}
+		return connected;
 	}
 	
 	/**
@@ -361,13 +365,15 @@ public class GpgsClient implements IGameServiceClientEx
 
 	@Override
 	public boolean unlockAchievement(final String achievementId) {
-		background(new SafeRunnable() {
-			@Override
-			public void run() throws IOException {
-				unlockAchievementSync(achievementId);
-			}
-		});
-		return initialized;
+		if(connected){
+			background(new SafeRunnable() {
+				@Override
+				public void run() throws IOException {
+					unlockAchievementSync(achievementId);
+				}
+			});
+		}
+		return connected;
 	}
 	
 	/**
@@ -381,13 +387,15 @@ public class GpgsClient implements IGameServiceClientEx
 
 	@Override
 	public boolean incrementAchievement(final String achievementId, final int incNum, final float completionPercentage) {
-		background(new SafeRunnable() {
-			@Override
-			public void run() throws IOException {
-				incrementAchievementSync(achievementId, incNum, completionPercentage);
-			}
-		});
-		return initialized;
+		if(connected){
+			background(new SafeRunnable() {
+				@Override
+				public void run() throws IOException {
+					incrementAchievementSync(achievementId, incNum, completionPercentage);
+				}
+			});
+		}
+		return connected;
 	}
 	
 	/**
