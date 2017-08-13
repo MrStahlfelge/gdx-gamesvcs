@@ -16,7 +16,9 @@ import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.BaseDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.GdxRuntimeException;
@@ -109,15 +111,18 @@ public class FallbackUIExample
 		popup = null;
 	}
 	
-	private Texture getTexture(String url){
-		Texture texture = textureCache.get(url);
-		if(texture == null){
-			Pixmap pixmap = pixmapCache.get(url);
-			if(pixmap != null){
-				texture = new Texture(pixmap);
+	private Drawable getTexture(String url){
+		Texture texture = null;
+		if(url != null){
+			texture = textureCache.get(url);
+			if(texture == null){
+				Pixmap pixmap = pixmapCache.get(url);
+				if(pixmap != null){
+					texture = new Texture(pixmap);
+				}
 			}
 		}
-		return texture;
+		return new BaseDrawable();
 	}
 	
 	private void loadPixmap(String url){
