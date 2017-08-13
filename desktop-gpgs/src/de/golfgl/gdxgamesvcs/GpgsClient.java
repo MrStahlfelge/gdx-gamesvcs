@@ -266,14 +266,15 @@ public class GpgsClient implements IGameServiceClientEx
 	@Override
 	public void disconnect() {
 		// nothing special to do here since there is no resources to freeup.
+		if(gameListener != null) gameListener.gsDisconnected();
 	}
 
 	@Override
 	public void logOff() {
-		disconnect();
 		connected = false;
 		playerName = null;
 		GAPIGateway.closeSession();
+		disconnect();
 	}
 
 	@Override
