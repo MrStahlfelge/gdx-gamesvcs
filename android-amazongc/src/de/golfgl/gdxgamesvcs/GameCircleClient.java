@@ -102,7 +102,8 @@ public class GameCircleClient implements IGameServiceClient {
         if (gsListener != null) {
             gsListener.gsDisconnected();
             if (!autoStartSignInFlow)
-                gsListener.gsErrorMsg(IGameServiceListener.GsErrorType.errorLoginFailed, amazonGamesStatus.name());
+                gsListener.gsErrorMsg(IGameServiceListener.GsErrorType.errorLoginFailed,
+                        amazonGamesStatus.name(), null);
         }
     }
 
@@ -297,11 +298,6 @@ public class GameCircleClient implements IGameServiceClient {
     }
 
     @Override
-    public void saveGameState(String fileId, byte[] gameState, long progressValue) {
-        saveGameState(fileId, gameState, progressValue, null);
-    }
-
-    @Override
     public void saveGameState(String fileId, byte[] gameState, long progressValue,
                               ISaveGameStateResponseListener listener) {
         if (!whisperSyncEnabled)
@@ -354,12 +350,6 @@ public class GameCircleClient implements IGameServiceClient {
         };
 
         task.execute();
-    }
-
-    @Override
-    public boolean deleteGameState(String fileId) {
-        //TODO supported by GameCircle
-        throw new UnsupportedOperationException();
     }
 
     @Override

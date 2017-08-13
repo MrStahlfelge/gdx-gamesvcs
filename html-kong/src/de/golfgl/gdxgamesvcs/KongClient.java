@@ -150,11 +150,6 @@ public class KongClient implements IGameServiceClient {
     }
 
     @Override
-    public void saveGameState(String fileId, byte[] gameState, long progressValue) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void saveGameState(String fileId, byte[] gameState, long progressValue, ISaveGameStateResponseListener
             listener) {
         throw new UnsupportedOperationException();
@@ -162,11 +157,6 @@ public class KongClient implements IGameServiceClient {
 
     @Override
     public void loadGameState(String fileId, ILoadGameStateResponseListener listener) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean deleteGameState(String fileId) {
         throw new UnsupportedOperationException();
     }
 

@@ -38,11 +38,11 @@ public class GameServiceRenderThreadListener implements IGameServiceListener {
     }
 
     @Override
-    public void gsErrorMsg(final GsErrorType et, final String msg) {
+    public void gsErrorMsg(final GsErrorType et, final String msg, final Throwable t) {
         Gdx.app.postRunnable(new Runnable() {
             @Override
             public void run() {
-                realListener.gsErrorMsg(et, msg);
+                realListener.gsErrorMsg(et, msg, t);
             }
         });
     }

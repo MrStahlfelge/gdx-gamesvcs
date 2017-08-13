@@ -274,7 +274,7 @@ public class GameJoltClient implements IGameServiceClient {
             gsListener.gsDisconnected();
 
             if (!silent)
-                gsListener.gsErrorMsg(IGameServiceListener.GsErrorType.errorLoginFailed, msg);
+                gsListener.gsErrorMsg(IGameServiceListener.GsErrorType.errorLoginFailed, msg, null);
         }
     }
 
@@ -515,20 +515,8 @@ public class GameJoltClient implements IGameServiceClient {
     }
 
     @Override
-    public void saveGameState(String fileId, byte[] gameState, long progressValue) {
-        //TODO Supported by GameJolt
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void saveGameState(String fileId, byte[] gameState, long progressValue, ISaveGameStateResponseListener
             listener) {
-        //TODO Supported by GameJolt
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean deleteGameState(String fileId) {
         //TODO Supported by GameJolt
         throw new UnsupportedOperationException();
     }

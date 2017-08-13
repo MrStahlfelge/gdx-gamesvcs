@@ -51,12 +51,12 @@ public interface IGameServiceClient {
      * Note: Probably you have set up the GameService client with an initialize() method. It is not defined by
      * this interface because it depends on the service which parameters the method needs.
      *
-     * @see #isConnected()
      * @param silent if true, no error messages or log in prompts will be shown. Use this at application start
      *               or after resuming the application in Android. If false, log in screens may appear for letting
      *               the user enter his credentials.
      * @return true if connection is already established or connection is pending. false if no connect is tried due to
      * unfulfilled prejudices (normally credentials not given).
+     * @see #isConnected()
      */
     boolean connect(boolean silent);
 
@@ -96,8 +96,8 @@ public interface IGameServiceClient {
      * method to check whether calling submit-Methods. Game service implementations will check all prerequisites for
      * you.
      *
-     * @see #isConnectionPending()
      * @return true if connected to a user session, false otherwise
+     * @see #isConnectionPending()
      */
     boolean isConnected();
 
@@ -212,13 +212,9 @@ public interface IGameServiceClient {
      * @param gameState     State to save
      * @param progressValue A value indicating player's progress. Used for conflict handling: if game state already
      *                      saved is higher than this value, the gameState is not saved
+     * @param success       response listener, can be null
      */
-    void saveGameState(String fileId, byte[] gameState, long progressValue);
-
-    /**
-     * same as {@link #saveGameState(String, byte[], long) but with possibility to give a success response listener}
-     */
-    void saveGameState(String fileId, byte[] gameState, long progressValue, ISaveGameStateResponseListener listener);
+    void saveGameState(String fileId, byte[] gameState, long progressValue, ISaveGameStateResponseListener success);
 
     /**
      * Loads game state from the cloud and calls gsGameStateLoaded method of the listener set.
@@ -235,12 +231,8 @@ public interface IGameServiceClient {
      * Should only be called when {@link GameServiceFeature#GameStateDelete} is supported,
      * check {@link #isFeatureSupported(GameServiceFeature)} prior to call this method.
      *
-     * @param fileId game state Id
-     */
-    boolean deleteGameState(final String fileId);
-
-    /**
-     * same as {@link #deleteGameState(String)} but with possibility to get a success response
+     * @param fileId  game state Id
+     * @param success response listener, can be null
      */
     boolean deleteGameState(final String fileId, ISaveGameStateResponseListener success);
 

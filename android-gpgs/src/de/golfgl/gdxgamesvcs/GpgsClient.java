@@ -294,7 +294,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
 
             if (errorMsg != null)
                 gameListener.gsErrorMsg(IGameServiceListener.GsErrorType.errorLoginFailed,
-                        "Google Play Games: " + errorMsg);
+                        "Google Play Games: " + errorMsg, null);
 
         }
     }
@@ -377,11 +377,6 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     @Override
     public void setListener(IGameServiceListener gameListener) {
         this.gameListener = gameListener;
-    }
-
-    @Override
-    public void saveGameState(String id, byte[] gameState, long progressValue) {
-        saveGameState(id, gameState, progressValue, null);
     }
 
     @Override
@@ -492,12 +487,6 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         };
 
         task.execute();
-    }
-
-    @Override
-    public boolean deleteGameState(String fileId) {
-        //TODO supported by GPGS
-        throw new UnsupportedOperationException();
     }
 
     @Override
