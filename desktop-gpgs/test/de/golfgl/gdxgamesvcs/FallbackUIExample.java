@@ -142,7 +142,6 @@ public class FallbackUIExample
 			public void onLeaderBoardResponse(final Array<LeaderBoardEntry> entries) {
 				// download some icons
 				if(entries != null){
-					// XXX loadPixmap(leaderBoard.iconUrl);
 					for(LeaderBoardEntry score : entries){
 						loadPixmap(score.getAvatarUrl());
 					}
@@ -171,15 +170,6 @@ public class FallbackUIExample
 		
 		TextButton btClose = new TextButton("Close", skin);
 		table.add(btClose).center().colspan(4).row();
-		
-		// leader board header
-		// XXX no more leader board header ...
-//		Image image = new Image(getTexture(lb.iconUrl));
-//		image.setScaling(Scaling.fit);
-//		table.add(image).size(32);
-//		
-//		table.add(lb.name).colspan(3);
-//		table.row();
 		
 		// leaderboard table header
 		table.add("Player").colspan(2);
