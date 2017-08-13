@@ -1,5 +1,8 @@
 package de.golfgl.gdxgamesvcs;
 
+import java.io.IOException;
+
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -16,6 +19,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.GdxRuntimeException;
+import com.badlogic.gdx.utils.ObjectMap;
 import com.badlogic.gdx.utils.Scaling;
 
 import de.golfgl.gdxgamesvcs.LeaderBoard.Score;
@@ -41,8 +46,8 @@ public class FallbackUIExample
 	
 	private Table popup;
 	
-	private Array<Texture> texturesToDispose = new Array<Texture>();
-	private Array<Pixmap> pixmapToDispose = new Array<Pixmap>();
+	final private ObjectMap<String, Texture> textureCache = new ObjectMap<String, Texture>();
+	final private ObjectMap<String, Pixmap> pixmapCache = new ObjectMap<String, Pixmap>();
 	
 	public FallbackUIExample(Stage stage, Skin skin, IGameServiceClientEx gsClient) {
 		super();
@@ -87,36 +92,62 @@ public class FallbackUIExample
 	private void dismiss(){
 		popup.remove();
 		
-		for(Texture texture : texturesToDispose){
+		for(Texture texture : textureCache.values()){
 			texture.dispose();
 		}
-		texturesToDispose.clear();
+		textureCache.clear();
 		
-		for(Pixmap pixmap : pixmapToDispose){
+		for(Pixmap pixmap : pixmapCache.values()){
 			pixmap.dispose();
 		}
-		pixmapToDispose.clear();
+		pixmapCache.clear();
 		
 		popup = null;
 	}
 	
-	private Texture createTexture(Pixmap pixmap){
-		Texture texture = new Texture(pixmap);
-		pixmapToDispose.add(pixmap);
-		texturesToDispose.add(texture);
+	private Texture getTexture(String url){
+		Texture texture = textureCache.get(url);
+		if(texture == null){
+			Pixmap pixmap = pixmapCache.get(url);
+			if(pixmap != null){
+				texture = new Texture(pixmap);
+			}
+		}
 		return texture;
+	}
+	
+	private void loadPixmap(String url){
+		try {
+			if(url != null){
+				pixmapCache.put(url, DownloadUtil.downloadImage(url));
+			}
+		} catch (IOException e) {
+			throw new GdxRuntimeException("Failed to download icon " + String.valueOf(url), e);
+		}
 	}
 	
 	public void showLeaderboards(final String leaderBoardId) throws GameServiceException {
 		showWait();
-		gsClient.fetchLeaderboard(leaderBoardId, false, false, true, new ILeaderBoardCallback() {
+		gsClient.fetchLeaderboard(leaderBoardId, false, false, new ILeaderBoardCallback() {
 			@Override
-			public void onLeaderBoardResponse(LeaderBoard leaderBoard) {
+			public void onLeaderBoardResponse(final LeaderBoard leaderBoard) {
+				// download some icons
 				if(leaderBoard != null){
-					showLeaderboardsGUI(leaderBoard);
-				}else{
-					showError();
+					loadPixmap(leaderBoard.iconUrl);
+					for(Score score : leaderBoard.scores){
+						loadPixmap(score.avatarUrl);
+					}
 				}
+				Gdx.app.postRunnable(new Runnable() {
+					@Override
+					public void run() {
+						if(leaderBoard != null){
+							showLeaderboardsGUI(leaderBoard);
+						}else{
+							showError();
+						}
+					}
+				});
 			}
 		});
 	}
@@ -133,7 +164,7 @@ public class FallbackUIExample
 		table.add(btClose).center().colspan(4).row();
 		
 		// leader board header
-		Image image = new Image(createTexture(lb.icon));
+		Image image = new Image(getTexture(lb.iconUrl));
 		image.setScaling(Scaling.fit);
 		table.add(image).size(32);
 		
@@ -149,8 +180,8 @@ public class FallbackUIExample
 		// leaderboard table body
 		for(Score score : lb.scores){
 			
-			if(score.avatar != null){
-				Image avatar = new Image(createTexture(score.avatar));
+			if(score.avatarUrl != null){
+				Image avatar = new Image(getTexture(score.avatarUrl));
 				avatar.setScaling(Scaling.fit);
 				table.add(avatar).size(32);
 			}else{
@@ -178,14 +209,26 @@ public class FallbackUIExample
 	
 	public void showAchievements() {
 		showWait();
-		gsClient.fetchAchievements(true, new IAchievementCallback() {
+		gsClient.fetchAchievements(new IAchievementCallback() {
 			@Override
-			public void onAchievementsResponse(Array<Achievement> achievements) {
+			public void onAchievementsResponse(final Array<Achievement> achievements) {
+				// download some icons
 				if(achievements != null){
-					showAchievementsGUI(achievements);
-				}else{
-					showError();
+					for(Achievement a : achievements){
+						loadPixmap(a.iconUrl);
+					}
 				}
+				Gdx.app.postRunnable(new Runnable() {
+					
+					@Override
+					public void run() {
+						if(achievements != null){
+							showAchievementsGUI(achievements);
+						}else{
+							showError();
+						}
+					}
+				});
 			}
 		});
 	}
@@ -205,7 +248,7 @@ public class FallbackUIExample
 		
 		for(Achievement a : achievements){
 			
-			Image image = new Image(createTexture(a.icon));
+			Image image = new Image(getTexture(a.iconUrl));
 			image.setScaling(Scaling.fit);
 			
 			table.add(image).size(32);
@@ -233,12 +276,17 @@ public class FallbackUIExample
 		showWait();
 		gsClient.fetchGameStates(new IGameStatesCallback() {
 			@Override
-			public void onGameStatesResponse(Array<String> gameStates) {
-				if(gameStates != null){
-					showGameStatesGUI(gameStates);
-				}else{
-					showError();
-				}
+			public void onGameStatesResponse(final Array<String> gameStates) {
+				Gdx.app.postRunnable(new Runnable() {
+					@Override
+					public void run() {
+						if(gameStates != null){
+							showGameStatesGUI(gameStates);
+						}else{
+							showError();
+						}
+					}
+				});
 			}
 		});
 	}

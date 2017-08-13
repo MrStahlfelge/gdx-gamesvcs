@@ -34,10 +34,9 @@ public interface IGameServiceClientEx extends IGameServiceClient {
 	 * Fetch current player's achievements.
 	 * Should only be called when {@link GameServiceFeature#achievementsList} is supported,
 	 * check {@link #isFeatureSupported(GameServiceFeature)} prior to call this method.
-	 * @param fetchIcons whether to download achievements icons as {@link com.badlogic.gdx.graphics.Pixmap}
 	 * @param callback
 	 */
-	void fetchAchievements(final boolean fetchIcons, final IAchievementCallback callback);
+	void fetchAchievements(final IAchievementCallback callback);
 	
 	/**
 	 * Fetch a leader board.
@@ -46,10 +45,9 @@ public interface IGameServiceClientEx extends IGameServiceClient {
 	 * @param leaderBoardId leaderboard to fetch
 	 * @param aroundPlayer only fetch scores around current player score.
 	 * @param friendsOnly only fetch player's friend.
-	 * @param fetchIcons whether to download icon leader board icon and players avatars as {@link com.badlogic.gdx.graphics.Pixmap}
 	 * @param callback
 	 */
-	void fetchLeaderboard(String leaderBoardId, boolean aroundPlayer, boolean friendsOnly, boolean fetchIcons, ILeaderBoardCallback callback);
+	void fetchLeaderboard(String leaderBoardId, boolean aroundPlayer, boolean friendsOnly, ILeaderBoardCallback callback);
 
 	/**
 	 * Fetch current player's game states.

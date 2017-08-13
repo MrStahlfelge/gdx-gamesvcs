@@ -2,8 +2,6 @@ package de.golfgl.gdxgamesvcs;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.Comparator;
@@ -14,7 +12,6 @@ import java.util.logging.Logger;
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.GdxRuntimeException;
@@ -418,13 +415,7 @@ public class GpgsClient implements IGameServiceClientEx
 				try{
 					result = fetchGamesSync();
 				}finally{
-					final Array<String> fresult = result;
-					Gdx.app.postRunnable(new Runnable() {
-						@Override
-						public void run() {
-							callback.onGameStatesResponse(fresult);
-						}
-					});
+					callback.onGameStatesResponse(result);
 				}
 			}
 		});
@@ -582,22 +573,16 @@ public class GpgsClient implements IGameServiceClientEx
 	}
 
 	@Override
-	public void fetchAchievements(final boolean fetchIcons, final IAchievementCallback callback)
+	public void fetchAchievements(final IAchievementCallback callback)
 	{
 		background(new SafeRunnable() {
 			@Override
 			public void run() throws IOException {
 				Array<Achievement> result = null;
 				try{
-					result = fetchAchievementsSync(fetchIcons);
+					result = fetchAchievementsSync();
 				}finally{
-					final Array<Achievement> fresult = result;
-					Gdx.app.postRunnable(new Runnable() {
-						@Override
-						public void run() {
-							callback.onAchievementsResponse(fresult);
-						}
-					});
+					callback.onAchievementsResponse(result);
 				}
 			}
 		});
@@ -605,11 +590,10 @@ public class GpgsClient implements IGameServiceClientEx
 	
 	/**
 	 * Blocking version of {@link #fetchAchievements(boolean, IAchievementCallback)}
-	 * @param fetchIcons
 	 * @return the achievement list
 	 * @throws IOException
 	 */
-	public Array<Achievement> fetchAchievementsSync(boolean fetchIcons) throws IOException {
+	public Array<Achievement> fetchAchievementsSync() throws IOException {
 		
 		Array<Achievement> achievements = new Array<Achievement>();
 		
@@ -654,10 +638,6 @@ public class GpgsClient implements IGameServiceClientEx
 			}
 			a.iconUrl = unlocked ? def.getUnlockedIconUrl() : def.getRevealedIconUrl();
 			
-			if(fetchIcons && a.iconUrl != null){
-				a.icon = downloadIconSyn(a.iconUrl);
-			}
-			
 			achievements.add(a);
 		}
 		
@@ -665,22 +645,16 @@ public class GpgsClient implements IGameServiceClientEx
 	}
 	
 	@Override
-	public void fetchLeaderboard(final String leaderBoardId, final boolean aroundPlayer, final boolean friendsOnly, final boolean fetchIcons, final ILeaderBoardCallback callback)
+	public void fetchLeaderboard(final String leaderBoardId, final boolean aroundPlayer, final boolean friendsOnly, final ILeaderBoardCallback callback)
 	{
 		background(new SafeRunnable() {
 			@Override
 			public void run() throws IOException {
 				LeaderBoard result = null;
 				try{
-					result = fetchLeaderboardSync(leaderBoardId, aroundPlayer, friendsOnly, fetchIcons);
+					result = fetchLeaderboardSync(leaderBoardId, aroundPlayer, friendsOnly);
 				}finally{
-					final LeaderBoard fresult = result;
-					Gdx.app.postRunnable(new Runnable() {
-						@Override
-						public void run() {
-							callback.onLeaderBoardResponse(fresult);
-						}
-					});
+					callback.onLeaderBoardResponse(result);
 				}
 			}
 		});
@@ -691,7 +665,7 @@ public class GpgsClient implements IGameServiceClientEx
 	 * @param leaderBoardId
 	 * @throws IOException
 	 */
-	public LeaderBoard fetchLeaderboardSync(String leaderBoardId, boolean aroundPlayer, boolean friendsOnly, boolean fetchIcons) throws IOException
+	public LeaderBoard fetchLeaderboardSync(String leaderBoardId, boolean aroundPlayer, boolean friendsOnly) throws IOException
 	{
 		LeaderBoard result = new LeaderBoard();
 		Leaderboard lb = GAPIGateway.games.leaderboards().get(leaderBoardId).execute();
@@ -699,9 +673,6 @@ public class GpgsClient implements IGameServiceClientEx
 		result.name = lb.getName();
 		result.scores = new Array<LeaderBoard.Score>();
 		result.iconUrl = lb.getIconUrl();
-		if(fetchIcons && result.iconUrl != null){
-			result.icon = downloadIconSyn(result.iconUrl);
-		}
 		
 		LeaderboardScores r; 
 		if(aroundPlayer){
@@ -714,7 +685,7 @@ public class GpgsClient implements IGameServiceClientEx
 		// we add it to the list because non-public profile won't appear in
 		// the full list.
 		if(playerScore != null){
-			LeaderBoard.Score ps = mapPlayerScore(r.getPlayerScore(), fetchIcons);
+			LeaderBoard.Score ps = mapPlayerScore(r.getPlayerScore());
 			ps.currrentPlayer = true;
 			result.scores.add(ps);
 		}
@@ -723,7 +694,7 @@ public class GpgsClient implements IGameServiceClientEx
 			for(LeaderboardEntry score : r.getItems()){
 				// when player is public it appear in this list as well, so we filter it.
 				if(playerScore == null || !score.getPlayer().getPlayerId().equals(playerScore.getPlayer().getPlayerId())){
-					LeaderBoard.Score s = mapPlayerScore(score, fetchIcons);
+					LeaderBoard.Score s = mapPlayerScore(score);
 					s.currrentPlayer = false;
 					result.scores.add(s);
 				}
@@ -743,41 +714,16 @@ public class GpgsClient implements IGameServiceClientEx
 		return result;
 	}
 	
-	private LeaderBoard.Score mapPlayerScore(LeaderboardEntry score, boolean fetchAvatar) throws IOException{
+	private LeaderBoard.Score mapPlayerScore(LeaderboardEntry score) throws IOException{
 		LeaderBoard.Score s = new LeaderBoard.Score();
 		s.name = score.getPlayer().getDisplayName();
 		s.rank = score.getFormattedScoreRank();
 		s.score = score.getFormattedScore();
 		s.avatarUrl = score.getPlayer().getAvatarImageUrl();
 		s.sortKey = score.getScoreValue() != null ? score.getScoreValue().longValue() : 0;
-		if(fetchAvatar && s.avatarUrl != null){
-			s.avatar = downloadIconSyn(s.avatarUrl);
-		}
 		return s;
 	}
 	
-	private Pixmap downloadIconSyn(String iconUrl) throws IOException{
-		byte[] bytes = downloadSync(iconUrl);
-		return new Pixmap(bytes, 0, bytes.length);
-	}
-	
-	private static byte[] downloadSync(String url) throws IOException {
-		InputStream in = null;
-		try {
-			HttpURLConnection conn = (HttpURLConnection)new URL(url).openConnection();
-			conn.setDoInput(true);
-			conn.setDoOutput(false);
-			conn.setUseCaches(true);
-			conn.connect();
-			in = conn.getInputStream();
-			return StreamUtils.copyStreamToByteArray(in);
-		} catch (IOException ex) {
-			throw ex;
-		} finally {
-			StreamUtils.closeQuietly(in);
-		}
-	}
-
 	@Override
 	public void showGameStates() {
 		throw new IllegalStateException("not supported");

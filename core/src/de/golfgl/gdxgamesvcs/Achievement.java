@@ -1,7 +1,5 @@
 package de.golfgl.gdxgamesvcs;
 
-import com.badlogic.gdx.graphics.Pixmap;
-
 /**
  * Achievement data
  * 
@@ -18,13 +16,6 @@ public class Achievement
 	
 	/** icon url, may varying depending on locking state */
 	public String iconUrl;
-	
-	/**
-	 * achievement icon pixel if fetch icon has been requested.
-	 * caller is responsible to dispose this resource.
-	 * Note : icon can be different depending on {@link #progress} completeness.
-	 */
-	public Pixmap icon;
 	
 	/**
 	 * Progression rate in percents ranges from 0 to 100.
