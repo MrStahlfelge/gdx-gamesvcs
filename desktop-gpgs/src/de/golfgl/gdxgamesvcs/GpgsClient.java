@@ -701,7 +701,9 @@ public class GpgsClient implements IGameServiceClientEx
 			r = GAPIGateway.games.scores().list(leaderBoardId, friendsOnly ? "SOCIAL" : "PUBLIC", "ALL_TIME").execute();
 		}
 		LeaderboardEntry playerScore = r.getPlayerScore();
-		// player may not have a score yet.
+		// player is null when not having a score yet.
+		// we add it to the list because non-public profile won't appear in
+		// the full list.
 		if(playerScore != null){
 			LeaderBoard.Score ps = mapPlayerScore(r.getPlayerScore(), fetchIcons);
 			ps.currrentPlayer = true;
@@ -710,15 +712,17 @@ public class GpgsClient implements IGameServiceClientEx
 		// r.getItems is null when no score has been submitted yet.
 		if(r.getItems() != null){
 			for(LeaderboardEntry score : r.getItems()){
-				LeaderBoard.Score s = mapPlayerScore(score, fetchIcons);
-				s.currrentPlayer = false;
-				result.scores.add(s);
+				// when player is public it appear in this list as well, so we filter it.
+				if(playerScore == null || !score.getPlayer().getPlayerId().equals(playerScore.getPlayer().getPlayerId())){
+					LeaderBoard.Score s = mapPlayerScore(score, fetchIcons);
+					s.currrentPlayer = false;
+					result.scores.add(s);
+				}
 			}
 		}
 		
-		// TODO maybe already sorted but API doesn't say anything : 
+		// maybe already sorted but API doesn't say anything about it : 
 		// https://developers.google.com/games/services/web/api/scores/list
-		// And test is required to se if it is OK ...
 		// so we sort list depending of score meaning.
 		final int order = "SMALLER_IS_BETTER".equals(lb.getOrder()) ? 1 : -1;
 		result.scores.sort(new Comparator<LeaderBoard.Score>() {
