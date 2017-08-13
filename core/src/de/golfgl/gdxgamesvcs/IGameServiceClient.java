@@ -42,7 +42,7 @@ public interface IGameServiceClient {
     void setListener(IGameServiceListener gsListener);
 
     /**
-     * Connects to Gameservice and tries to get a user session.
+     * Connects to a user session.
      * <p>
      * It depends from the game service implementation what the connected state implies. See the documentation of
      * the specific service. This method should be called with silent param at application startup, and when resuming
@@ -51,44 +51,58 @@ public interface IGameServiceClient {
      * Note: Probably you have set up the GameService client with an initialize() method. It is not defined by
      * this interface because it depends on the service which parameters the method needs.
      *
-     * @param silent if true, no error messages or log in prompts will be shown for. Use this at application start
+     * @param silent if true, no error messages or log in prompts will be shown. Use this at application start
      *               or after resuming the application in Android. If false, log in screens may appear for letting
      *               the user enter his credentials.
      * @return true if connection is already established or connection is pending. false if no connect is tried due to
      * unfulfilled prejudices (normally credentials not given).
+     * @see #isConnected()
      */
     boolean connect(boolean silent);
 
     /**
-     * Disconnects from Gameservice by dropping an open connection or deactivating ping calls,
+     * Disconnects from Gameservice user session by dropping an open connection or deactivating ping calls,
      * but does not close the user's session and so not invalidating a signin.
      * <p>
      * Use this in your main games pause() method on Android and when game is quit by the user.
+     *
+     * @see #isConnected()
      */
     void disconnect();
 
     /**
-     * Signs explicitely out and disconnects from Gameservice. Use only when explicitely wanted by user to end his
-     * session.
+     * Signs explicitely out and disconnects from Gameservice user session. Use only when explicitely wanted by user to
+     * end his session.
+     * <p>
+     * Notes:
+     * Some game services do not provide this feature, the user will stay logged in and connected to a user session.
+     * Some game services will allow unauthenticated users to submit events or scores
      */
     void logOff();
 
     /**
-     * Gets Players display name, if possible.
+     * Gets Players display name, if possible and user session is connected
      *
      * @return Display name, if available. May return null.
      */
     String getPlayerDisplayName();
 
     /**
-     * Checks the connection status of the game service. See also isConnectionPending.
+     * Checks the connection status of the game service user session.
+     * <p>
+     * Note:
+     * This method returns false if no user session is available, but the game service and some of its features may
+     * be available. Some game services allow submitting events or scores without user context. So do not use this
+     * method to check whether calling submit-Methods. Game service implementations will check all prerequisites for
+     * you.
      *
-     * @return true if connected, false otherwise
+     * @return true if connected to a user session, false otherwise
+     * @see #isConnectionPending()
      */
     boolean isConnected();
 
     /**
-     * Checks if a connection attempt is running
+     * Checks if a user session connection attempt is running
      *
      * @return
      */
@@ -198,13 +212,9 @@ public interface IGameServiceClient {
      * @param gameState     State to save
      * @param progressValue A value indicating player's progress. Used for conflict handling: if game state already
      *                      saved is higher than this value, the gameState is not saved
+     * @param success       response listener, can be null
      */
-    void saveGameState(String fileId, byte[] gameState, long progressValue);
-
-    /**
-     * same as {@link #saveGameState(String, byte[], long) but with possibility to give a success response listener}
-     */
-    void saveGameState(String fileId, byte[] gameState, long progressValue, ISaveGameStateResponseListener listener);
+    void saveGameState(String fileId, byte[] gameState, long progressValue, ISaveGameStateResponseListener success);
 
     /**
      * Loads game state from the cloud and calls gsGameStateLoaded method of the listener set.
@@ -221,12 +231,8 @@ public interface IGameServiceClient {
      * Should only be called when {@link GameServiceFeature#GameStateDelete} is supported,
      * check {@link #isFeatureSupported(GameServiceFeature)} prior to call this method.
      *
-     * @param fileId game state Id
-     */
-    boolean deleteGameState(final String fileId);
-
-    /**
-     * same as {@link #deleteGameState(String)} but with possibility to get a success response
+     * @param fileId  game state Id
+     * @param success response listener, can be null
      */
     boolean deleteGameState(final String fileId, ISaveGameStateResponseListener success);
 
@@ -248,7 +254,6 @@ public interface IGameServiceClient {
     boolean isFeatureSupported(GameServiceFeature feature);
 
     public static enum GameServiceFeature {
-        ShowGameStatesUI,
         FetchGameStates,
         GameStateStorage,
         GameStateDelete,

@@ -99,9 +99,7 @@ public class GpgsClient implements IGameServiceClient
 				try {
 					runnable.run();
 				} catch (Throwable e) {
-					// Always log errors to be able to analize stacktrace.
-					Gdx.app.error(TAG, "GpgsClient Error", e);
-					if(gameListener != null) gameListener.gsErrorMsg(GsErrorType.errorUnknown, e.getMessage());
+					if(gameListener != null) gameListener.gsErrorMsg(GsErrorType.errorUnknown, "GpgsClient Error", e);
 				}
 			}
 		}).start();
@@ -218,8 +216,7 @@ public class GpgsClient implements IGameServiceClient
 			GAPIGateway.authorize(getUserId());
 			success = true;
 		} catch (IOException e) {
-			Gdx.app.error(TAG, "failed to get authorization from user", e);
-			if(gameListener != null) gameListener.gsErrorMsg(GsErrorType.errorUnknown, "failed to connect");
+			if(gameListener != null) gameListener.gsErrorMsg(GsErrorType.errorUnknown, "failed to get authorization from user", e);
 		}
 		
 		// try to retreive palyer name
@@ -228,8 +225,7 @@ public class GpgsClient implements IGameServiceClient
 				Player player = GAPIGateway.games.players().get(ME).execute();
 				playerName = player.getDisplayName();
 			} catch (IOException e) {
-				Gdx.app.error(TAG, "Failed to retreive player name", e);
-				if(gameListener != null) gameListener.gsErrorMsg(GsErrorType.errorUnknown, "Failed to retreive player name");
+				if(gameListener != null) gameListener.gsErrorMsg(GsErrorType.errorUnknown, "Failed to retreive player name", e);
 			}
 		}
 		
@@ -518,7 +514,7 @@ public class GpgsClient implements IGameServiceClient
 			
 			GAPIGateway.drive.files().update(remoteFile.getId(), null, mediaContent).execute();
 			
-			Gdx.app.log("GAPI", "File updated ID: " + remoteFile.getId());
+			Gdx.app.log(TAG, "File updated ID: " + remoteFile.getId());
 		}
 		// file doesn't exists then create it
 		else{
@@ -532,7 +528,7 @@ public class GpgsClient implements IGameServiceClient
 					.setFields("id")
 					.execute();
 			
-			Gdx.app.log("GAPI", "File created ID: " + remoteFile.getId());
+			Gdx.app.log(TAG, "File created ID: " + remoteFile.getId());
 		}
 			
 	}
@@ -754,18 +750,4 @@ public class GpgsClient implements IGameServiceClient
 			return false;
 		}
 	}
-
-	@Override
-	public void saveGameState(String fileId, byte[] gameState, long progressValue) {
-		// backward compatibility
-		saveGameState(fileId, gameState, progressValue, null);
-	}
-
-	@Override
-	public boolean deleteGameState(String fileId) {
-		// backward compatibility
-		return deleteGameState(fileId, null);
-	}
-
-	
 }

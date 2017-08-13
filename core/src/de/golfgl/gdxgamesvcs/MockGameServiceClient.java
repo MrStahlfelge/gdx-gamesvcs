@@ -196,11 +196,6 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 	}
 
 	@Override
-	public void saveGameState(String fileId, byte[] gameState, long progressValue) {
-		saveGameState(fileId, gameState, progressValue, null);
-	}
-
-	@Override
 	public void saveGameState(String fileId, byte[] gameState, long progressValue,
 			final ISaveGameStateResponseListener listener) {
 		sleep(new Runnable() {
@@ -220,11 +215,6 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 				responseListener.gsGameStateLoaded(getGameState());
 			}
 		});
-	}
-
-	@Override
-	public boolean deleteGameState(String fileId) {
-		return deleteGameState(fileId, null);
 	}
 
 	@Override

@@ -23,7 +23,6 @@ public class MockClientTest extends GameServiceClientTest<MockGameServiceClient>
 			public boolean isFeatureSupported(GameServiceFeature feature) {
 				switch(feature){
 				case ShowAchievementsUI:
-				case ShowGameStatesUI:
 				case ShowLeaderboardUI:
 				case ShowAllLeaderboardsUI:
 					return false;

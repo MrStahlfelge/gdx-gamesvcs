@@ -138,24 +138,14 @@ public class NoGameServiceClient implements IGameServiceClient {
     }
 
     @Override
-    public void saveGameState(String fileId, byte[] gameState, long progressValue) {
-        Gdx.app.log(GAMESERVICE_ID, "Called save game state " + fileId + " with progress " + progressValue);
-    }
-
-    @Override
     public void saveGameState(String fileId, byte[] gameState, long progressValue, ISaveGameStateResponseListener
             listener) {
-
+        Gdx.app.log(GAMESERVICE_ID, "Called save game state " + fileId + " with progress " + progressValue);
     }
 
     @Override
     public void loadGameState(String fileId, ILoadGameStateResponseListener listener) {
         Gdx.app.log(GAMESERVICE_ID, "Called load game state " + fileId);
-    }
-
-    @Override
-    public boolean deleteGameState(String fileId) {
-        return false;
     }
 
     @Override

@@ -17,6 +17,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 import de.golfgl.gdxgamesvcs.IGameServiceClient.GameServiceFeature;
 import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
+import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
 
 abstract public class GameServiceClientTest<T extends IGameServiceClient> extends Game
 {
@@ -62,8 +63,8 @@ abstract public class GameServiceClientTest<T extends IGameServiceClient> extend
 		gsClient.setListener(new GameServiceRenderThreadListener(new IGameServiceListener() {
 
 			@Override
-			public void gsErrorMsg(GsErrorType et, String msg) {
-				Gdx.app.error(TAG, et.toString() + " : " + msg);
+			public void gsErrorMsg(GsErrorType et, String msg, Throwable e) {
+				Gdx.app.error(TAG, et.toString() + " : " + msg, e);
 			}
 			
 			@Override
@@ -207,7 +208,12 @@ abstract public class GameServiceClientTest<T extends IGameServiceClient> extend
 		createAction(table, "saveGameState", new Runnable() {
 			@Override
 			public void run() {
-				gsClient.saveGameState(gameId.getText(), gameDataToSave.getText().getBytes(), 0);
+				gsClient.saveGameState(gameId.getText(), gameDataToSave.getText().getBytes(), 0, new ISaveGameStateResponseListener() {
+					@Override
+					public void onGameStateSaved(boolean success, String errorCode) {
+						Gdx.app.log(TAG, "Game saved : " + success + " " + String.valueOf(errorCode));
+					}
+				});
 			}
 		});
 		createAction(table, "loadGameState", new Runnable() {
@@ -234,7 +240,13 @@ abstract public class GameServiceClientTest<T extends IGameServiceClient> extend
 		createAction(table, "deleteGameState", new Runnable() {
 			@Override
 			public void run() {
-				gsClient.deleteGameState(gameId.getText());
+				gsClient.deleteGameState(gameId.getText(), new ISaveGameStateResponseListener() {
+					
+					@Override
+					public void onGameStateSaved(boolean success, String errorCode) {
+						Gdx.app.log(TAG, "game deleted : " + success + " " + String.valueOf(errorCode));
+					}
+				});
 			}
 		});
 		

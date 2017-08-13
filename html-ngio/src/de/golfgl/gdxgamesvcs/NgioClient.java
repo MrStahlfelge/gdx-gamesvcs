@@ -204,7 +204,7 @@ public class NgioClient implements IGameServiceClient {
             Gdx.app.log(GAMESERVICE_ID, errorMsg);
 
             if (!silent && gsListener != null)
-                gsListener.gsErrorMsg(IGameServiceListener.GsErrorType.errorLoginFailed, errorMsg);
+                gsListener.gsErrorMsg(IGameServiceListener.GsErrorType.errorLoginFailed, errorMsg, null);
         }
 
         if (gsListener != null) {
@@ -352,11 +352,6 @@ public class NgioClient implements IGameServiceClient {
     }
 
     @Override
-    public void saveGameState(String fileId, byte[] gameState, long progressValue) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void saveGameState(String fileId, byte[] gameState, long progressValue, ISaveGameStateResponseListener
             listener) {
         throw new UnsupportedOperationException();
@@ -364,11 +359,6 @@ public class NgioClient implements IGameServiceClient {
 
     @Override
     public void loadGameState(String fileId, ILoadGameStateResponseListener listener) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean deleteGameState(String fileId) {
         throw new UnsupportedOperationException();
     }
 

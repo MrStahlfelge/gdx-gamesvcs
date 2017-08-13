@@ -23,10 +23,11 @@ public interface IGameServiceListener {
     /**
      * Called from GameServiceClient to show a message to the user.
      *
-     * @param et - error type for your own message
-     * @param msg - further information, may be null
+     * @param et  error type for your own message
+     * @param msg further information, may be null
+     * @param t   Throwable causing the problem, may be null
      */
-    public void gsErrorMsg(GsErrorType et, String msg);
+    public void gsErrorMsg(GsErrorType et, String msg, Throwable t);
 
     public enum GsErrorType {errorLoginFailed, errorUnknown, errorServiceUnreachable}
 }
