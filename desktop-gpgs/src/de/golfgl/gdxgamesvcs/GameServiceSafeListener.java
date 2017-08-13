@@ -9,7 +9,7 @@ import com.badlogic.gdx.Gdx;
  * 
  * @author mgsx
  * 
- * @todo pull-up this class to core package, could be usefull for any implementations. or
+ * TODO pull-up this class to core package, could be usefull for any implementations. or
  * better, force implementation to call listener in GLThread (postRunnable)
  *
  */

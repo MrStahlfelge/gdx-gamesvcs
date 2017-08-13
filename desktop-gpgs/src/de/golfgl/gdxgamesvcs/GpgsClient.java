@@ -119,7 +119,7 @@ public class GpgsClient implements IGameServiceClientEx
 	 * 
 	 * Default is <USER_HOME>/.store/<APPLICATION_NAME>
 	 * 
-	 * @param dataStoreDirectory where to store users credentials for this application
+	 * @return directory to store users credentials for this application
 	 */
 	protected java.io.File getDataStoreDirectory() {
 		java.io.File dataStoresDirectory = new java.io.File(System.getProperty("user.home"), ".store");
@@ -172,7 +172,7 @@ public class GpgsClient implements IGameServiceClientEx
 	
 	/**
 	 * Initialize with a clientSecretFile. 
-	 * @see {@link #initialize(String, InputStream)}
+	 * see {@link #initialize(String, InputStream)}
 	 * @param applicationName
 	 * @param clientSecretFile
 	 */
@@ -400,7 +400,7 @@ public class GpgsClient implements IGameServiceClientEx
 	
 	/**
 	 * Blocking version of {@link #fetchGamesSync()}
-	 * @return
+	 * @return game states
 	 * @throws IOException
 	 */
 	public Array<String> fetchGamesSync() throws IOException {
@@ -522,7 +522,7 @@ public class GpgsClient implements IGameServiceClientEx
 	/**
 	 * Blocking version of {@link #loadGameState(String)}
 	 * @param fileId
-	 * @return
+	 * @return game state data
 	 * @throws IOException
 	 */
 	public byte [] loadGameStateSync(String fileId) throws IOException {
@@ -574,7 +574,7 @@ public class GpgsClient implements IGameServiceClientEx
 	/**
 	 * Blocking version of {@link #fetchAchievements(boolean, IAchievementCallback)}
 	 * @param fetchIcons
-	 * @return
+	 * @return the achievement list
 	 * @throws IOException
 	 */
 	public Array<Achievement> fetchAchievementsSync(boolean fetchIcons) throws IOException {
