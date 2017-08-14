@@ -739,6 +739,8 @@ public class GpgsClient implements IGameServiceClient
 		s.setFormattedValue(score.getFormattedScore());
 		s.setSortValue(score.getScoreValue() != null ? score.getScoreValue().longValue() : 0);
 		s.setAvatarUrl(score.getPlayer().getAvatarImageUrl());
+        s.setUserId(score.getPlayer().getPlayerId());
+        s.setScoreTag(score.getScoreTag());
 		return s;
 	}
 

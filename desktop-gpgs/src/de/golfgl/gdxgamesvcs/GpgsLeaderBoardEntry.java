@@ -50,7 +50,11 @@ public class GpgsLeaderBoardEntry implements ILeaderBoardEntry {
 
     @Override
     public String getUserId() {
-        return userId;
+        // do not return null as a user with a null id is a guest. But there are no guest users in GPGS
+        if (userId != null)
+            return userId;
+        else
+            return "";
     }
 
     void setUserId(String userId) {
