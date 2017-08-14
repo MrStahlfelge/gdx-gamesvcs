@@ -29,5 +29,5 @@ public interface IGameServiceListener {
      */
     public void gsErrorMsg(GsErrorType et, String msg, Throwable t);
 
-    public enum GsErrorType {errorLoginFailed, errorUnknown, errorServiceUnreachable}
+    public enum GsErrorType {errorLoginFailed, errorUnknown, errorServiceUnreachable, errorLogoutFailed}
 }
