@@ -99,7 +99,8 @@ public class GpgsClient implements IGameServiceClient
 				try {
 					runnable.run();
 				} catch (Throwable e) {
-					if(gameListener != null) gameListener.gsErrorMsg(GsErrorType.errorUnknown, "GpgsClient Error", e);
+                    Gdx.app.error(TAG, "Gpgs Error", e);
+					if(gameListener != null) gameListener.gsErrorMsg(GsErrorType.errorUnknown, e.getMessage(), e);
 				}
 			}
 		}).start();
@@ -181,8 +182,9 @@ public class GpgsClient implements IGameServiceClient
 	 * </pre>
 	 *
 	 * @throws GdxRuntimeException if initialisation fails.
+     * @return method chaining
 	 */
-	public void initialize(String applicationName, InputStream clientSecret){
+	public GpgsClient initialize(String applicationName, InputStream clientSecret){
 		this.applicationName = applicationName;
 		try {
 			GApiGateway.init(applicationName, clientSecret, getDataStoreDirectory());
@@ -192,6 +194,8 @@ public class GpgsClient implements IGameServiceClient
 		} catch (IOException e) {
 			throw new GdxRuntimeException(e);
 		}
+
+		return this;
 	}
 
 	/**
@@ -199,9 +203,11 @@ public class GpgsClient implements IGameServiceClient
 	 * see {@link #initialize(String, InputStream)}
 	 * @param applicationName
 	 * @param clientSecretFile
+     * @return method chaining
 	 */
-	public void initialize(String applicationName, FileHandle clientSecretFile){
+	public GpgsClient initialize(String applicationName, FileHandle clientSecretFile){
 		initialize(applicationName, clientSecretFile.read());
+        return this;
 	}
 
 	/**
