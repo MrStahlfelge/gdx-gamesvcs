@@ -12,6 +12,8 @@ public class LeaderBoardEntry {
     protected String userDisplayName;
     protected String userId;
     protected String scoreRank;
+	protected String avatarUrl;
+	protected boolean currentPlayer;
 
     /**
      * Leaderboard entryformatted value
@@ -66,4 +68,20 @@ public class LeaderBoardEntry {
     public String getScoreRank() {
         return scoreRank;
     }
+    
+    /**
+     * @return Player's avatar URL (may be null)
+     */
+	public String getAvatarUrl() {
+		return avatarUrl;
+	}
+	
+	/**
+	 * @return whether this entry is the current player score
+	 */
+	public boolean isCurrentPlayer() {
+		return currentPlayer;
+	}
+	
+
 }

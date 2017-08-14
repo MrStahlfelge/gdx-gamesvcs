@@ -171,6 +171,38 @@ project(":desktop") {
     }
 }
 
+project(":desktop-gpgs") {
+    apply plugin: 'java'
+
+    apply from: '../publish.gradle'
+
+    configurations {
+        custom
+        compile.extendsFrom custom
+    }
+
+    eclipse {
+        project {
+            name = appName + "-desktop-gpgs"
+        }
+    }
+    
+    ext{
+    	gapiVersion = '1.22.0'
+    }
+
+    dependencies {
+        compile project(':core')
+        
+        compile "com.google.apis:google-api-services-games:v1-rev239-$gapiVersion"
+        compile "com.google.oauth-client:google-oauth-client-jetty:$gapiVersion"
+        compile "com.google.apis:google-api-services-drive:v3-rev77-$gapiVersion"
+        
+        testCompile "com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion"
+        testCompile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+    }
+}
+
 
 project(":html") {
     apply plugin: 'java'

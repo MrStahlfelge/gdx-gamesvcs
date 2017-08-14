@@ -10,7 +10,8 @@ public class Achievement {
     protected String title;
     protected String description;
     protected float completionPercentage;
-
+	protected String iconUrl;
+	
     /**
      * Returns the achievementId for this achievement
      *
@@ -57,4 +58,11 @@ public class Achievement {
     public boolean isUnlocked() {
         return completionPercentage >= 1f;
     }
+    
+    /**
+     * @return the achievement icon URL (may be null)
+     */
+    public String getIconUrl() {
+		return iconUrl;
+	}
 }
