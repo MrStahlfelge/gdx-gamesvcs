@@ -66,7 +66,7 @@ import de.golfgl.gdxgamesvcs.leaderboard.LeaderBoardEntry;
  */
 public class GpgsClient implements IGameServiceClient
 {
-	private static final String TAG = "GpgsClient";
+	private static final String TAG = IGameServiceClient.GS_GOOGLEPLAYGAMES_ID;
 	
 	/**
 	 * Shortcut for current user as per Google API doc.
@@ -185,7 +185,7 @@ public class GpgsClient implements IGameServiceClient
 	public void initialize(String applicationName, InputStream clientSecret){
 		this.applicationName = applicationName;
 		try {
-			GAPIGateway.init(applicationName, clientSecret, getDataStoreDirectory());
+			GApiGateway.init(applicationName, clientSecret, getDataStoreDirectory());
 			initialized = true;
 		} catch (GeneralSecurityException e) {
 			throw new GdxRuntimeException(e);
@@ -213,7 +213,7 @@ public class GpgsClient implements IGameServiceClient
 		// load user token or open browser for user authorizations.
 		boolean success = false;
 		try {
-			GAPIGateway.authorize(getUserId());
+			GApiGateway.authorize(getUserId());
 			success = true;
 		} catch (IOException e) {
 			if(gameListener != null) gameListener.gsErrorMsg(GsErrorType.errorUnknown, "failed to get authorization from user", e);
@@ -222,7 +222,7 @@ public class GpgsClient implements IGameServiceClient
 		// try to retreive palyer name
 		if(success){
 			try {
-				Player player = GAPIGateway.games.players().get(ME).execute();
+				Player player = GApiGateway.games.players().get(ME).execute();
 				playerName = player.getDisplayName();
 			} catch (IOException e) {
 				if(gameListener != null) gameListener.gsErrorMsg(GsErrorType.errorUnknown, "Failed to retreive player name", e);
@@ -272,7 +272,7 @@ public class GpgsClient implements IGameServiceClient
 	public void logOff() {
 		connected = false;
 		playerName = null;
-		GAPIGateway.closeSession();
+		GApiGateway.closeSession();
 		disconnect();
 	}
 
@@ -322,7 +322,7 @@ public class GpgsClient implements IGameServiceClient
 	 * @throws IOException
 	 */
 	public void submitToLeaderboardSync(String leaderboardId, long score, String tag) throws IOException {
-		GAPIGateway.games.scores().submit(leaderboardId, score).execute();
+		GApiGateway.games.scores().submit(leaderboardId, score).execute();
 	}
 
 
@@ -369,7 +369,7 @@ public class GpgsClient implements IGameServiceClient
 	 * @throws IOException
 	 */
 	public void unlockAchievementSync(String achievementId) throws IOException {
-		GAPIGateway.games.achievements().unlock(achievementId).execute();
+		GApiGateway.games.achievements().unlock(achievementId).execute();
 	}
 
 	@Override
@@ -393,7 +393,7 @@ public class GpgsClient implements IGameServiceClient
 	 * @throws IOException
 	 */
 	public void incrementAchievementSync(String achievementId, int incNum, float completionPercentage) throws IOException {
-		GAPIGateway.games.achievements().increment(achievementId, incNum).execute();
+		GApiGateway.games.achievements().increment(achievementId, incNum).execute();
 	}
 
 	@Override
@@ -423,7 +423,7 @@ public class GpgsClient implements IGameServiceClient
 		
 		Array<String> games = new Array<String>();
 
-		FileList l = GAPIGateway.drive.files().list()
+		FileList l = GApiGateway.drive.files().list()
 				.setSpaces("appDataFolder")
 				.setFields("files(name)")
 				.execute();
@@ -456,7 +456,7 @@ public class GpgsClient implements IGameServiceClient
 	public void deleteGameStateSync(String fileId) throws IOException {
 		File remoteFile = findFileByNameSync(fileId);
 		if(remoteFile != null){
-			GAPIGateway.drive.files().delete(remoteFile.getId()).execute();
+			GApiGateway.drive.files().delete(remoteFile.getId()).execute();
 		}
 	}
 
@@ -479,7 +479,7 @@ public class GpgsClient implements IGameServiceClient
 	
 	private File findFileByNameSync(String name) throws IOException{
 		// escape some chars (') see : https://developers.google.com/drive/v3/web/search-parameters#fn1
-		List<File> files = GAPIGateway.drive.files().list().setSpaces("appDataFolder").setQ("name='" + name + "'").execute().getFiles();
+		List<File> files = GApiGateway.drive.files().list().setSpaces("appDataFolder").setQ("name='" + name + "'").execute().getFiles();
 		if(files.size() > 1){
 			throw new GdxRuntimeException("multiple files with name " + name + " exists.");
 		} else if(files.size() < 1) {
@@ -512,7 +512,7 @@ public class GpgsClient implements IGameServiceClient
 			
 			// just update content, leave metadata intact.
 			
-			GAPIGateway.drive.files().update(remoteFile.getId(), null, mediaContent).execute();
+			GApiGateway.drive.files().update(remoteFile.getId(), null, mediaContent).execute();
 			
 			Gdx.app.log(TAG, "File updated ID: " + remoteFile.getId());
 		}
@@ -524,7 +524,7 @@ public class GpgsClient implements IGameServiceClient
 			// app folder is a reserved keyyword for current application private folder.
 			fileMetadata.setParents(Collections.singletonList("appDataFolder"));
 			
-			remoteFile = GAPIGateway.drive.files().create(fileMetadata, mediaContent)
+			remoteFile = GApiGateway.drive.files().create(fileMetadata, mediaContent)
 					.setFields("id")
 					.execute();
 			
@@ -564,7 +564,7 @@ public class GpgsClient implements IGameServiceClient
 			File remoteFile = findFileByNameSync(fileId);
 			if(remoteFile != null){
 				
-				stream = GAPIGateway.drive.files().get(remoteFile.getId()).executeMediaAsInputStream();
+				stream = GApiGateway.drive.files().get(remoteFile.getId()).executeMediaAsInputStream();
 			
 				data = StreamUtils.copyStreamToByteArray(stream);
 			}
@@ -604,12 +604,12 @@ public class GpgsClient implements IGameServiceClient
 		
 		// fetch all definitions
 		ObjectMap<String, AchievementDefinition> defs = new ObjectMap<String, AchievementDefinition>();
-		for(AchievementDefinition def : GAPIGateway.games.achievementDefinitions().list().execute().getItems()){
+		for(AchievementDefinition def : GApiGateway.games.achievementDefinitions().list().execute().getItems()){
 			defs.put(def.getId(), def);
 		}
 		
 		// Fetch player achievements
-		for(PlayerAchievement p : GAPIGateway.games.achievements().list(ME).execute().getItems()){
+		for(PlayerAchievement p : GApiGateway.games.achievements().list(ME).execute().getItems()){
 			AchievementDefinition def = defs.get(p.getId());
 			
 			String state = p.getAchievementState();
@@ -619,7 +619,7 @@ public class GpgsClient implements IGameServiceClient
 			// can check if this achievement is hidden by its absence in the returned list.
 			if("HIDDEN".equals(state)) continue;
 			
-			GPGSAchievement a = new GPGSAchievement();
+			GpgsAchievement a = new GpgsAchievement();
 			a.setAchievementId(def.getId());
 			a.setTitle(def.getName());
 			a.setDescription(def.getDescription());
@@ -678,7 +678,7 @@ public class GpgsClient implements IGameServiceClient
 		// TODO implement limit
 		
 		Array<LeaderBoardEntry> result = new Array<LeaderBoardEntry>();
-		Leaderboard lb = GAPIGateway.games.leaderboards().get(leaderBoardId).execute();
+		Leaderboard lb = GApiGateway.games.leaderboards().get(leaderBoardId).execute();
 		
 		// XXX no longer LB info ...
 //		result.id = lb.getId();
@@ -688,16 +688,16 @@ public class GpgsClient implements IGameServiceClient
 		
 		LeaderboardScores r; 
 		if(aroundPlayer){
-			r = GAPIGateway.games.scores().listWindow(leaderBoardId, friendsOnly ? "SOCIAL" : "PUBLIC", "ALL_TIME").execute();
+			r = GApiGateway.games.scores().listWindow(leaderBoardId, friendsOnly ? "SOCIAL" : "PUBLIC", "ALL_TIME").execute();
 		}else{
-			r = GAPIGateway.games.scores().list(leaderBoardId, friendsOnly ? "SOCIAL" : "PUBLIC", "ALL_TIME").execute();
+			r = GApiGateway.games.scores().list(leaderBoardId, friendsOnly ? "SOCIAL" : "PUBLIC", "ALL_TIME").execute();
 		}
 		LeaderboardEntry playerScore = r.getPlayerScore();
 		// player is null when not having a score yet.
 		// we add it to the list because non-public profile won't appear in
 		// the full list.
 		if(playerScore != null){
-			GPGSLeaderBoardEntry ps = mapPlayerScore(r.getPlayerScore());
+			GpgsLeaderBoardEntry ps = mapPlayerScore(r.getPlayerScore());
 			ps.setCurrentPlayer(true);
 			result.add(ps);
 		}
@@ -706,7 +706,7 @@ public class GpgsClient implements IGameServiceClient
 			for(LeaderboardEntry score : r.getItems()){
 				// when player is public it appear in this list as well, so we filter it.
 				if(playerScore == null || !score.getPlayer().getPlayerId().equals(playerScore.getPlayer().getPlayerId())){
-					GPGSLeaderBoardEntry s = mapPlayerScore(score);
+					GpgsLeaderBoardEntry s = mapPlayerScore(score);
 					s.setCurrentPlayer(false);
 					result.add(s);
 				}
@@ -726,8 +726,8 @@ public class GpgsClient implements IGameServiceClient
 		return result;
 	}
 	
-	private GPGSLeaderBoardEntry mapPlayerScore(LeaderboardEntry score) throws IOException{
-		GPGSLeaderBoardEntry s = new GPGSLeaderBoardEntry();
+	private GpgsLeaderBoardEntry mapPlayerScore(LeaderboardEntry score) throws IOException{
+		GpgsLeaderBoardEntry s = new GpgsLeaderBoardEntry();
 		s.setUserDisplayName(score.getPlayer().getDisplayName());
 		s.setScoreRank(score.getFormattedScoreRank());
 		s.setFormattedValue(score.getFormattedScore());

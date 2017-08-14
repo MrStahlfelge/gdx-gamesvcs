@@ -2,7 +2,7 @@ package de.golfgl.gdxgamesvcs;
 
 import de.golfgl.gdxgamesvcs.achievement.Achievement;
 
-class GPGSAchievement extends Achievement
+class GpgsAchievement extends Achievement
 {
 	void setIconUrl(String iconUrl) {
 		this.iconUrl = iconUrl;

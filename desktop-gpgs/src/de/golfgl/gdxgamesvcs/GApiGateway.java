@@ -27,7 +27,7 @@ import com.google.api.services.games.GamesScopes;
 
 // https://developers.google.com/identity/protocols/OAuth2#scenarios
 // https://developers.google.com/api-client-library/java/google-api-java-client/oauth2
-class GAPIGateway {
+class GApiGateway {
 	
 	private static String applicationName;
 	private static GoogleClientSecrets clientSecrets;
@@ -55,8 +55,8 @@ class GAPIGateway {
 	 */
 	public static void init(String applicationName, InputStream clientSecret, File dataStoreDirectory) throws GeneralSecurityException, IOException  
 	{
-		GAPIGateway.applicationName = applicationName;
-		GAPIGateway.clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(clientSecret));
+		GApiGateway.applicationName = applicationName;
+		GApiGateway.clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(clientSecret));
 		
 		httpTransport = GoogleNetHttpTransport.newTrustedTransport();
 		

@@ -2,7 +2,7 @@ package de.golfgl.gdxgamesvcs;
 
 import de.golfgl.gdxgamesvcs.leaderboard.LeaderBoardEntry;
 
-public class GPGSLeaderBoardEntry extends LeaderBoardEntry
+public class GpgsLeaderBoardEntry extends LeaderBoardEntry
 {
 	void setCurrentPlayer(boolean currentPlayer) {
 		this.currentPlayer = currentPlayer;
