@@ -26,9 +26,10 @@ public class GjScoreboardEntry implements ILeaderBoardEntry {
         gje.score = json.getString("score");
         gje.sort = json.getLong("sort");
         gje.tag = json.getString("extra_data");
-        gje.userId = json.getString("user_id");
+        String userId = json.getString("user_id");
 
-        if (gje.userId != null && !gje.userId.isEmpty()) {
+        if (userId != null && !userId.isEmpty()) {
+            gje.userId = userId;
             gje.displayName = json.getString("user");
             gje.currentPlayer = (currentPlayer != null && currentPlayer.equalsIgnoreCase(gje.displayName));
         } else
