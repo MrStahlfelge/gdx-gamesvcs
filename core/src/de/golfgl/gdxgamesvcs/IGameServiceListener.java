@@ -28,7 +28,7 @@ public interface IGameServiceListener {
      */
     public void gsErrorMsg(GsErrorType et, String msg);
 
-    public enum GsErrorType {errorLoginFailed, errorUnknown, errorServiceUnreachable}
+    public enum GsErrorType {errorLoginFailed, errorUnknown, errorServiceUnreachable, errorLogoutFailed}
 
     /**
      * Returns a game state that was saved in Cloud services

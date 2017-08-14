@@ -5,7 +5,11 @@ import com.badlogic.gdx.Gdx;
 /**
  * Kongegrate Client
  * <p>
- * see http://docs.kongregate.com/docs/javascript-api
+ * Do not forget to embed Kongregate's js lib in index.html for using this client, see
+ * https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Kongregate
+ * <p>
+ * see also http://docs.kongregate.com/docs/javascript-api and
+ * http://developers.kongregate.com/docs/api-overview/client-api
  * <p>
  * Created by Benjamin Schulte on 25.06.2017.
  */
@@ -55,7 +59,10 @@ public class KongClient implements IGameServiceClient {
 
     @Override
     public void logOff() {
-        //nothing to do
+        //nothing to do, inform the user to log out via web interface
+        if (gsListener != null)
+            gsListener.gsErrorMsg(IGameServiceListener.GsErrorType.errorLogoutFailed,
+                    "Please logout via Kongregate's interface");
     }
 
     @Override
@@ -76,7 +83,7 @@ public class KongClient implements IGameServiceClient {
 
     @Override
     public boolean isConnected() {
-        return initialized;
+        return initialized && !isKongGuest();
     }
 
     @Override
