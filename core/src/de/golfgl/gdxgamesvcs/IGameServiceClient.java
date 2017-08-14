@@ -130,6 +130,9 @@ public interface IGameServiceClient {
      * check {@link #isFeatureSupported(GameServiceFeature)} prior to call this method.
      *
      * @param callback
+     * @return false if fetch attempt could not be made. Response listener will not get called in that case.
+     * @throws UnsupportedOperationException if not supported by game service client, so check
+     *                                       {@link #isFeatureSupported(GameServiceFeature)} prior to call this method.
      */
     boolean fetchAchievements(final IFetchAchievementsResponseListener callback);
 
@@ -148,15 +151,16 @@ public interface IGameServiceClient {
     boolean submitToLeaderboard(String leaderboardId, long score, String tag);
 
     /**
-     * Fetch a leader board.
-     * Should only be called when {@link GameServiceFeature#FetchLeaderBoardEntries} is supported,
-     * check {@link #isFeatureSupported(GameServiceFeature)} prior to call this method.
+     * Fetches leader board entries
      *
      * @param leaderBoardId   leaderboard to fetch
      * @param limit           limit how many entries to retrieve
      * @param relatedToPlayer only fetch scores around current player score or by current player (depending on Game
      *                        Service)
      * @param callback
+     * @return false if fetch attempt could not be made. Response listener will not get called in that case.
+     * @throws UnsupportedOperationException if not supported by game service client, so check
+     *                                       {@link #isFeatureSupported(GameServiceFeature)} prior to call this method.
      */
     boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
                                     IFetchLeaderBoardEntriesResponseListener callback);
@@ -238,10 +242,11 @@ public interface IGameServiceClient {
 
     /**
      * Fetch current player's game states.
-     * Should only be called when {@link GameServiceFeature#FetchGameStates} is supported,
-     * check {@link #isFeatureSupported(GameServiceFeature)} prior to call this method.
      *
      * @param callback
+     * @return false if fetch attempt could not be made. Response listener will not get called in that case.
+     * @throws UnsupportedOperationException if not supported by game service client, so check
+     *                                       {@link #isFeatureSupported(GameServiceFeature)} prior to call this method.
      */
     boolean fetchGameStates(IFetchGameStatesListResponseListener callback);
 
