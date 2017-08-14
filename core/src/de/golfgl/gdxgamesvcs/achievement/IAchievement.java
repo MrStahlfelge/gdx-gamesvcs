@@ -1,34 +1,25 @@
 package de.golfgl.gdxgamesvcs.achievement;
 
 /**
- * Achievement data. This is the most general Achievement class
+ * IAchievement data. This is the most general IAchievement class
  *
  * @author mgsx
  */
-public class Achievement {
-    protected String achievementId;
-    protected String title;
-    protected String description;
-    protected float completionPercentage;
-	protected String iconUrl;
-	
+public interface IAchievement {
+
     /**
      * Returns the achievementId for this achievement
      *
      * @return achievementId
      */
-    public String getAchievementId() {
-        return achievementId;
-    }
+    public String getAchievementId();
 
     /**
      * Returns the title for the achievement
      *
      * @return title
      */
-    public String getTitle() {
-        return title;
-    }
+    public String getTitle();
 
     /**
      * Returns the description for the achivement. If a description for locked and unlocked is available, it returns
@@ -36,9 +27,7 @@ public class Achievement {
      *
      * @return description
      */
-    public String getDescription() {
-        return description;
-    }
+    public String getDescription();
 
     /**
      * Returns player progression
@@ -46,23 +35,17 @@ public class Achievement {
      * @return Achievment progression rate in percent ranges from 0f to 1f. For non incremental achievements
      * (locked/unlocked), this value is 0 when locked, 1f when unlocked.
      */
-    public float getCompletionPercentage() {
-        return completionPercentage;
-    }
+    public float getCompletionPercentage();
 
     /**
      * Checks if achievmenet is unlocked
      *
      * @return true if unlocked
      */
-    public boolean isUnlocked() {
-        return completionPercentage >= 1f;
-    }
+    public boolean isUnlocked();
     
     /**
      * @return the achievement icon URL (may be null)
      */
-    public String getIconUrl() {
-		return iconUrl;
-	}
+    public String getIconUrl();
 }

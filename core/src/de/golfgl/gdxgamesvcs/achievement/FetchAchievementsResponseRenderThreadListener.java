@@ -18,7 +18,7 @@ public class FetchAchievementsResponseRenderThreadListener implements IFetchAchi
     }
 
     @Override
-    public void onFetchAchievementsResponse(final Array<Achievement> achievements) {
+    public void onFetchAchievementsResponse(final Array<IAchievement> achievements) {
         Gdx.app.postRunnable(new Runnable() {
             @Override
             public void run() {

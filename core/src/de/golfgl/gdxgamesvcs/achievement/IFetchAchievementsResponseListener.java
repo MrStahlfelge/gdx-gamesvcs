@@ -18,6 +18,6 @@ public interface IFetchAchievementsResponseListener {
      *
      * @param achievements null if achievements couldn't be fetched.
      */
-    void onFetchAchievementsResponse(Array<Achievement> achievements);
+    void onFetchAchievementsResponse(Array<IAchievement> achievements);
 
 }

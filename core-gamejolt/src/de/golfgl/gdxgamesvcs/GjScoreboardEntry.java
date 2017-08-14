@@ -2,7 +2,7 @@ package de.golfgl.gdxgamesvcs;
 
 import com.badlogic.gdx.utils.JsonValue;
 
-import de.golfgl.gdxgamesvcs.leaderboard.LeaderBoardEntry;
+import de.golfgl.gdxgamesvcs.leaderboard.ILeaderBoardEntry;
 
 /**
  * GameJolt leaderboard entry
@@ -10,7 +10,7 @@ import de.golfgl.gdxgamesvcs.leaderboard.LeaderBoardEntry;
  * Created by Benjamin Schulte on 13.08.2017.
  */
 
-public class GjScoreboardEntry extends LeaderBoardEntry {
+public class GjScoreboardEntry implements ILeaderBoardEntry {
     protected String score;
     protected long sort;
     protected String tag;
@@ -18,8 +18,9 @@ public class GjScoreboardEntry extends LeaderBoardEntry {
     protected String rank;
     protected String userId;
     protected String stored;
+    protected boolean currentPlayer;
 
-    protected static GjScoreboardEntry fromJson(JsonValue json, int rank) {
+    protected static GjScoreboardEntry fromJson(JsonValue json, int rank, String currentPlayer) {
         GjScoreboardEntry gje = new GjScoreboardEntry();
         gje.rank = String.valueOf(rank);
         gje.score = json.getString("score");
@@ -27,9 +28,10 @@ public class GjScoreboardEntry extends LeaderBoardEntry {
         gje.tag = json.getString("extra_data");
         gje.userId = json.getString("user_id");
 
-        if (gje.userId != null && !gje.userId.isEmpty())
+        if (gje.userId != null && !gje.userId.isEmpty()) {
             gje.displayName = json.getString("user");
-        else
+            gje.currentPlayer = (currentPlayer != null && currentPlayer.equalsIgnoreCase(gje.displayName));
+        } else
             gje.displayName = json.getString("guest");
 
         gje.stored = json.getString("stored");
@@ -45,6 +47,16 @@ public class GjScoreboardEntry extends LeaderBoardEntry {
     @Override
     public String getScoreRank() {
         return rank;
+    }
+
+    @Override
+    public String getAvatarUrl() {
+        return null;
+    }
+
+    @Override
+    public boolean isCurrentPlayer() {
+        return currentPlayer;
     }
 
     @Override

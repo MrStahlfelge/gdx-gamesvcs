@@ -14,5 +14,5 @@ public interface IFetchLeaderBoardEntriesResponseListener {
      *
      * @param leaderBoard null if leaderBoard couldn't be fetched.
      */
-    void onLeaderBoardResponse(Array<LeaderBoardEntry> leaderBoard);
+    void onLeaderBoardResponse(Array<ILeaderBoardEntry> leaderBoard);
 }

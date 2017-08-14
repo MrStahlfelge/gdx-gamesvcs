@@ -19,7 +19,7 @@ import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
-import de.golfgl.gdxgamesvcs.leaderboard.LeaderBoardEntry;
+import de.golfgl.gdxgamesvcs.leaderboard.ILeaderBoardEntry;
 
 /**
  * GameServiceClient for GameJolt API
@@ -439,10 +439,10 @@ public class GameJoltClient implements IGameServiceClient {
                     try {
                         JsonValue scores = response.get("scores");
                         int rank = 0;
-                        Array<LeaderBoardEntry> les = new Array<LeaderBoardEntry>();
+                        Array<ILeaderBoardEntry> les = new Array<ILeaderBoardEntry>();
                         for (JsonValue score = scores.child; score != null; score = score.next) {
                             rank++;
-                            GjScoreboardEntry gje = GjScoreboardEntry.fromJson(score, rank);
+                            GjScoreboardEntry gje = GjScoreboardEntry.fromJson(score, rank, getPlayerDisplayName());
                             if (gje != null)
                                 les.add(gje);
                         }

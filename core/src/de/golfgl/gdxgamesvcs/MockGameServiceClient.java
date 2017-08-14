@@ -2,13 +2,13 @@ package de.golfgl.gdxgamesvcs;
 
 import com.badlogic.gdx.utils.Array;
 
-import de.golfgl.gdxgamesvcs.achievement.Achievement;
+import de.golfgl.gdxgamesvcs.achievement.IAchievement;
 import de.golfgl.gdxgamesvcs.achievement.IFetchAchievementsResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
-import de.golfgl.gdxgamesvcs.leaderboard.LeaderBoardEntry;
+import de.golfgl.gdxgamesvcs.leaderboard.ILeaderBoardEntry;
 
 /**
  * This is a mock implementation of {@link IGameServiceClient}. Useful during
@@ -58,7 +58,7 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 	/**
 	 * @return some fake leaderboard entries data
 	 */
-	abstract protected Array<LeaderBoardEntry> getLeaderbaordEntries();
+	abstract protected Array<ILeaderBoardEntry> getLeaderbaordEntries();
 	
 	/**
 	 * @return some fake game states fileNames
@@ -73,7 +73,7 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 	/**
 	 * @return fake achievements list
 	 */
-	abstract protected Array<Achievement> getAchievements();
+	abstract protected Array<IAchievement> getAchievements();
 
 	@Override
 	public String getGameServiceId() {

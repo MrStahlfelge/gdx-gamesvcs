@@ -33,7 +33,7 @@ class GApiGateway {
 	private static GoogleClientSecrets clientSecrets;
 	
 	/**
-	 * Global instance of the {@link DataStoreFactory}. The best practice is to
+	 * Global instance of the {@link FileDataStoreFactory}. The best practice is to
 	 * make it a single globally shared instance across your application.
 	 */
 	private static FileDataStoreFactory dataStoreFactory;
