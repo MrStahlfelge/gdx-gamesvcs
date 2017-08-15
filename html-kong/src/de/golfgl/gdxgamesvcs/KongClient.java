@@ -18,7 +18,8 @@ public class KongClient implements IGameServiceClient {
     public static final String GAMESERVICE_ID = IGameServiceClient.GS_KONGREGATE_ID;
     protected IGameServiceListener gsListener;
 
-    boolean initialized;
+    protected boolean initialized;
+    protected boolean connectionPending;
 
     @Override
     public String getGameServiceId() {
@@ -32,24 +33,47 @@ public class KongClient implements IGameServiceClient {
 
     @Override
     public boolean connect(boolean silent) {
-        if (!initialized) {
+        if (!initialized && !connectionPending) {
             try {
+                connectionPending = true;
                 loadKongApi();
-                initialized = true;
-                // if Kong API has initialized, it also is connected
-                if (gsListener != null)
-                    gsListener.gsConnected();
             } catch (Throwable t) {
-                Gdx.app.error(GAMESERVICE_ID, "Could not initialize - kongregate_api.js included in index.html?");
+                connectionPending = false;
+                Gdx.app.error(GAMESERVICE_ID, "Could not initialize - kongregate_api.js included in index.html? "
+                        + t.getMessage());
             }
+        } else if (initialized && !silent && isKongGuest())
+            showKongLogin();
+
+        return initialized;
+    }
+
+    protected void onInitialized() {
+        initialized = true;
+        connectionPending = false;
+        // if Kong API has initialized, check if user session is active
+        if (gsListener != null) {
+            if (!isKongGuest())
+                gsListener.gsConnected();
+            else
+                gsListener.gsDisconnected();
         }
-        return true;
     }
 
     private native void loadKongApi() /*-{
+        var that = this;
         $wnd.kongregateAPI.loadAPI(function(){
             $wnd.kongregate = $wnd.kongregateAPI.getAPI();
+            that.@de.golfgl.gdxgamesvcs.KongClient::onInitialized()();
+
+            $wnd.kongregate.services.addEventListener('login', function(){
+               that.@de.golfgl.gdxgamesvcs.KongClient::onInitialized()();
+            });
         });
+    }-*/;
+
+    private native void showKongLogin() /*-{
+       $wnd.kongregate.services.showRegistrationBox()
     }-*/;
 
     @Override
@@ -67,14 +91,14 @@ public class KongClient implements IGameServiceClient {
 
     @Override
     public String getPlayerDisplayName() {
-        if (isKongGuest())
+        if (!initialized || isKongGuest())
             return null;
         else
             return getKongPlayerName();
     }
 
     private native boolean isKongGuest() /*-{
-        return kongregate.services.isGuest();
+        return $wnd.kongregate.services.isGuest();
     }-*/;
 
     private native String getKongPlayerName() /*-{
@@ -88,7 +112,7 @@ public class KongClient implements IGameServiceClient {
 
     @Override
     public boolean isConnectionPending() {
-        return false;
+        return connectionPending && !initialized;
     }
 
     @Override
