@@ -14,15 +14,15 @@ import de.golfgl.gdxgamesvcs.leaderboard.ILeaderBoardEntry;
  * This is a mock implementation of {@link IGameServiceClient}. Useful during
  * development phase when you don't want to connect to an existing service but just
  * test your application behavior against service responses.
- * 
+ *
  * It emulate network latencies with a fixed sleep time, helpful to test your wait
  * screen and your GUI behaviors.
- * 
+ *
  * By default mock supports all feature, you may override {@link #isFeatureSupported(de.golfgl.gdxgamesvcs.IGameServiceClient.GameServiceFeature)}
  * in order to configure your mock.
- * 
+ *
  * Subclass implements abstract methods in order to provide mock data (game state, achievements and leaderboard entries)
- * 
+ *
  * @author mgsx
  *
  */
@@ -31,10 +31,10 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 	private float latency;
 	private IGameServiceListener gsListener;
 	private volatile boolean connected, connecting;
-	
+
 	private void sleep(final Runnable runnable){
 		new Thread(new Runnable() {
-			
+
 			@Override
 			public void run() {
 				try {
@@ -46,7 +46,7 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 			}
 		}).start();
 	}
-	
+
 	/**
 	 * Create mock service
 	 * @param latency time of latency in seconds for each emulated remote call.
@@ -54,17 +54,17 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 	public MockGameServiceClient(float latency) {
 		this.latency = latency;
 	}
-	
+
 	/**
 	 * @return some fake leaderboard entries data
 	 */
-	abstract protected Array<ILeaderBoardEntry> getLeaderbaordEntries();
-	
+	abstract protected Array<ILeaderBoardEntry> getLeaderboardEntries();
+
 	/**
 	 * @return some fake game states fileNames
 	 */
 	abstract protected Array<String> getGameStates();
-	
+
 	/**
 	 * @return fake saved game state data
 	 */
@@ -79,11 +79,11 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 	public String getGameServiceId() {
 		return "Mock";
 	}
-	
+
 	@Override
 	public void showAchievements() throws GameServiceException {
 	}
-	
+
 	@Override
 	public void showLeaderboards(String leaderBoardId) throws GameServiceException {
 	}
@@ -92,7 +92,7 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 	public boolean isFeatureSupported(GameServiceFeature feature) {
 		return true;
 	}
-	
+
 	@Override
 	public void setListener(IGameServiceListener gsListener) {
 		this.gsListener = gsListener;
@@ -101,8 +101,9 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 	@Override
 	public boolean connect(boolean silent) {
 		if(!connected && !connecting){
+			connecting = true;
 			sleep(new Runnable() {
-				
+
 				@Override
 				public void run() {
 					connecting = false;
@@ -117,7 +118,7 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 	@Override
 	public void disconnect() {
 		sleep(new Runnable() {
-			
+
 			@Override
 			public void run() {
 				if(gsListener != null) gsListener.gsDisconnected();
@@ -171,7 +172,7 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 		sleep(new Runnable() {
 			@Override
 			public void run() {
-				callback.onLeaderBoardResponse(getLeaderbaordEntries());
+				callback.onLeaderBoardResponse(getLeaderboardEntries());
 			}
 		});
 		return true;
@@ -199,7 +200,7 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 	public void saveGameState(String fileId, byte[] gameState, long progressValue,
 			final ISaveGameStateResponseListener listener) {
 		sleep(new Runnable() {
-			
+
 			@Override
 			public void run() {
 				if(listener != null) listener.onGameStateSaved(true, null);
