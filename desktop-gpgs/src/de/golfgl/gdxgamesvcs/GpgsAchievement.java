@@ -13,6 +13,11 @@ class GpgsAchievement implements IAchievement {
         return achievementId;
     }
 
+    @Override
+    public boolean isAchievementId(String achievementId) {
+        return achievementId != null && achievementId.equalsIgnoreCase(this.achievementId);
+    }
+
     void setAchievementId(String achievementId) {
         this.achievementId = achievementId;
     }

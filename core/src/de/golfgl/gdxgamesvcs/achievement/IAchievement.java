@@ -9,10 +9,20 @@ public interface IAchievement {
 
     /**
      * Returns the achievementId for this achievement
+     * Note that this might be an internal id from the game service. For game services where you defined a
+     * mapping, use {@link #isAchievementId} which respects mappings
      *
      * @return achievementId
      */
     public String getAchievementId();
+
+    /**
+     * Returns if this achievement has the given id. This method respects a given id mapping
+     *
+     * @param achievementId achievement id
+     * @return true or false
+     */
+    public boolean isAchievementId(String achievementId);
 
     /**
      * Returns the title for the achievement
@@ -43,7 +53,7 @@ public interface IAchievement {
      * @return true if unlocked
      */
     public boolean isUnlocked();
-    
+
     /**
      * @return the achievement icon URL (may be null)
      */

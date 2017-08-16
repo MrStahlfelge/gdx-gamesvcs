@@ -14,6 +14,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
+import de.golfgl.gdxgamesvcs.achievement.IAchievement;
 import de.golfgl.gdxgamesvcs.achievement.IFetchAchievementsResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
@@ -341,9 +342,62 @@ public class GameJoltClient implements IGameServiceClient {
     }
 
     @Override
-    public boolean fetchAchievements(IFetchAchievementsResponseListener callback) {
-        //TODO Supported by GameJolt
-        throw new UnsupportedOperationException();
+    public boolean fetchAchievements(final IFetchAchievementsResponseListener callback) {
+        if (!isConnected())
+            return false;
+
+        Map<String, String> params = new HashMap<String, String>();
+        addGameIDUserNameUserToken(params);
+
+        final Net.HttpRequest http = buildJsonRequest("trophies/", params);
+
+        if (http == null)
+            return false;
+
+        Gdx.net.sendHttpRequest(http, new Net.HttpResponseListener() {
+            @Override
+            public void handleHttpResponse(Net.HttpResponse httpResponse) {
+
+                JsonValue response = null;
+                String json = httpResponse.getResultAsString();
+                try {
+                    response = new JsonReader().parse(json).get("response");
+                } catch (Throwable t) {
+                    // eat
+                }
+
+                if (response == null || !response.getBoolean("success")) {
+                    Gdx.app.error(GAMESERVICE_ID, "Could not parse answer from GameJolt: " + json);
+                    callback.onFetchAchievementsResponse(null);
+                } else {
+                    try {
+                        JsonValue trophies = response.get("trophies");
+                        Array<IAchievement> achs = new Array<IAchievement>();
+                        for (JsonValue trophy = trophies.child; trophy != null; trophy = trophy.next) {
+                            GjTrophy ach = GjTrophy.fromJson(trophy);
+                            ach.setTrophyMapper(trophyMapper);
+                            achs.add(ach);
+                        }
+                        callback.onFetchAchievementsResponse(achs);
+                    } catch (Throwable t) {
+                        Gdx.app.error(GAMESERVICE_ID, "Could not parse answer from GameJolt", t);
+                        callback.onFetchAchievementsResponse(null);
+                    }
+                }
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                callback.onFetchAchievementsResponse(null);
+            }
+
+            @Override
+            public void cancelled() {
+                callback.onFetchAchievementsResponse(null);
+            }
+        });
+
+        return true;
     }
 
     @Override
@@ -607,7 +661,8 @@ public class GameJoltClient implements IGameServiceClient {
     @Override
     public boolean isFeatureSupported(GameServiceFeature feature) {
         return feature.equals(GameServiceFeature.SubmitEvents)
-                || feature.equals(GameServiceFeature.FetchLeaderBoardEntries);
+                || feature.equals(GameServiceFeature.FetchLeaderBoardEntries)
+                || feature.equals(GameServiceFeature.FetchAchievements);
     }
 
     protected void storeData(String dataKey, boolean globalKey, String content) {
