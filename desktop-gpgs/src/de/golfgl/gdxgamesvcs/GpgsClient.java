@@ -76,6 +76,9 @@ public class GpgsClient implements IGameServiceClient {
      */
     protected String applicationName;
 
+    protected IGameServiceIdMapper<String> gpgsLeaderboardIdMapper;
+    protected IGameServiceIdMapper<String> gpgsAchievementIdMapper;
+
     private IGameServiceListener gameListener;
 
     private Thread authorizationThread;
@@ -216,6 +219,28 @@ public class GpgsClient implements IGameServiceClient {
     }
 
     /**
+     * sets up the mapper for leader board ids
+     *
+     * @param gpgsLeaderboardIdMapper
+     * @return this for method chaining
+     */
+    public GpgsClient setGpgsLeaderboardIdMapper(IGameServiceIdMapper<String> gpgsLeaderboardIdMapper) {
+        this.gpgsLeaderboardIdMapper = gpgsLeaderboardIdMapper;
+        return this;
+    }
+
+    /**
+     * sets up the mapper for leader achievement ids
+     *
+     * @param gpgsAchievementIdMapper
+     * @return this for method chaining
+     */
+    public GpgsClient setGpgsAchievementIdMapper(IGameServiceIdMapper<String> gpgsAchievementIdMapper) {
+        this.gpgsAchievementIdMapper = gpgsAchievementIdMapper;
+        return this;
+    }
+
+    /**
      * Try to authorize user. This method is blocking until user accept
      * autorization.
      */
@@ -335,7 +360,11 @@ public class GpgsClient implements IGameServiceClient {
      * @throws IOException
      */
     public void submitToLeaderboardSync(String leaderboardId, long score, String tag) throws IOException {
-        GApiGateway.games.scores().submit(leaderboardId, score).execute();
+        if (gpgsLeaderboardIdMapper != null)
+            leaderboardId = gpgsLeaderboardIdMapper.mapToGsId(leaderboardId);
+
+        if (leaderboardId != null)
+            GApiGateway.games.scores().submit(leaderboardId, score).execute();
     }
 
     @Override
@@ -382,7 +411,11 @@ public class GpgsClient implements IGameServiceClient {
      * @throws IOException
      */
     public void unlockAchievementSync(String achievementId) throws IOException {
-        GApiGateway.games.achievements().unlock(achievementId).execute();
+        if (gpgsAchievementIdMapper != null)
+            achievementId = gpgsAchievementIdMapper.mapToGsId(achievementId);
+
+        if (achievementId != null)
+            GApiGateway.games.achievements().unlock(achievementId).execute();
     }
 
     @Override
@@ -409,7 +442,11 @@ public class GpgsClient implements IGameServiceClient {
      */
     public void incrementAchievementSync(String achievementId, int incNum, float completionPercentage) throws
             IOException {
-        GApiGateway.games.achievements().increment(achievementId, incNum).execute();
+        if (gpgsAchievementIdMapper != null)
+            achievementId = gpgsAchievementIdMapper.mapToGsId(achievementId);
+
+        if (achievementId != null)
+            GApiGateway.games.achievements().increment(achievementId, incNum).execute();
     }
 
     @Override
@@ -498,7 +535,7 @@ public class GpgsClient implements IGameServiceClient {
     private File findFileByNameSync(String name) throws IOException {
         // escape some chars (') see : https://developers.google.com/drive/v3/web/search-parameters#fn1
         List<File> files = GApiGateway.drive.files().list().setSpaces("appDataFolder").setQ("name='" + name + "'")
-				.execute().getFiles();
+                .execute().getFiles();
         if (files.size() > 1) {
             throw new GdxRuntimeException("multiple files with name " + name + " exists.");
         } else if (files.size() < 1) {
@@ -662,6 +699,7 @@ public class GpgsClient implements IGameServiceClient {
                 a.setCompletionPercentage(0f);
             }
             a.setIconUrl(unlocked ? def.getUnlockedIconUrl() : def.getRevealedIconUrl());
+            a.achievementIdMapper = gpgsAchievementIdMapper;
 
             achievements.add(a);
         }
@@ -670,7 +708,8 @@ public class GpgsClient implements IGameServiceClient {
     }
 
     @Override
-    public boolean fetchLeaderboardEntries(final String leaderBoardId, final int limit, final boolean relatedToPlayer, final IFetchLeaderBoardEntriesResponseListener callback) {
+    public boolean fetchLeaderboardEntries(final String leaderBoardId, final int limit, final boolean
+            relatedToPlayer, final IFetchLeaderBoardEntriesResponseListener callback) {
         if (connected) {
             background(new SafeRunnable() {
                 @Override
@@ -688,13 +727,21 @@ public class GpgsClient implements IGameServiceClient {
     }
 
     /**
-     * Blocking version of {@link #fetchLeaderboardEntries(String, int, boolean, IFetchLeaderBoardEntriesResponseListener)}
+     * Blocking version of
+     * {@link #fetchLeaderboardEntries(String, int, boolean, IFetchLeaderBoardEntriesResponseListener)}
      *
      * @param leaderBoardId
      * @throws IOException
      */
-    public Array<ILeaderBoardEntry> fetchLeaderboardSync(String leaderBoardId, int limit, boolean aroundPlayer, boolean friendsOnly) throws IOException {
+    public Array<ILeaderBoardEntry> fetchLeaderboardSync(String leaderBoardId, int limit, boolean aroundPlayer,
+                                                         boolean friendsOnly) throws IOException {
         // TODO implement limit
+
+        if (gpgsLeaderboardIdMapper != null)
+            leaderBoardId = gpgsLeaderboardIdMapper.mapToGsId(leaderBoardId);
+
+        if (leaderBoardId == null)
+            return null;
 
         Array<ILeaderBoardEntry> result = new Array<ILeaderBoardEntry>();
         Leaderboard lb = GApiGateway.games.leaderboards().get(leaderBoardId).execute();
@@ -707,7 +754,8 @@ public class GpgsClient implements IGameServiceClient {
 
         LeaderboardScores r;
         if (aroundPlayer) {
-            r = GApiGateway.games.scores().listWindow(leaderBoardId, friendsOnly ? "SOCIAL" : "PUBLIC", "ALL_TIME").execute();
+            r = GApiGateway.games.scores().listWindow(leaderBoardId, friendsOnly ? "SOCIAL" : "PUBLIC", "ALL_TIME")
+                    .execute();
         } else {
             r = GApiGateway.games.scores().list(leaderBoardId, friendsOnly ? "SOCIAL" : "PUBLIC", "ALL_TIME").execute();
         }
@@ -724,7 +772,8 @@ public class GpgsClient implements IGameServiceClient {
         if (r.getItems() != null) {
             for (LeaderboardEntry score : r.getItems()) {
                 // when player is public it appear in this list as well, so we filter it.
-                if (playerScore == null || !score.getPlayer().getPlayerId().equals(playerScore.getPlayer().getPlayerId())) {
+                if (playerScore == null || !score.getPlayer().getPlayerId().equals(playerScore.getPlayer()
+                        .getPlayerId())) {
                     GpgsLeaderBoardEntry s = mapPlayerScore(score);
                     s.setCurrentPlayer(false);
                     result.add(s);
@@ -745,7 +794,7 @@ public class GpgsClient implements IGameServiceClient {
         return result;
     }
 
-    private GpgsLeaderBoardEntry mapPlayerScore(LeaderboardEntry score) throws IOException {
+    protected GpgsLeaderBoardEntry mapPlayerScore(LeaderboardEntry score) throws IOException {
         GpgsLeaderBoardEntry s = new GpgsLeaderBoardEntry();
         s.setUserDisplayName(score.getPlayer().getDisplayName());
         s.setScoreRank(score.getFormattedScoreRank());

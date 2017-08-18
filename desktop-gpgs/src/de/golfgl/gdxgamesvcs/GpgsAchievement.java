@@ -8,6 +8,7 @@ class GpgsAchievement implements IAchievement {
     protected String description;
     protected float completionPercentage;
     protected String iconUrl;
+    protected IGameServiceIdMapper<String> achievementIdMapper;
 
     public String getAchievementId() {
         return achievementId;
@@ -15,6 +16,9 @@ class GpgsAchievement implements IAchievement {
 
     @Override
     public boolean isAchievementId(String achievementId) {
+        if (achievementIdMapper != null)
+            achievementId = achievementIdMapper.mapToGsId(achievementId);
+
         return achievementId != null && achievementId.equalsIgnoreCase(this.achievementId);
     }
 
