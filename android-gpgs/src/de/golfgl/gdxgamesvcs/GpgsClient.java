@@ -42,9 +42,33 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     protected int firstConnectAttempt;
     protected boolean isConnectionPending;
     protected boolean driveApiEnabled;
+    protected IGameServiceIdMapper<String> gpgsLeaderboardIdMapper;
+    protected IGameServiceIdMapper<String> gpgsAchievementIdMapper;
     private boolean mResolvingConnectionFailure = false;
     private boolean mAutoStartSignInflow = true;
     private boolean mSignInClicked = false;
+
+    /**
+     * sets up the mapper for leader board ids
+     *
+     * @param gpgsLeaderboardIdMapper
+     * @return this for method chaining
+     */
+    public GpgsClient setGpgsLeaderboardIdMapper(IGameServiceIdMapper<String> gpgsLeaderboardIdMapper) {
+        this.gpgsLeaderboardIdMapper = gpgsLeaderboardIdMapper;
+        return this;
+    }
+
+    /**
+     * sets up the mapper for leader achievement ids
+     *
+     * @param gpgsAchievementIdMapper
+     * @return this for method chaining
+     */
+    public GpgsClient setGpgsAchievementIdMapper(IGameServiceIdMapper<String> gpgsAchievementIdMapper) {
+        this.gpgsAchievementIdMapper = gpgsAchievementIdMapper;
+        return this;
+    }
 
     /**
      * Initializes the GoogleApiClient. Give your main AndroidLauncher as context.
@@ -300,11 +324,14 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
 
     @Override
     public void showLeaderboards(String leaderBoardId) throws GameServiceException {
-        if (isConnected())
+        if (isConnected()) {
+            if (gpgsLeaderboardIdMapper != null)
+                leaderBoardId = gpgsLeaderboardIdMapper.mapToGsId(leaderBoardId);
+
             myContext.startActivityForResult(leaderBoardId != null ?
                     Games.Leaderboards.getLeaderboardIntent(mGoogleApiClient, leaderBoardId) :
                     Games.Leaderboards.getAllLeaderboardsIntent(mGoogleApiClient), RC_LEADERBOARD);
-        else
+        } else
             throw new GameServiceException.NotConnectedException();
     }
 
@@ -325,7 +352,10 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
 
     @Override
     public boolean submitToLeaderboard(String leaderboardId, long score, String tag) {
-        if (isConnected()) {
+        if (gpgsLeaderboardIdMapper != null)
+            leaderboardId = gpgsLeaderboardIdMapper.mapToGsId(leaderboardId);
+
+        if (leaderboardId != null && isConnected()) {
             if (tag != null)
                 Games.Leaderboards.submitScore(mGoogleApiClient, leaderboardId, score, tag);
             else
@@ -348,7 +378,10 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
 
     @Override
     public boolean unlockAchievement(String achievementId) {
-        if (isConnected()) {
+        if (gpgsAchievementIdMapper != null)
+            achievementId = gpgsAchievementIdMapper.mapToGsId(achievementId);
+
+        if (achievementId != null && isConnected()) {
             Games.Achievements.unlock(mGoogleApiClient, achievementId);
             return true;
         } else
@@ -357,7 +390,10 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
 
     @Override
     public boolean incrementAchievement(String achievementId, int incNum, float completionPercentage) {
-        if (isConnected()) {
+        if (gpgsAchievementIdMapper != null)
+            achievementId = gpgsAchievementIdMapper.mapToGsId(achievementId);
+
+        if (achievementId != null && isConnected()) {
             // GPGS supports passing a value for incrementation, no need to use completionPercentage
             Games.Achievements.increment(mGoogleApiClient, achievementId, incNum);
             return true;
