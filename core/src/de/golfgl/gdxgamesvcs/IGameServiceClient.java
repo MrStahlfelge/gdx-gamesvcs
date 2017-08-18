@@ -170,7 +170,7 @@ public interface IGameServiceClient {
      * <p>
      * This API is of type fire and forget. Every possible error is checked by the API and not thrown, but logged on
      * info level. If the connection is not open, this is no error - some game services allow submitting events
-     * without a user session.
+     * without a user session. Also, if game service does not support events, no error is thrown.
      *
      * @param eventId   event to post to
      * @param increment value the event is incremented. This parameter is ignored when not supported by the API
