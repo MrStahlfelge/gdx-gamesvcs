@@ -430,6 +430,7 @@ public class GameJoltClient implements IGameServiceClient {
             params.put("guest", guestName);
         } else {
             Gdx.app.log(GAMESERVICE_ID, "Cannot post to scoreboard. No guest name and no user given.");
+            return false;
         }
         params.put("score", String.valueOf(score));
         params.put("sort", String.valueOf(score));
