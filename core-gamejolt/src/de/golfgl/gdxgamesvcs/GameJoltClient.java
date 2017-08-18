@@ -374,9 +374,9 @@ public class GameJoltClient implements IGameServiceClient {
                         JsonValue trophies = response.get("trophies");
                         Array<IAchievement> achs = new Array<IAchievement>();
                         for (JsonValue trophy = trophies.child; trophy != null; trophy = trophy.next) {
-                            GjTrophy ach = GjTrophy.fromJson(trophy);
-                            ach.setTrophyMapper(trophyMapper);
-                            achs.add(ach);
+                            IAchievement ach = achievementJsonToObject(trophy);
+                            if (ach != null)
+                                achs.add(ach);
                         }
                         callback.onFetchAchievementsResponse(achs);
                     } catch (Throwable t) {
@@ -398,6 +398,12 @@ public class GameJoltClient implements IGameServiceClient {
         });
 
         return true;
+    }
+
+    protected GjTrophy achievementJsonToObject(JsonValue trophy) {
+        GjTrophy ach = GjTrophy.fromJson(trophy);
+        ach.setTrophyMapper(trophyMapper);
+        return ach;
     }
 
     @Override
@@ -456,8 +462,7 @@ public class GameJoltClient implements IGameServiceClient {
         }
 
         Map<String, String> params = new HashMap<String, String>();
-        // no user name or token added! We want to use the global storage.
-        // http://gamejolt.com/api/doc/game/data-store/update
+        // http://gamejolt.com/api/doc/game/scores/fetch
         if (relatedToPlayer && isConnected())
             addGameIDUserNameUserToken(params);
         else
@@ -497,7 +502,7 @@ public class GameJoltClient implements IGameServiceClient {
                         Array<ILeaderBoardEntry> les = new Array<ILeaderBoardEntry>();
                         for (JsonValue score = scores.child; score != null; score = score.next) {
                             rank++;
-                            GjScoreboardEntry gje = GjScoreboardEntry.fromJson(score, rank, getPlayerDisplayName());
+                            ILeaderBoardEntry gje = scoreJsonToObject(rank, score);
                             if (gje != null)
                                 les.add(gje);
                         }
@@ -521,6 +526,13 @@ public class GameJoltClient implements IGameServiceClient {
         });
 
         return true;
+    }
+
+    /**
+     * converts GameJolt's scoreboard return json to our own data type. This method is for overriding purposes
+     */
+    protected ILeaderBoardEntry scoreJsonToObject(int rank, JsonValue score) {
+        return GjScoreboardEntry.fromJson(score, rank, getPlayerDisplayName());
     }
 
     /**
