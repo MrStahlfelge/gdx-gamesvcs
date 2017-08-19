@@ -1,6 +1,7 @@
 package de.golfgl.gdxgamesvcs;
 
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Timer;
 
 import de.golfgl.gdxgamesvcs.achievement.IAchievement;
 import de.golfgl.gdxgamesvcs.achievement.IFetchAchievementsResponseListener;
@@ -32,22 +33,17 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 	private IGameServiceListener gsListener;
 	private volatile boolean connected, connecting;
 
-	private void sleep(final Runnable runnable){
-		new Thread(new Runnable() {
+    private void sleep(final Runnable runnable) {
+        if (runnable != null)
+            Timer.schedule(new Timer.Task() {
+                @Override
+                public void run() {
+                    runnable.run();
+                }
+            }, latency);
+    }
 
-			@Override
-			public void run() {
-				try {
-					Thread.sleep((long)(latency * 1000));
-				} catch (InterruptedException e) {
-					// silently fail
-				}
-				if(runnable != null) runnable.run();
-			}
-		}).start();
-	}
-
-	/**
+    /**
 	 * Create mock service
 	 * @param latency time of latency in seconds for each emulated remote call.
 	 */
