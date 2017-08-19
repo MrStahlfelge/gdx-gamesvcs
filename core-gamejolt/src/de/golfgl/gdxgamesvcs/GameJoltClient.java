@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Net;
 import com.badlogic.gdx.net.HttpParametersUtils;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Base64Coder;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.Timer;
@@ -610,7 +611,10 @@ public class GameJoltClient implements IGameServiceClient {
 
         // no user name or token added! We want to use the global storage.
         // http://gamejolt.com/api/doc/game/data-store/set
-        storeData(eventKeyPrefix + eventId, true, "0");
+        Net.HttpRequest http = buildStoreDataRequest(eventKeyPrefix + eventId, true, "0");
+
+        if (http != null)
+            Gdx.net.sendHttpRequest(http, new NoOpResponseListener());
 
     }
 
@@ -653,10 +657,52 @@ public class GameJoltClient implements IGameServiceClient {
     }
 
     @Override
-    public void saveGameState(String fileId, byte[] gameState, long progressValue, ISaveGameStateResponseListener
-            listener) {
-        //TODO Supported by GameJolt
-        throw new UnsupportedOperationException();
+    public void saveGameState(String fileId, byte[] gameState, long progressValue,
+                              final ISaveGameStateResponseListener listener) {
+        Net.HttpRequest http = buildStoreDataRequest(fileId, false, new String(Base64Coder.encode(gameState)));
+
+        Gdx.net.sendHttpRequest(http, new Net.HttpResponseListener() {
+            @Override
+            public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                String json = httpResponse.getResultAsString();
+                boolean success = parseSuccessFromResponse(json);
+
+                if (!success)
+                    Gdx.app.error(GAMESERVICE_ID, "Error saving gamestate: " + json);
+
+                if (listener != null)
+                    listener.onGameStateSaved(success, null);
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                Gdx.app.error(GAMESERVICE_ID, "Error saving gamestate", t);
+                if (listener != null)
+                    listener.onGameStateSaved(false, null);
+            }
+
+            @Override
+            public void cancelled() {
+                Gdx.app.error(GAMESERVICE_ID, "Error saving gamestate: Cancelled");
+                if (listener != null)
+                    listener.onGameStateSaved(false, null);
+            }
+        });
+    }
+
+    protected boolean parseSuccessFromResponse(String json) {
+        JsonValue response = null;
+        boolean success;
+        try {
+            response = new JsonReader().parse(json).get("response");
+
+            success = response != null && response.getBoolean("success");
+        } catch (Throwable t) {
+            // eat
+            Gdx.app.error(GAMESERVICE_ID, "Cannot parse save gamestate response", t);
+            success = false;
+        }
+        return success;
     }
 
     @Override
@@ -673,12 +719,22 @@ public class GameJoltClient implements IGameServiceClient {
 
     @Override
     public boolean isFeatureSupported(GameServiceFeature feature) {
-        return feature.equals(GameServiceFeature.SubmitEvents)
-                || feature.equals(GameServiceFeature.FetchLeaderBoardEntries)
-                || feature.equals(GameServiceFeature.FetchAchievements);
+        switch (feature) {
+            case GameStateStorage:
+            case GameStateMultipleFiles:
+            case SubmitEvents:
+            case FetchLeaderBoardEntries:
+            case FetchAchievements:
+                return true;
+            default:
+                return false;
+        }
     }
 
-    protected void storeData(String dataKey, boolean globalKey, String content) {
+    /**
+     * content must be without special chars ampersand or question mark - use Base64 when not sure!
+     */
+    protected Net.HttpRequest buildStoreDataRequest(String dataKey, boolean globalKey, String content) {
         Map<String, String> params = new HashMap<String, String>();
 
         if (globalKey)
@@ -687,29 +743,65 @@ public class GameJoltClient implements IGameServiceClient {
             addGameIDUserNameUserToken(params);
         params.put("key", dataKey);
 
-        // should better be POSTed, which should work according to the documentation. But it did not (see below).
-        params.put("data", content);
-
         final Net.HttpRequest http = buildJsonRequest("data-store/set/", params);
         if (http == null)
-            return;
+            return null;
 
-        //This does not work:
-        //http.setMethod(Net.HttpMethods.POST);
-        //http.setContent("data=" + content);
-        //This also does not work:
-        //http.setMethod(Net.HttpMethods.POST);
-        //http.setContent(content);
+        http.setMethod(Net.HttpMethods.POST);
+        http.setHeader("Content-Type", "application/x-www-form-urlencoded");
+        http.setContent("data=" + content);
 
-        Gdx.net.sendHttpRequest(http, new NoOpResponseListener());
+        return http;
     }
 
     @Override
-    public void loadGameState(String fileId, ILoadGameStateResponseListener listener) {
-        //TODO - it is supported by Gamejolt, but not by this client
-        throw new UnsupportedOperationException();
+    public void loadGameState(String fileId, final ILoadGameStateResponseListener listener) {
+        Net.HttpRequest http = buildLoadDataRequest(fileId, false);
+
+        Gdx.net.sendHttpRequest(http, new Net.HttpResponseListener() {
+            @Override
+            public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                String response = httpResponse.getResultAsString();
+
+                if (response == null || !response.startsWith("SUCCESS")) {
+                    Gdx.app.error(GAMESERVICE_ID, "Gamestate load failed: " + response);
+                    listener.gsGameStateLoaded(null);
+                } else {
+                    byte[] gs = Base64Coder.decode(response.substring(response.indexOf('\n') + 1));
+                    listener.gsGameStateLoaded(gs);
+                }
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                Gdx.app.error(GAMESERVICE_ID, "Gamestate load failed", t);
+                listener.gsGameStateLoaded(null);
+            }
+
+            @Override
+            public void cancelled() {
+                Gdx.app.error(GAMESERVICE_ID, "Gamestate load cancelled");
+
+                listener.gsGameStateLoaded(null);
+            }
+        });
     }
 
+    protected Net.HttpRequest buildLoadDataRequest(String dataKey, boolean globalKey) {
+        Map<String, String> params = new HashMap<String, String>();
+
+        if (globalKey)
+            params.put("game_id", gjAppId);
+        else
+            addGameIDUserNameUserToken(params);
+        params.put("key", dataKey);
+
+        final Net.HttpRequest http = buildRequest("data-store/?format=dump&", params);
+
+        return http;
+
+    }
+    
     protected void addGameIDUserNameUserToken(Map<String, String> params) {
         params.put("game_id", String.valueOf(gjAppId));
         params.put("username", userName);
