@@ -659,6 +659,12 @@ public class GameJoltClient implements IGameServiceClient {
     @Override
     public void saveGameState(String fileId, byte[] gameState, long progressValue,
                               final ISaveGameStateResponseListener listener) {
+        if (!isConnected()) {
+            if (listener != null)
+                listener.onGameStateSaved(false, "NOT_CONNECTED");
+            return;
+        }
+
         Net.HttpRequest http = buildStoreDataRequest(fileId, false, new String(Base64Coder.encode(gameState)));
 
         Gdx.net.sendHttpRequest(http, new Net.HttpResponseListener() {
@@ -690,6 +696,9 @@ public class GameJoltClient implements IGameServiceClient {
         });
     }
 
+    /**
+     * Helper method when just interested if GameJolt request was successful
+     */
     protected boolean parseSuccessFromResponse(String json) {
         JsonValue response = null;
         boolean success;
@@ -699,7 +708,7 @@ public class GameJoltClient implements IGameServiceClient {
             success = response != null && response.getBoolean("success");
         } catch (Throwable t) {
             // eat
-            Gdx.app.error(GAMESERVICE_ID, "Cannot parse save gamestate response", t);
+            Gdx.app.error(GAMESERVICE_ID, "Cannot parse GameJolt response", t);
             success = false;
         }
         return success;
@@ -756,6 +765,11 @@ public class GameJoltClient implements IGameServiceClient {
 
     @Override
     public void loadGameState(String fileId, final ILoadGameStateResponseListener listener) {
+        if (!isConnected()) {
+            listener.gsGameStateLoaded(null);
+            return;
+        }
+
         Net.HttpRequest http = buildLoadDataRequest(fileId, false);
 
         Gdx.net.sendHttpRequest(http, new Net.HttpResponseListener() {
@@ -787,6 +801,9 @@ public class GameJoltClient implements IGameServiceClient {
         });
     }
 
+    /**
+     * Load data is done with dump format
+     */
     protected Net.HttpRequest buildLoadDataRequest(String dataKey, boolean globalKey) {
         Map<String, String> params = new HashMap<String, String>();
 
