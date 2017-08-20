@@ -665,7 +665,10 @@ public class GameJoltClient implements IGameServiceClient {
             return;
         }
 
-        Net.HttpRequest http = buildStoreDataRequest(fileId, false, new String(Base64Coder.encode(gameState)));
+        //TODO progressValue is saved for future use, but should be checked before overwriting existing values
+
+        Net.HttpRequest http = buildStoreDataRequest(fileId, false,
+                Long.toString(progressValue) + "\n" + new String(Base64Coder.encode(gameState)));
 
         Gdx.net.sendHttpRequest(http, new Net.HttpResponseListener() {
             @Override
@@ -781,7 +784,10 @@ public class GameJoltClient implements IGameServiceClient {
                     Gdx.app.error(GAMESERVICE_ID, "Gamestate load failed: " + response);
                     listener.gsGameStateLoaded(null);
                 } else {
-                    byte[] gs = Base64Coder.decode(response.substring(response.indexOf('\n') + 1));
+                    // indexOf is twice to cut first two lines. First one is success message,
+                    // second one is progressValue
+                    byte[] gs = Base64Coder.decode(response.substring(
+                            response.indexOf('\n', response.indexOf('\n') + 1) + 1));
                     listener.gsGameStateLoaded(gs);
                 }
             }
@@ -818,7 +824,7 @@ public class GameJoltClient implements IGameServiceClient {
         return http;
 
     }
-    
+
     protected void addGameIDUserNameUserToken(Map<String, String> params) {
         params.put("game_id", String.valueOf(gjAppId));
         params.put("username", userName);
