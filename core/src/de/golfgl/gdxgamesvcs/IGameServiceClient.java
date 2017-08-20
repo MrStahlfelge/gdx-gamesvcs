@@ -236,7 +236,8 @@ public interface IGameServiceClient {
      * check {@link #isFeatureSupported(GameServiceFeature)} prior to call this method.
      *
      * @param fileId  game state Id
-     * @param success response listener, can be null
+     * @param success response listener, can be null. Called when a delete attempt succeeded or failed
+     * @return true if delete attempt could be made, false otherwise
      */
     boolean deleteGameState(final String fileId, ISaveGameStateResponseListener success);
 

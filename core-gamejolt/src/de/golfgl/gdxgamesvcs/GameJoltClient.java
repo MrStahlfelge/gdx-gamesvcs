@@ -196,7 +196,7 @@ public class GameJoltClient implements IGameServiceClient {
                 try {
                     response = new JsonReader().parse(json).get("response");
                 } catch (Throwable t) {
-                    // eat
+                    Gdx.app.error(GAMESERVICE_ID, "Could not parse answer from GameJolt", t);
                 }
 
                 if (response == null) {
@@ -363,15 +363,12 @@ public class GameJoltClient implements IGameServiceClient {
                 String json = httpResponse.getResultAsString();
                 try {
                     response = new JsonReader().parse(json).get("response");
-                } catch (Throwable t) {
-                    // eat
-                }
 
-                if (response == null || !response.getBoolean("success")) {
-                    Gdx.app.error(GAMESERVICE_ID, "Could not parse answer from GameJolt: " + json);
-                    callback.onFetchAchievementsResponse(null);
-                } else {
-                    try {
+                    if (response == null || !response.getBoolean("success")) {
+                        Gdx.app.error(GAMESERVICE_ID, "Could not parse answer from GameJolt: " + json);
+                        callback.onFetchAchievementsResponse(null);
+                    } else {
+
                         JsonValue trophies = response.get("trophies");
                         Array<IAchievement> achs = new Array<IAchievement>();
                         for (JsonValue trophy = trophies.child; trophy != null; trophy = trophy.next) {
@@ -380,10 +377,10 @@ public class GameJoltClient implements IGameServiceClient {
                                 achs.add(ach);
                         }
                         callback.onFetchAchievementsResponse(achs);
-                    } catch (Throwable t) {
-                        Gdx.app.error(GAMESERVICE_ID, "Could not parse answer from GameJolt", t);
-                        callback.onFetchAchievementsResponse(null);
                     }
+                } catch (Throwable t) {
+                    Gdx.app.error(GAMESERVICE_ID, "Could not parse answer from GameJolt " + json, t);
+                    callback.onFetchAchievementsResponse(null);
                 }
             }
 
@@ -489,15 +486,11 @@ public class GameJoltClient implements IGameServiceClient {
                 String json = httpResponse.getResultAsString();
                 try {
                     response = new JsonReader().parse(json).get("response");
-                } catch (Throwable t) {
-                    // eat
-                }
 
-                if (response == null || !response.getBoolean("success")) {
-                    Gdx.app.error(GAMESERVICE_ID, "Could not parse answer from GameJolt: " + json);
-                    callback.onLeaderBoardResponse(null);
-                } else {
-                    try {
+                    if (response == null || !response.getBoolean("success")) {
+                        Gdx.app.error(GAMESERVICE_ID, "Could not parse answer from GameJolt: " + json);
+                        callback.onLeaderBoardResponse(null);
+                    } else {
                         JsonValue scores = response.get("scores");
                         int rank = 0;
                         Array<ILeaderBoardEntry> les = new Array<ILeaderBoardEntry>();
@@ -508,10 +501,10 @@ public class GameJoltClient implements IGameServiceClient {
                                 les.add(gje);
                         }
                         callback.onLeaderBoardResponse(les);
-                    } catch (Throwable t) {
-                        Gdx.app.error(GAMESERVICE_ID, "Could not parse answer from GameJolt", t);
-                        callback.onLeaderBoardResponse(null);
                     }
+                } catch (Throwable t) {
+                    Gdx.app.error(GAMESERVICE_ID, "Could not parse answer from GameJolt: " + json, t);
+                    callback.onLeaderBoardResponse(null);
                 }
             }
 
@@ -710,23 +703,110 @@ public class GameJoltClient implements IGameServiceClient {
 
             success = response != null && response.getBoolean("success");
         } catch (Throwable t) {
-            // eat
-            Gdx.app.error(GAMESERVICE_ID, "Cannot parse GameJolt response", t);
+            Gdx.app.error(GAMESERVICE_ID, "Cannot parse GameJolt response: " + json, t);
             success = false;
         }
         return success;
     }
 
     @Override
-    public boolean deleteGameState(String fileId, ISaveGameStateResponseListener success) {
-        //TODO Supported by GameJolt
-        throw new UnsupportedOperationException();
+    public boolean deleteGameState(String fileId, final ISaveGameStateResponseListener successListener) {
+        if (!isConnected())
+            return false;
+
+        Map<String, String> params = new HashMap<String, String>();
+
+        addGameIDUserNameUserToken(params);
+        params.put("key", fileId);
+
+        final Net.HttpRequest http = buildJsonRequest("data-store/remove/", params);
+        if (http == null)
+            return false;
+
+        Gdx.net.sendHttpRequest(http, new Net.HttpResponseListener() {
+            @Override
+            public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                String json = httpResponse.getResultAsString();
+                boolean success = parseSuccessFromResponse(json);
+
+                if (!success)
+                    Gdx.app.error(GAMESERVICE_ID, "Error deleting gamestate: " + json);
+
+                if (successListener != null)
+                    successListener.onGameStateSaved(success, null);
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                Gdx.app.error(GAMESERVICE_ID, "Error deleting gamestate", t);
+                if (successListener != null)
+                    successListener.onGameStateSaved(false, null);
+            }
+
+            @Override
+            public void cancelled() {
+                Gdx.app.error(GAMESERVICE_ID, "Error deleting gamestate: Cancelled");
+                if (successListener != null)
+                    successListener.onGameStateSaved(false, null);
+            }
+        });
+
+        return true;
     }
 
     @Override
-    public boolean fetchGameStates(IFetchGameStatesListResponseListener callback) {
-        //TODO Supported by GameJolt
-        throw new UnsupportedOperationException();
+    public boolean fetchGameStates(final IFetchGameStatesListResponseListener callback) {
+        if (!isConnected())
+            return false;
+
+        Map<String, String> params = new HashMap<String, String>();
+
+        addGameIDUserNameUserToken(params);
+
+        final Net.HttpRequest http = buildJsonRequest("data-store/get-keys/", params);
+        if (http == null)
+            return false;
+
+        Gdx.net.sendHttpRequest(http, new Net.HttpResponseListener() {
+            @Override
+            public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                JsonValue response = null;
+                String json = httpResponse.getResultAsString();
+                try {
+                    response = new JsonReader().parse(json).get("response");
+
+                    if (response == null || !response.getBoolean("success")) {
+                        Gdx.app.error(GAMESERVICE_ID, "Could not parse answer from GameJolt: " + json);
+                        callback.onFetchGameStatesListResponse(null);
+                    } else {
+
+                        JsonValue keysObj = response.get("keys");
+                        Array<String> keysArr = new Array<String>();
+                        for (JsonValue keyObj = keysObj.child; keyObj != null; keyObj = keyObj.next) {
+                            keysArr.add(keyObj.getString("key"));
+                        }
+                        callback.onFetchGameStatesListResponse(keysArr);
+                    }
+                } catch (Throwable t) {
+                    Gdx.app.error(GAMESERVICE_ID, "Could not parse answer from GameJolt: " + json, t);
+                    callback.onFetchGameStatesListResponse(null);
+                }
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                Gdx.app.error(GAMESERVICE_ID, "Error fetching gamestates", t);
+                callback.onFetchGameStatesListResponse(null);
+            }
+
+            @Override
+            public void cancelled() {
+                Gdx.app.error(GAMESERVICE_ID, "Error fetching gamestates: Cancelled");
+                callback.onFetchGameStatesListResponse(null);
+            }
+        });
+
+        return true;
     }
 
     @Override
@@ -737,6 +817,8 @@ public class GameJoltClient implements IGameServiceClient {
             case SubmitEvents:
             case FetchLeaderBoardEntries:
             case FetchAchievements:
+            case GameStateDelete:
+            case FetchGameStates:
                 return true;
             default:
                 return false;
