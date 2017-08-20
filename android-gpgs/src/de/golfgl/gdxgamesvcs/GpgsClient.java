@@ -421,17 +421,14 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         if (!driveApiEnabled)
             throw new UnsupportedOperationException();
 
-        if (isConnected()) {
+        AsyncTask<Void, Void, Boolean> task = new AsyncTask<Void, Void, Boolean>() {
+            @Override
+            protected Boolean doInBackground(Void... params) {
+                return saveGameStateSync(fileId, gameState, progressValue, listener);
+            }
+        };
 
-            AsyncTask<Void, Void, Boolean> task = new AsyncTask<Void, Void, Boolean>() {
-                @Override
-                protected Boolean doInBackground(Void... params) {
-                    return saveGameStateSync(fileId, gameState, progressValue, listener);
-                }
-            };
-
-            task.execute();
-        }
+        task.execute();
     }
 
     @NonNull
