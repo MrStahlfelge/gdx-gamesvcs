@@ -215,17 +215,18 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 	}
 
 	@Override
-	public boolean deleteGameState(String fileId, final ISaveGameStateResponseListener success) {
-		sleep(new Runnable() {
-			@Override
-			public void run() {
-				success.onGameStateSaved(true, null);
-			}
-		});
-		return false;
-	}
+    public boolean deleteGameState(String fileId, final ISaveGameStateResponseListener success) {
+        sleep(new Runnable() {
+            @Override
+            public void run() {
+                if (success != null)
+                    success.onGameStateSaved(true, null);
+            }
+        });
+        return true;
+    }
 
-	@Override
+    @Override
 	public boolean fetchGameStates(final IFetchGameStatesListResponseListener callback) {
 		sleep(new Runnable() {
 			@Override
