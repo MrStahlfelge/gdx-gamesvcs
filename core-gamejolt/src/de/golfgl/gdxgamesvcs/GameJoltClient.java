@@ -700,7 +700,6 @@ public class GameJoltClient implements IGameServiceClient {
         boolean success;
         try {
             response = new JsonReader().parse(json).get("response");
-
             success = response != null && response.getBoolean("success");
         } catch (Throwable t) {
             Gdx.app.error(GAMESERVICE_ID, "Cannot parse GameJolt response: " + json, t);
@@ -729,8 +728,9 @@ public class GameJoltClient implements IGameServiceClient {
                 String json = httpResponse.getResultAsString();
                 boolean success = parseSuccessFromResponse(json);
 
+                // just log, no error because deleting a nonexistant gamestate fails but is no error
                 if (!success)
-                    Gdx.app.error(GAMESERVICE_ID, "Error deleting gamestate: " + json);
+                    Gdx.app.log(GAMESERVICE_ID, "Failed to delete gamestate: " + json);
 
                 if (successListener != null)
                     successListener.onGameStateSaved(success, null);
@@ -863,7 +863,8 @@ public class GameJoltClient implements IGameServiceClient {
                 String response = httpResponse.getResultAsString();
 
                 if (response == null || !response.startsWith("SUCCESS")) {
-                    Gdx.app.error(GAMESERVICE_ID, "Gamestate load failed: " + response);
+                    // just log, no error because loading a nonexistant gamestate fails but is no error
+                    Gdx.app.log(GAMESERVICE_ID, "Gamestate load failed: " + response);
                     listener.gsGameStateLoaded(null);
                 } else {
                     // indexOf is twice to cut first two lines. First one is success message,
