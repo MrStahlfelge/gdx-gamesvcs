@@ -366,11 +366,17 @@ public class GameCircleClient implements IGameServiceClient {
 
     @Override
     public boolean isFeatureSupported(GameServiceFeature feature) {
-        return feature.equals(GameServiceFeature.GameStateStorage) && whisperSyncEnabled
-                || feature.equals(GameServiceFeature.GameStateMultipleFiles) && whisperSyncEnabled
-                || feature.equals(GameServiceFeature.ShowAchievementsUI)
-                || feature.equals(GameServiceFeature.ShowAllLeaderboardsUI)
-                || feature.equals(GameServiceFeature.ShowLeaderboardUI);
+        switch (feature) {
+            case GameStateStorage:
+            case GameStateMultipleFiles:
+                return whisperSyncEnabled;
+            case ShowAchievementsUI:
+            case ShowAllLeaderboardsUI:
+            case ShowLeaderboardUI:
+                return true;
+            default:
+                return false;
+        }
     }
 
     protected boolean loadGameStateSync(String fileId, ILoadGameStateResponseListener listener) {

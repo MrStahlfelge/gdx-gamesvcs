@@ -536,12 +536,18 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
 
     @Override
     public boolean isFeatureSupported(GameServiceFeature feature) {
-        return feature.equals(GameServiceFeature.GameStateStorage) && driveApiEnabled
-                || feature.equals(GameServiceFeature.GameStateMultipleFiles) && driveApiEnabled
-                || feature.equals(GameServiceFeature.ShowAchievementsUI)
-                || feature.equals(GameServiceFeature.ShowAllLeaderboardsUI)
-                || feature.equals(GameServiceFeature.ShowLeaderboardUI)
-                || feature.equals(GameServiceFeature.SubmitEvents);
+        switch (feature) {
+            case GameStateStorage:
+            case GameStateMultipleFiles:
+                return driveApiEnabled;
+            case ShowAchievementsUI:
+            case ShowAllLeaderboardsUI:
+            case ShowLeaderboardUI:
+            case SubmitEvents:
+                return true;
+            default:
+                return false;
+        }
     }
 
     @NonNull
