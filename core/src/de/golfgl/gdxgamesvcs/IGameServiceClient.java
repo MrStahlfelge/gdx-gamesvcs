@@ -156,7 +156,7 @@ public interface IGameServiceClient {
      * @param leaderBoardId   leaderboard to fetch
      * @param limit           limit how many entries to retrieve
      * @param relatedToPlayer only fetch scores around current player score or by current player (depending on Game
-     *                        Service)
+     *                        Service). If this is not possible, player-unrelated leaderboard entries are returned.
      * @param callback
      * @return false if fetch attempt could not be made. Response listener will not get called in that case.
      * @throws UnsupportedOperationException if not supported by game service client, so check
