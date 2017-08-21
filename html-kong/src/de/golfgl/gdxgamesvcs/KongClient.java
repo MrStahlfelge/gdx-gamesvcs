@@ -1,12 +1,17 @@
 package de.golfgl.gdxgamesvcs;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Net;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.JsonReader;
+import com.badlogic.gdx.utils.JsonValue;
 
 import de.golfgl.gdxgamesvcs.achievement.IFetchAchievementsResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
+import de.golfgl.gdxgamesvcs.leaderboard.ILeaderBoardEntry;
 
 /**
  * Kongegrate Client
@@ -23,6 +28,7 @@ import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListene
 public class KongClient implements IGameServiceClient {
     public static final String GAMESERVICE_ID = IGameServiceClient.GS_KONGREGATE_ID;
     protected IGameServiceListener gsListener;
+    protected IGameServiceIdMapper<Integer> statIdMapper;
 
     protected boolean initialized;
     protected boolean connectionPending;
@@ -35,6 +41,11 @@ public class KongClient implements IGameServiceClient {
     @Override
     public void setListener(IGameServiceListener gsListener) {
         this.gsListener = gsListener;
+    }
+
+    public KongClient setStatIdMapper(IGameServiceIdMapper<Integer> statIds) {
+        this.statIdMapper = statIds;
+        return this;
     }
 
     @Override
@@ -111,6 +122,17 @@ public class KongClient implements IGameServiceClient {
         return $wnd.kongregate.services.getUsername();
     }-*/;
 
+    public int getUserId() {
+        if (!initialized || isKongGuest())
+            return 0;
+        else
+            return getKongPlayerId();
+    }
+
+    private native int getKongPlayerId() /*-{
+        return $wnd.kongregate.services.getUserId();
+    }-*/;
+
     @Override
     public boolean isConnected() {
         return initialized && !isKongGuest();
@@ -149,10 +171,81 @@ public class KongClient implements IGameServiceClient {
     }
 
     @Override
-    public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
-                                           IFetchLeaderBoardEntriesResponseListener callback) {
-        //TODO Supported by Kong
-        throw new UnsupportedOperationException();
+    public boolean fetchLeaderboardEntries(String leaderBoardId, final int limit, boolean relatedToPlayer,
+                                           final IFetchLeaderBoardEntriesResponseListener callback) {
+        //this does not work without hosting an own webservice, thus isFeatureSupported does not report it as supported
+        //See issue #13 https://github.com/MrStahlfelge/gdx-gamesvcs/issues/13 for more information
+
+        if (statIdMapper == null)
+            throw new IllegalStateException("Call setStatIdMapper before querying stats");
+
+        Integer statId = statIdMapper.mapToGsId(leaderBoardId);
+
+        if (statId == null)
+            return false;
+
+        Gdx.net.sendHttpRequest(buildQueryStatRequest(statId, relatedToPlayer),
+                new Net.HttpResponseListener() {
+                    @Override
+                    public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                        JsonValue response = null;
+                        String json = httpResponse.getResultAsString();
+                        // looks like a CORS error when fetching :-(
+                        try {
+                            response = new JsonReader().parse(json).get(0);
+                            int rank = 0;
+                            Array<ILeaderBoardEntry> le = new Array<ILeaderBoardEntry>();
+                            for (JsonValue statEntry = response.child; statEntry != null && rank < limit;
+                                 statEntry = statEntry.next) {
+                                rank++;
+                                KongStatEntry kse = new KongStatEntry();
+                                kse.username = statEntry.getString("username");
+                                kse.currentPlayer = kse.username.equalsIgnoreCase(getPlayerDisplayName());
+                                kse.avatarUrl = statEntry.getString("avatar_url");
+                                kse.score = statEntry.getLong("score");
+                                kse.rank = Integer.toString(rank);
+
+                                le.add(kse);
+                            }
+
+                            callback.onLeaderBoardResponse(le);
+
+                        } catch (Throwable t) {
+                            Gdx.app.error(GAMESERVICE_ID, "Error querying stats " + json, t);
+                            callback.onLeaderBoardResponse(null);
+                        }
+                    }
+
+                    @Override
+                    public void failed(Throwable t) {
+                        Gdx.app.error(GAMESERVICE_ID, "Query stat failed", t);
+                        callback.onLeaderBoardResponse(null);
+                    }
+
+                    @Override
+                    public void cancelled() {
+                        Gdx.app.error(GAMESERVICE_ID, "Query stat cancelled");
+                        callback.onLeaderBoardResponse(null);
+                    }
+                });
+
+        return true;
+    }
+
+    /**
+     * override this method for tunneling through own server or other needs
+     */
+    protected Net.HttpRequest buildQueryStatRequest(Integer statId, boolean playerRelated) {
+        String url = "https://api.kongregate.com/api/high_scores/" +
+                (playerRelated && isConnected() ? "friends/" + statId.toString() + "/" + Integer.toString(getUserId())
+                        : "https://api.kongregate.com/api/high_scores/lifetime/" + statId.toString())
+                + ".json";
+
+        Net.HttpRequest http = new Net.HttpRequest();
+        http.setMethod(Net.HttpMethods.GET);
+        http.setUrl(url);
+
+        return http;
     }
 
     @Override
@@ -203,6 +296,8 @@ public class KongClient implements IGameServiceClient {
 
     @Override
     public boolean isFeatureSupported(GameServiceFeature feature) {
+        //this does not list FetchLeaderBoardEntries because it does not work out of the box
+        //See issue #13 https://github.com/MrStahlfelge/gdx-gamesvcs/issues/13 for more information
         return feature.equals(GameServiceFeature.SubmitEvents);
     }
 }
