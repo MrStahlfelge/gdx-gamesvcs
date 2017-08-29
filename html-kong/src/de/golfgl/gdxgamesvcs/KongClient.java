@@ -49,6 +49,15 @@ public class KongClient implements IGameServiceClient {
     }
 
     @Override
+    public boolean resumeSession() {
+        return connect(true);
+    }
+
+    @Override
+    public boolean logIn() {
+        return connect(false);
+    }
+
     public boolean connect(boolean silent) {
         if (!initialized && !connectionPending) {
             try {
@@ -71,9 +80,9 @@ public class KongClient implements IGameServiceClient {
         // if Kong API has initialized, check if user session is active
         if (gsListener != null) {
             if (!isKongGuest())
-                gsListener.gsConnected();
+                gsListener.gsOnSessionActive();
             else
-                gsListener.gsDisconnected();
+                gsListener.gsOnSessionInactive();
         }
     }
 
@@ -94,7 +103,7 @@ public class KongClient implements IGameServiceClient {
     }-*/;
 
     @Override
-    public void disconnect() {
+    public void pauseSession() {
         //nothing to do
     }
 
@@ -102,7 +111,7 @@ public class KongClient implements IGameServiceClient {
     public void logOff() {
         //nothing to do, inform the user to log out via web interface
         if (gsListener != null)
-            gsListener.gsErrorMsg(IGameServiceListener.GsErrorType.errorLogoutFailed,
+            gsListener.gsShowErrorToUser(IGameServiceListener.GsErrorType.errorLogoutFailed,
                     "Please logout via Kongregate's interface", null);
     }
 
@@ -134,7 +143,7 @@ public class KongClient implements IGameServiceClient {
     }-*/;
 
     @Override
-    public boolean isConnected() {
+    public boolean isSessionActive() {
         return initialized && !isKongGuest();
     }
 
@@ -237,7 +246,7 @@ public class KongClient implements IGameServiceClient {
      */
     protected Net.HttpRequest buildQueryStatRequest(Integer statId, boolean playerRelated) {
         String url = "https://api.kongregate.com/api/high_scores/" +
-                (playerRelated && isConnected() ? "friends/" + statId.toString() + "/" + Integer.toString(getUserId())
+                (playerRelated && isSessionActive() ? "friends/" + statId.toString() + "/" + Integer.toString(getUserId())
                         : "https://api.kongregate.com/api/high_scores/lifetime/" + statId.toString())
                 + ".json";
 

@@ -18,31 +18,31 @@ public class GameServiceRenderThreadListener implements IGameServiceListener {
     }
 
     @Override
-    public void gsConnected() {
+    public void gsOnSessionActive() {
         Gdx.app.postRunnable(new Runnable() {
             @Override
             public void run() {
-                realListener.gsConnected();
+                realListener.gsOnSessionActive();
             }
         });
     }
 
     @Override
-    public void gsDisconnected() {
+    public void gsOnSessionInactive() {
         Gdx.app.postRunnable(new Runnable() {
             @Override
             public void run() {
-                realListener.gsDisconnected();
+                realListener.gsOnSessionInactive();
             }
         });
     }
 
     @Override
-    public void gsErrorMsg(final GsErrorType et, final String msg, final Throwable t) {
+    public void gsShowErrorToUser(final GsErrorType et, final String msg, final Throwable t) {
         Gdx.app.postRunnable(new Runnable() {
             @Override
             public void run() {
-                realListener.gsErrorMsg(et, msg, t);
+                realListener.gsShowErrorToUser(et, msg, t);
             }
         });
     }

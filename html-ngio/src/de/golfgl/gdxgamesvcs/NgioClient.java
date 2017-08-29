@@ -106,6 +106,15 @@ public class NgioClient implements IGameServiceClient {
     }
 
     @Override
+    public boolean resumeSession() {
+        return connect(true);
+    }
+
+    @Override
+    public boolean logIn() {
+        return connect(false);
+    }
+
     public boolean connect(final boolean silent) {
         if (connected)
             return true;
@@ -204,26 +213,26 @@ public class NgioClient implements IGameServiceClient {
             Gdx.app.log(GAMESERVICE_ID, errorMsg);
 
             if (!silent && gsListener != null)
-                gsListener.gsErrorMsg(IGameServiceListener.GsErrorType.errorLoginFailed, errorMsg, null);
+                gsListener.gsShowErrorToUser(IGameServiceListener.GsErrorType.errorLoginFailed, errorMsg, null);
         }
 
         if (gsListener != null) {
             if (connected)
                 // yeah!
-                gsListener.gsConnected();
+                gsListener.gsOnSessionActive();
             else
                 // reset pending state
-                gsListener.gsDisconnected();
+                gsListener.gsOnSessionInactive();
         }
     }
 
     @Override
-    public void disconnect() {
+    public void pauseSession() {
         //TODO: Deactivate ping
         connected = false;
 
         if (gsListener != null)
-            gsListener.gsDisconnected();
+            gsListener.gsOnSessionInactive();
     }
 
     @Override
@@ -232,7 +241,7 @@ public class NgioClient implements IGameServiceClient {
         userName = null;
         userId = 0;
 
-        disconnect();
+        pauseSession();
     }
 
     @Override
@@ -241,7 +250,7 @@ public class NgioClient implements IGameServiceClient {
     }
 
     @Override
-    public boolean isConnected() {
+    public boolean isSessionActive() {
         return connected && userId > 0;
     }
 
@@ -275,7 +284,7 @@ public class NgioClient implements IGameServiceClient {
         Integer boardId = boardMapper.mapToGsId(leaderboardId);
 
         // no board available or not connected
-        if (boardId == null || !isConnected())
+        if (boardId == null || !isSessionActive())
             return false;
 
         JsonValue parameters = new JsonValue(JsonValue.ValueType.object);
@@ -331,7 +340,7 @@ public class NgioClient implements IGameServiceClient {
         if (medalId == null)
             return false;
 
-        if (!isConnected())
+        if (!isSessionActive())
             return false;
 
         JsonValue parameters = new JsonValue(JsonValue.ValueType.object);

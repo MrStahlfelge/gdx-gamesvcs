@@ -11,14 +11,14 @@ package de.golfgl.gdxgamesvcs;
 public interface IGameServiceListener {
 
     /**
-     * Called when game service is sucessfully connected
+     * Called when game service user session is sucessfully connected
      */
-    public void gsConnected();
+    public void gsOnSessionActive();
 
     /**
-     * Called when game service has disconnected or a connection attempt failed
+     * Called when game service user session has disconnected or a connection attempt failed
      */
-    public void gsDisconnected();
+    public void gsOnSessionInactive();
 
     /**
      * Called from GameServiceClient to show a message to the user.
@@ -27,7 +27,7 @@ public interface IGameServiceListener {
      * @param msg further information, may be null
      * @param t   Throwable causing the problem, may be null
      */
-    public void gsErrorMsg(GsErrorType et, String msg, Throwable t);
+    public void gsShowErrorToUser(GsErrorType et, String msg, Throwable t);
 
     public enum GsErrorType {errorLoginFailed, errorUnknown, errorServiceUnreachable, errorLogoutFailed}
 }

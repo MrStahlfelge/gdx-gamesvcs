@@ -41,6 +41,15 @@ public class NoGameServiceClient implements IGameServiceClient {
     }
 
     @Override
+    public boolean resumeSession() {
+        return connect(true);
+    }
+
+    @Override
+    public boolean logIn() {
+        return connect(false);
+    }
+
     public boolean connect(boolean silent) {
         Gdx.app.log(GAMESERVICE_ID, "Connect called, silent: " + silent);
 
@@ -50,25 +59,25 @@ public class NoGameServiceClient implements IGameServiceClient {
         connected = true;
 
         if (gsListener != null)
-            gsListener.gsConnected();
+            gsListener.gsOnSessionActive();
 
         return true;
     }
 
     @Override
-    public void disconnect() {
+    public void pauseSession() {
         Gdx.app.log(GAMESERVICE_ID, "Disconnect called.");
         connected = false;
 
         if (gsListener != null)
-            gsListener.gsDisconnected();
+            gsListener.gsOnSessionInactive();
     }
 
     @Override
     public void logOff() {
         Gdx.app.log(GAMESERVICE_ID, "Log off called.");
 
-        disconnect();
+        pauseSession();
     }
 
     @Override
@@ -78,7 +87,7 @@ public class NoGameServiceClient implements IGameServiceClient {
     }
 
     @Override
-    public boolean isConnected() {
+    public boolean isSessionActive() {
         return connected;
     }
 
@@ -108,7 +117,7 @@ public class NoGameServiceClient implements IGameServiceClient {
     public boolean submitToLeaderboard(String leaderboardId, long score, String tag) {
         Gdx.app.log(GAMESERVICE_ID, "Submit to leaderboard " + leaderboardId + ", score " + score + ", tag " + tag);
 
-        return isConnected();
+        return isSessionActive();
     }
 
     @Override
@@ -121,20 +130,20 @@ public class NoGameServiceClient implements IGameServiceClient {
     public boolean submitEvent(String eventId, int increment) {
         Gdx.app.log(GAMESERVICE_ID, "Submit event " + eventId + ", value " + increment);
 
-        return isConnected();
+        return isSessionActive();
     }
 
     @Override
     public boolean unlockAchievement(String achievementId) {
         Gdx.app.log(GAMESERVICE_ID, "Unlock achievement " + achievementId);
-        return isConnected();
+        return isSessionActive();
     }
 
     @Override
     public boolean incrementAchievement(String achievementId, int incNum, float completionPercentage) {
         Gdx.app.log(GAMESERVICE_ID, "Increment achievement "+ achievementId
                 + " by " + incNum + " (" + completionPercentage + "%)");
-        return isConnected();
+        return isSessionActive();
     }
 
     @Override

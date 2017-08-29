@@ -117,7 +117,7 @@ public class GpgsClient implements IGameServiceClient {
                     runnable.run();
                 } catch (Throwable e) {
                     Gdx.app.error(TAG, "Gpgs Error", e);
-                    if (gameListener != null) gameListener.gsErrorMsg(GsErrorType.errorUnknown, e.getMessage(), e);
+                    if (gameListener != null) gameListener.gsShowErrorToUser(GsErrorType.errorUnknown, e.getMessage(), e);
                 }
             }
         }).start();
@@ -252,7 +252,7 @@ public class GpgsClient implements IGameServiceClient {
             success = true;
         } catch (IOException e) {
             if (gameListener != null)
-                gameListener.gsErrorMsg(GsErrorType.errorUnknown, "failed to get authorization from user", e);
+                gameListener.gsShowErrorToUser(GsErrorType.errorUnknown, "failed to get authorization from user", e);
         }
 
         // try to retreive palyer name
@@ -262,7 +262,7 @@ public class GpgsClient implements IGameServiceClient {
                 playerName = player.getDisplayName();
             } catch (IOException e) {
                 if (gameListener != null)
-                    gameListener.gsErrorMsg(GsErrorType.errorUnknown, "Failed to retreive player name", e);
+                    gameListener.gsShowErrorToUser(GsErrorType.errorUnknown, "Failed to retreive player name", e);
             }
         }
 
@@ -271,14 +271,23 @@ public class GpgsClient implements IGameServiceClient {
         // dispatch status
         if (gameListener != null) {
             if (connected) {
-                gameListener.gsConnected();
+                gameListener.gsOnSessionActive();
             } else {
-                gameListener.gsDisconnected();
+                gameListener.gsOnSessionInactive();
             }
         }
     }
 
     @Override
+    public boolean resumeSession() {
+        return connect(true);
+    }
+
+    @Override
+    public boolean logIn() {
+        return connect(false);
+    }
+
     public boolean connect(boolean silent) {
         if (initialized && !connected && !connecting) {
             connecting = true;
@@ -300,9 +309,9 @@ public class GpgsClient implements IGameServiceClient {
     }
 
     @Override
-    public void disconnect() {
+    public void pauseSession() {
         // nothing special to do here since there is no resources to freeup.
-        if (gameListener != null) gameListener.gsDisconnected();
+        if (gameListener != null) gameListener.gsOnSessionInactive();
     }
 
     @Override
@@ -310,7 +319,7 @@ public class GpgsClient implements IGameServiceClient {
         connected = false;
         playerName = null;
         GApiGateway.closeSession();
-        disconnect();
+        pauseSession();
     }
 
     @Override
@@ -319,7 +328,7 @@ public class GpgsClient implements IGameServiceClient {
     }
 
     @Override
-    public boolean isConnected() {
+    public boolean isSessionActive() {
         return connected;
     }
 

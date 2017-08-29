@@ -42,23 +42,31 @@ public interface IGameServiceClient {
     void setListener(IGameServiceListener gsListener);
 
     /**
-     * Connects to a user session.
+     * Resumes connection to a user session, if possible
      * <p>
-     * It depends from the game service implementation what the connected state implies. See the documentation of
-     * the specific service. This method should be called with silent param at application startup, and when resuming
-     * in Android.
+     * It depends from the game service implementation what the session connection state implies. See the
+     * documentation of the specific service. This method should be called at application startup, and when resuming
+     * in Android. No error messages or log in prompts will be shown in error case.
      * <p>
      * Note: Probably you have set up the GameService client with an initialize() method. It is not defined by
      * this interface because it depends on the service which parameters the method needs.
      *
-     * @param silent if true, no error messages or log in prompts will be shown. Use this at application start
-     *               or after resuming the application in Android. If false, log in screens may appear for letting
-     *               the user enter his credentials.
      * @return true if connection is already established or connection is pending. false if no connect is tried due to
      * unfulfilled prejudices (normally credentials not given).
-     * @see #isConnected()
+     * @see #isSessionActive()
      */
-    boolean connect(boolean silent);
+    boolean resumeSession();
+
+    /**
+     * Opens a user session for the game service if necessary. If possible, user session is resumed silently.
+     * <p>
+     * This method should only be called when user explicitly pushed a log in button. If supported, log in screens
+     * may appear for the user to log in.
+
+     * @return true if connection is already established or connection is pending. false if no connection attempt made.
+     * @see #isSessionActive()
+     */
+    boolean logIn();
 
     /**
      * Disconnects from Gameservice user session by dropping an open connection or deactivating ping calls,
@@ -66,9 +74,9 @@ public interface IGameServiceClient {
      * <p>
      * Use this in your main games pause() method on Android and when game is quit by the user.
      *
-     * @see #isConnected()
+     * @see #isSessionActive()
      */
-    void disconnect();
+    void pauseSession();
 
     /**
      * Signs explicitely out and disconnects from Gameservice user session. Use only when explicitely wanted by user to
@@ -88,18 +96,17 @@ public interface IGameServiceClient {
     String getPlayerDisplayName();
 
     /**
-     * Checks the connection status of the game service user session.
+     * Returns if a user session is active.
      * <p>
-     * Note:
-     * This method returns false if no user session is available, but the game service and some of its features may
-     * be available. Some game services allow submitting events or scores without user context. So do not use this
+     * The game service and some of its features may be available even if this method returns false.
+     * Some game services allow submitting events or scores without user context. So do not use this
      * method to check whether calling submit-Methods. Game service implementations will check all prerequisites for
      * you.
      *
-     * @return true if connected to a user session, false otherwise
+     * @return true if a user session is available and active, false otherwise
      * @see #isConnectionPending()
      */
-    boolean isConnected();
+    boolean isSessionActive();
 
     /**
      * Checks if a user session connection attempt is running

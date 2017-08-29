@@ -107,7 +107,7 @@ public class GameJoltClient implements IGameServiceClient {
      * @return
      */
     public GameJoltClient setUserToken(String userToken) {
-        if (isConnected())
+        if (isSessionActive())
             throw new IllegalStateException();
 
         this.userToken = userToken;
@@ -121,7 +121,7 @@ public class GameJoltClient implements IGameServiceClient {
      * @return
      */
     public GameJoltClient setUserName(String userName) {
-        if (isConnected())
+        if (isSessionActive())
             throw new IllegalStateException();
 
         this.userName = userName;
@@ -159,6 +159,15 @@ public class GameJoltClient implements IGameServiceClient {
     }
 
     @Override
+    public boolean resumeSession() {
+        return connect(true);
+    }
+
+    @Override
+    public boolean logIn() {
+        return connect(false);
+    }
+
     public boolean connect(final boolean silent) {
         if (!initialized) {
             Gdx.app.error(GAMESERVICE_ID, "Cannot connect before app ID is set via initialize()");
@@ -210,7 +219,7 @@ public class GameJoltClient implements IGameServiceClient {
                         sendOpenSessionEvent();
 
                         if (gsListener != null)
-                            gsListener.gsConnected();
+                            gsListener.gsOnSessionActive();
                     } else {
                         Gdx.app.log(GAMESERVICE_ID, "Authentification from GameJolt failed. Check username, token, " +
                                 "app id and private key.");
@@ -236,7 +245,7 @@ public class GameJoltClient implements IGameServiceClient {
     }
 
     protected void sendOpenSessionEvent() {
-        if (!isConnected())
+        if (!isSessionActive())
             return;
 
         Map<String, String> params = new HashMap<String, String>();
@@ -257,7 +266,7 @@ public class GameJoltClient implements IGameServiceClient {
     }
 
     protected void sendKeepSessionOpenEvent() {
-        if (!isConnected())
+        if (!isSessionActive())
             return;
 
         Map<String, String> params = new HashMap<String, String>();
@@ -275,15 +284,15 @@ public class GameJoltClient implements IGameServiceClient {
         connectionPending = false;
 
         if (gsListener != null) {
-            gsListener.gsDisconnected();
+            gsListener.gsOnSessionInactive();
 
             if (!silent)
-                gsListener.gsErrorMsg(IGameServiceListener.GsErrorType.errorLoginFailed, msg, null);
+                gsListener.gsShowErrorToUser(IGameServiceListener.GsErrorType.errorLoginFailed, msg, null);
         }
     }
 
     @Override
-    public void disconnect() {
+    public void pauseSession() {
         if (pingTask != null)
             pingTask.cancel();
 
@@ -292,11 +301,11 @@ public class GameJoltClient implements IGameServiceClient {
         connected = false;
 
         if (gsListener != null)
-            gsListener.gsDisconnected();
+            gsListener.gsOnSessionInactive();
     }
 
     protected void sendCloseSessionEvent() {
-        if (!isConnected())
+        if (!isSessionActive())
             return;
 
         Map<String, String> params = new HashMap<String, String>();
@@ -312,7 +321,7 @@ public class GameJoltClient implements IGameServiceClient {
 
     @Override
     public void logOff() {
-        disconnect();
+        pauseSession();
         userName = null;
         userToken = null;
     }
@@ -323,7 +332,7 @@ public class GameJoltClient implements IGameServiceClient {
     }
 
     @Override
-    public boolean isConnected() {
+    public boolean isSessionActive() {
         return connected;
     }
 
@@ -344,7 +353,7 @@ public class GameJoltClient implements IGameServiceClient {
 
     @Override
     public boolean fetchAchievements(final IFetchAchievementsResponseListener callback) {
-        if (!isConnected())
+        if (!isSessionActive())
             return false;
 
         Map<String, String> params = new HashMap<String, String>();
@@ -427,7 +436,7 @@ public class GameJoltClient implements IGameServiceClient {
 
         Map<String, String> params = new HashMap<String, String>();
 
-        if (isConnected())
+        if (isSessionActive())
             addGameIDUserNameUserToken(params);
         else if (guestName != null) {
             params.put("game_id", gjAppId);
@@ -461,7 +470,7 @@ public class GameJoltClient implements IGameServiceClient {
 
         Map<String, String> params = new HashMap<String, String>();
         // http://gamejolt.com/api/doc/game/scores/fetch
-        if (relatedToPlayer && isConnected())
+        if (relatedToPlayer && isSessionActive())
             addGameIDUserNameUserToken(params);
         else
             params.put("game_id", gjAppId);
@@ -618,7 +627,7 @@ public class GameJoltClient implements IGameServiceClient {
             return false;
         }
 
-        if (!isConnected())
+        if (!isSessionActive())
             return false;
 
         Integer trophyId = trophyMapper.mapToGsId(achievementId);
@@ -652,7 +661,7 @@ public class GameJoltClient implements IGameServiceClient {
     @Override
     public void saveGameState(String fileId, byte[] gameState, long progressValue,
                               final ISaveGameStateResponseListener listener) {
-        if (!isConnected()) {
+        if (!isSessionActive()) {
             if (listener != null)
                 listener.onGameStateSaved(false, "NOT_CONNECTED");
             return;
@@ -710,7 +719,7 @@ public class GameJoltClient implements IGameServiceClient {
 
     @Override
     public boolean deleteGameState(String fileId, final ISaveGameStateResponseListener successListener) {
-        if (!isConnected())
+        if (!isSessionActive())
             return false;
 
         Map<String, String> params = new HashMap<String, String>();
@@ -756,7 +765,7 @@ public class GameJoltClient implements IGameServiceClient {
 
     @Override
     public boolean fetchGameStates(final IFetchGameStatesListResponseListener callback) {
-        if (!isConnected())
+        if (!isSessionActive())
             return false;
 
         Map<String, String> params = new HashMap<String, String>();
@@ -850,7 +859,7 @@ public class GameJoltClient implements IGameServiceClient {
 
     @Override
     public void loadGameState(String fileId, final ILoadGameStateResponseListener listener) {
-        if (!isConnected()) {
+        if (!isSessionActive()) {
             listener.gsGameStateLoaded(null);
             return;
         }

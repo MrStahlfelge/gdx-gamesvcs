@@ -12,7 +12,7 @@ Framework and implementations for using Game Services (BaaS) with libGDX.
 * [GameJolt](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/GameJolt) (all platforms)
 * [Newgrounds](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Newgrounds) (HTML5)
 
-Further contributes are very welcome! Very wanted: Steam, Apple GameCenter. :-)
+Further contributes are very welcome! Very wanted: Steam, Apple GameCenter, Play Games HTML5. :-)
 
 ## Motivation
 
@@ -45,7 +45,7 @@ into your project by just adding the dependencies to your `build.gradle` file.
 Define the version of this API right after the gdxVersion: 
    
     gdxVersion = '1.9.6'
-    gamesvcsVersion = '0.1.1'
+    gamesvcsVersion = '0.2.0-SNAPSHOT' // '0.1.2' for using stable version
 
 Core:
 
@@ -69,10 +69,12 @@ To build from source, clone or download this repository, then open it in Android
 See `build.gradle` file for current version to use in your dependencies.
 
 ## Usage
+**This documentation is only valid for v0.2. If you want to use older version v0.1, please see documentation on release/0.1.x branch.**
 
-A good library should be easy to use (let me know what you think of this lib). 
+When updating from v0.1 to v0.2, please note that main interface methods were 
+renamed to clarify their purpose. See [issue #15](https://github.com/MrStahlfelge/gdx-gamesvcs/issues/15) for the full list.
 
-### Connecting to the game service
+### Initializing the game service client
 
 You should be fine by adding the following lines to your game in order to connect to the service:
 
@@ -91,7 +93,7 @@ Main game class:
         gsClient.setListener(this);
 
         // establish a connection to the game service without error messages or login screens
-        gsClient.connect(true);
+        gsClient.resumeSession();
         
     }
     
@@ -99,14 +101,14 @@ Main game class:
     public void pause() {
         super.pause();
 
-        gsClient.disconnect();
+        gsClient.pauseSession();
     }
 
     @Override
     public void resume() {
         super.resume();
 
-        gsClient.connect(true);
+        gsClient.resumeSession();
     }
 
 In the launcher class you instantiate and initialize the GameServiceClient you really want to use:
@@ -118,7 +120,11 @@ In the launcher class you instantiate and initialize the GameServiceClient you r
         myGdxGame.gsClient = gsClient;
 
 
-Check for `gsClient.isConnected()` if you successfully established a connection, or set a listeneder and wait for the call to `gsConnected`.
+If you want to know if you established a connection to a user session, you can use 
+`gsClient.isSessionActive()`, or set a listener and wait for the call to 
+`gsOnSessionActive()`. You don't need to check if a user session is active for 
+submitting scores, events and unlocking achievements, as some game services allow anonymous
+or guest submits. The API client implementations do all needed checks.
 
 ### Submitting events and scores, unlocking achievements
 
@@ -132,35 +138,47 @@ Events are interesting for you as a developer.
     
     gsClient.submitEvent(eventId, 1);
 
-Please note: It depends of the game services which calls are allowed for unauthenticated users. The API client implementations deal with that so you don't have to.  
+Please note: It depends of the game services which calls can be processed without a user session. The API client implementations deal with that so you don't have to.  
 
 ### Cloud save
 
 Not every game service and client implementation supports cloud save, so you must check the availability by checking
 
-    if (gsClient.supportsCloudGameState() != CloudSaveCapability.NotSupported)
+    if (gsClient.isFeatureSupported(GameServiceFeature.GameStateStorage))
 
-If you ensured that cloud save feature is enabled, use this methods to invoke it:    
+If you ensured that cloud save feature is available, use this methods to invoke it:    
 
-    gsClient.loadGameState(fileId);
+    gsClient.loadGameState(fileId, new ILoadGameStateResponseListener() {...});
 
-    gsClient.saveGameState(fileId, gameState, progressValue);
+    gsClient.saveGameState(fileId, gameState, progressValue, 
+                           new ISaveGameStateResponseListener() {...});
 
 The methods perform an ansynchronous operation and call your listener afterwards.
 
 
 ### Fetching scores and achievement status
 
-The interface provides a method for open up an API's default leaderboard or achievmeent UI:
+The interface provides a method for open up an API's default leaderboard or achievment UI:
 
     gsClient.providesAchievementsUI();
     gsClient.showAchievements();
     // same for leaderboards
 
-At the moment, such a default UI is only provided by Google Play Games and GameCircle on Android.
+At the moment, such a default UI is only provided by Google Play Games and GameCircle on Android, 
+so you need to check with `gsClient.isFeatureSupported()` before calling. 
 
-Fetching scores and achievement status to show in your own UI is work in progress in v0.2.x.
+Fetching scores and achievement status to show in your own UI can be done by calling
+     
+     gsClient.fetchLeaderboardEntries()
+     gsClient.fetchAchievements()
+     
+after checking
     
+     gsClient.isFeatureSupported(IGameServiceClient.GameServiceFeature.FetchLeaderBoardEntries)
+     gsClient.isFeatureSupported(IGameServiceClient.GameServiceFeature.FetchAchievements))
+
+Your given listener will be called with a list of achievement or leader board 
+entries in response. Please refer to the JavaDocs or the demo application for more information.
 
 ## Updates & News
 Follow me to receive release updates about this

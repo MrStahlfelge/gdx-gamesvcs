@@ -95,6 +95,15 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 	}
 
 	@Override
+	public boolean resumeSession() {
+		return connect(true);
+	}
+
+	@Override
+	public boolean logIn() {
+		return connect(false);
+	}
+
 	public boolean connect(boolean silent) {
 		if(!connected && !connecting){
 			connecting = true;
@@ -104,7 +113,7 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 				public void run() {
 					connecting = false;
 					connected = true;
-					if(gsListener != null) gsListener.gsConnected();
+					if(gsListener != null) gsListener.gsOnSessionActive();
 				}
 			});
 		}
@@ -112,12 +121,12 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 	}
 
 	@Override
-	public void disconnect() {
+	public void pauseSession() {
 		sleep(new Runnable() {
 
 			@Override
 			public void run() {
-				if(gsListener != null) gsListener.gsDisconnected();
+				if(gsListener != null) gsListener.gsOnSessionInactive();
 			}
 		});
 	}
@@ -125,7 +134,7 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 	@Override
 	public void logOff() {
 		connected = connecting = false;
-		disconnect();
+		pauseSession();
 	}
 
 	@Override
@@ -136,7 +145,7 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 	abstract protected String getPlayerName();
 
 	@Override
-	public boolean isConnected() {
+	public boolean isSessionActive() {
 		return connected;
 	}
 

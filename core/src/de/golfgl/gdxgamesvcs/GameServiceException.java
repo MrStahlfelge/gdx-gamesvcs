@@ -10,7 +10,7 @@ public class GameServiceException extends Throwable {
 
     }
 
-    public static class NotConnectedException extends GameServiceException {
+    public static class NoSessionException extends GameServiceException {
 
     }
 

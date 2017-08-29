@@ -100,9 +100,9 @@ public class GameCircleClient implements IGameServiceClient {
         isConnectionPending = false;
         isConnected = false;
         if (gsListener != null) {
-            gsListener.gsDisconnected();
+            gsListener.gsOnSessionInactive();
             if (!autoStartSignInFlow)
-                gsListener.gsErrorMsg(IGameServiceListener.GsErrorType.errorLoginFailed,
+                gsListener.gsShowErrorToUser(IGameServiceListener.GsErrorType.errorLoginFailed,
                         amazonGamesStatus.name(), null);
         }
     }
@@ -122,7 +122,7 @@ public class GameCircleClient implements IGameServiceClient {
                         if (!response.isError()) {
                             cachedPlayerAlias = response.getPlayer().getAlias();
                             if (gsListener != null)
-                                gsListener.gsConnected();
+                                gsListener.gsOnSessionActive();
                         }
                     }
                 }
@@ -154,7 +154,7 @@ public class GameCircleClient implements IGameServiceClient {
 
 
         if (gsListener != null)
-            gsListener.gsConnected();
+            gsListener.gsOnSessionActive();
 
     }
 
@@ -169,11 +169,20 @@ public class GameCircleClient implements IGameServiceClient {
     }
 
     @Override
+    public boolean resumeSession() {
+        return connect(true);
+    }
+
+    @Override
+    public boolean logIn() {
+        return connect(false);
+    }
+
     public boolean connect(boolean silent) {
         if (myContext == null || agsFeatures == null)
             throw new IllegalStateException("Call initialize() before connecting");
 
-        if (isConnected())
+        if (isSessionActive())
             return true;
 
         isConnectionPending = true;
@@ -197,37 +206,37 @@ public class GameCircleClient implements IGameServiceClient {
     }
 
     @Override
-    public void disconnect() {
-        if (isConnected()) {
+    public void pauseSession() {
+        if (isSessionActive()) {
             Gdx.app.log(GS_CLIENT_ID, "Disconnecting from GameCircle");
 
             AmazonGamesClient.release();
             isConnected = false;
 
             if (gsListener != null)
-                gsListener.gsDisconnected();
+                gsListener.gsOnSessionInactive();
         }
     }
 
     @Override
     public void logOff() {
-        if (isConnected()) {
+        if (isSessionActive()) {
             Gdx.app.log(GS_CLIENT_ID, "Shutting down GameCircle client");
 
             AmazonGamesClient.shutdown();
             cachedPlayerAlias = null;
             if (gsListener != null)
-                gsListener.gsDisconnected();
+                gsListener.gsOnSessionInactive();
         }
     }
 
     @Override
     public String getPlayerDisplayName() {
-        return (isConnected() ? cachedPlayerAlias : null);
+        return (isSessionActive() ? cachedPlayerAlias : null);
     }
 
     @Override
-    public boolean isConnected() {
+    public boolean isSessionActive() {
         return agsClient != null && AmazonGamesClient.isInitialized() && isConnected && !isConnectionPending;
     }
 
@@ -238,21 +247,21 @@ public class GameCircleClient implements IGameServiceClient {
 
     @Override
     public void showLeaderboards(String leaderBoardId) throws GameServiceException {
-        if (isConnected()) {
+        if (isSessionActive()) {
             if (leaderBoardId != null)
                 agsClient.getLeaderboardsClient().showLeaderboardOverlay(leaderBoardId);
             else
                 agsClient.getLeaderboardsClient().showLeaderboardsOverlay();
         } else
-            throw new GameServiceException.NotConnectedException();
+            throw new GameServiceException.NoSessionException();
     }
 
     @Override
     public void showAchievements() throws GameServiceException {
-        if (isConnected())
+        if (isSessionActive())
             agsClient.getAchievementsClient().showAchievementsOverlay();
         else
-            throw new GameServiceException.NotConnectedException();
+            throw new GameServiceException.NoSessionException();
     }
 
     @Override
@@ -263,7 +272,7 @@ public class GameCircleClient implements IGameServiceClient {
 
     @Override
     public boolean submitToLeaderboard(String leaderboardId, long score, String tag) {
-        if (!leaderboardsEnabled || !isConnected())
+        if (!leaderboardsEnabled || !isSessionActive())
             return false;
 
         agsClient.getLeaderboardsClient().submitScore(leaderboardId, score);
@@ -290,7 +299,7 @@ public class GameCircleClient implements IGameServiceClient {
 
     @Override
     public boolean incrementAchievement(String achievementId, int incNum, float completionPercentage) {
-        if (!achievementsEnabled || !isConnected())
+        if (!achievementsEnabled || !isSessionActive())
             return false;
 
         agsClient.getAchievementsClient().updateProgress(achievementId, completionPercentage * 100);
@@ -309,7 +318,7 @@ public class GameCircleClient implements IGameServiceClient {
 
     public Boolean saveGameStateSync(String id, byte[] gameState, long progressValue,
                                      ISaveGameStateResponseListener listener) {
-        if (!isConnected() || !whisperSyncEnabled)
+        if (!isSessionActive() || !whisperSyncEnabled)
             return false;
 
         GameDataMap gameDataMap = AmazonGamesClient.getWhispersyncClient().getGameData();
@@ -337,7 +346,7 @@ public class GameCircleClient implements IGameServiceClient {
         if (!whisperSyncEnabled)
             throw new UnsupportedOperationException();
 
-        if (!isConnected()) {
+        if (!isSessionActive()) {
             listener.gsGameStateLoaded(null);
             return;
         }
@@ -380,7 +389,7 @@ public class GameCircleClient implements IGameServiceClient {
     }
 
     protected boolean loadGameStateSync(String fileId, ILoadGameStateResponseListener listener) {
-        if (!isConnected() || !whisperSyncEnabled) {
+        if (!isSessionActive() || !whisperSyncEnabled) {
             listener.gsGameStateLoaded(null);
             return false;
         }

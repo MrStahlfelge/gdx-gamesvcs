@@ -139,13 +139,22 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     }
 
     @Override
+    public boolean resumeSession() {
+        return connect(true);
+    }
+
+    @Override
+    public boolean logIn() {
+        return connect(false);
+    }
+
     public boolean connect(boolean autoStart) {
         if (mGoogleApiClient == null) {
             Gdx.app.error(GAMESERVICE_ID, "Call initialize first.");
             throw new IllegalStateException();
         }
 
-        if (isConnected())
+        if (isSessionActive())
             return true;
 
         Log.i(GAMESERVICE_ID, "Trying to connect with autostart " + autoStart);
@@ -163,13 +172,13 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     }
 
     @Override
-    public void disconnect() {
+    public void pauseSession() {
         this.disconnect(true);
     }
 
     public void disconnect(boolean autoEnd) {
 
-        if (isConnected()) {
+        if (isSessionActive()) {
             Log.i(GAMESERVICE_ID, "Disconnecting with autoEnd " + autoEnd);
             if (!autoEnd)
                 try {
@@ -178,7 +187,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
                     // eat security exceptions when already signed out via gpgs ui
                 }
             mGoogleApiClient.disconnect();
-            gameListener.gsDisconnected();
+            gameListener.gsOnSessionInactive();
         }
     }
 
@@ -191,12 +200,12 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         // and stays in memory, but is not used for a long time.
         firstConnectAttempt = MAX_CONNECTFAIL_RETRIES;
         isConnectionPending = false;
-        gameListener.gsConnected();
+        gameListener.gsOnSessionActive();
     }
 
     @Override
     public String getPlayerDisplayName() {
-        if (isConnected())
+        if (isSessionActive())
             return Games.Players.getCurrentPlayer(mGoogleApiClient)
                     .getDisplayName();
         else
@@ -204,7 +213,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     }
 
     @Override
-    public boolean isConnected() {
+    public boolean isSessionActive() {
         return mGoogleApiClient != null && mGoogleApiClient.isConnected();
     }
 
@@ -277,7 +286,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
 
         // inform listener that connection attempt failed
         if (gameListener != null && isPendingBefore && !isConnectionPending)
-            gameListener.gsDisconnected();
+            gameListener.gsOnSessionInactive();
     }
 
     public void signInResult(int resultCode, Intent data) {
@@ -294,7 +303,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
 
             // inform listener that connection attempt failed
             if (gameListener != null && isPendingBefore)
-                gameListener.gsDisconnected();
+                gameListener.gsOnSessionInactive();
 
             // Bring up an error dialog to alert the user that sign-in
             // failed. The R.string.signin_failure should reference an error
@@ -317,7 +326,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
             }
 
             if (errorMsg != null)
-                gameListener.gsErrorMsg(IGameServiceListener.GsErrorType.errorLoginFailed,
+                gameListener.gsShowErrorToUser(IGameServiceListener.GsErrorType.errorLoginFailed,
                         "Google Play Games: " + errorMsg, null);
 
         }
@@ -325,7 +334,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
 
     @Override
     public void showLeaderboards(String leaderBoardId) throws GameServiceException {
-        if (isConnected()) {
+        if (isSessionActive()) {
             if (gpgsLeaderboardIdMapper != null)
                 leaderBoardId = gpgsLeaderboardIdMapper.mapToGsId(leaderBoardId);
 
@@ -333,16 +342,16 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
                     Games.Leaderboards.getLeaderboardIntent(mGoogleApiClient, leaderBoardId) :
                     Games.Leaderboards.getAllLeaderboardsIntent(mGoogleApiClient), RC_LEADERBOARD);
         } else
-            throw new GameServiceException.NotConnectedException();
+            throw new GameServiceException.NoSessionException();
     }
 
     @Override
     public void showAchievements() throws GameServiceException {
-        if (isConnected())
+        if (isSessionActive())
             myContext.startActivityForResult(Games.Achievements.getAchievementsIntent(mGoogleApiClient),
                     RC_ACHIEVEMENTS);
         else
-            throw new GameServiceException.NotConnectedException();
+            throw new GameServiceException.NoSessionException();
 
     }
 
@@ -357,7 +366,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         if (gpgsLeaderboardIdMapper != null)
             leaderboardId = gpgsLeaderboardIdMapper.mapToGsId(leaderboardId);
 
-        if (leaderboardId != null && isConnected()) {
+        if (leaderboardId != null && isSessionActive()) {
             if (tag != null)
                 Games.Leaderboards.submitScore(mGoogleApiClient, leaderboardId, score, tag);
             else
@@ -377,7 +386,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     @Override
     public boolean submitEvent(String eventId, int increment) {
         // No exception, if not online events are dismissed
-        if (!isConnected())
+        if (!isSessionActive())
             return false;
 
         Games.Events.increment(mGoogleApiClient, eventId, increment);
@@ -390,7 +399,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         if (gpgsAchievementIdMapper != null)
             achievementId = gpgsAchievementIdMapper.mapToGsId(achievementId);
 
-        if (achievementId != null && isConnected()) {
+        if (achievementId != null && isSessionActive()) {
             Games.Achievements.unlock(mGoogleApiClient, achievementId);
             return true;
         } else
@@ -402,7 +411,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         if (gpgsAchievementIdMapper != null)
             achievementId = gpgsAchievementIdMapper.mapToGsId(achievementId);
 
-        if (achievementId != null && isConnected()) {
+        if (achievementId != null && isSessionActive()) {
             // GPGS supports passing a value for incrementation, no need to use completionPercentage
             Games.Achievements.increment(mGoogleApiClient, achievementId, incNum);
             return true;
@@ -434,7 +443,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     @NonNull
     public Boolean saveGameStateSync(String id, byte[] gameState, long progressValue,
                                      ISaveGameStateResponseListener listener) {
-        if (!isConnected()) {
+        if (!isSessionActive()) {
             if (listener != null)
                 listener.onGameStateSaved(false, "NOT_CONNECTED");
             return false;
@@ -507,7 +516,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         if (!driveApiEnabled)
             throw new UnsupportedOperationException();
 
-        if (!isConnected()) {
+        if (!isSessionActive()) {
             listener.gsGameStateLoaded(null);
             return;
         }
@@ -552,7 +561,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
 
     @NonNull
     public Boolean loadGameStateSync(String id, ILoadGameStateResponseListener listener) {
-        if (!isConnected()) {
+        if (!isSessionActive()) {
             listener.gsGameStateLoaded(null);
             return false;
         }
