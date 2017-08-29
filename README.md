@@ -6,13 +6,13 @@ Framework and implementations for using Game Services (BaaS) with libGDX.
 
 ## Supported game services
 
-* [Google Play Games](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Google-Play-Games) (Android)
+* [Google Play Games](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Google-Play-Games) (Android - for Desktop implementation use v0.2)
 * [Amazon GameCircle](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Amazon-GameCircle) (Android)
 * [Kongregate](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Kongregate) (HTML5)
 * [GameJolt](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/GameJolt) (all platforms)
 * [Newgrounds](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Newgrounds) (HTML5)
 
-Further contributes are very welcome! Very wanted: Steam, Apple GameCenter. :-)
+Further contributes are very welcome! Very wanted: Steam, Apple GameCenter, Play Games HTML5. :-)
 
 ## Motivation
 
@@ -45,7 +45,7 @@ into your project by just adding the dependencies to your `build.gradle` file.
 Define the version of this API right after the gdxVersion: 
    
     gdxVersion = '1.9.6'
-    gamesvcsVersion = '0.1.1'
+    gamesvcsVersion = '0.1.2'
 
 Core:
 
@@ -69,6 +69,7 @@ To build from source, clone or download this repository, then open it in Android
 See `build.gradle` file for current version to use in your dependencies.
 
 ## Usage
+**This documentation is only valid for v0.1 - method names are changed in v0.2**
 
 A good library should be easy to use (let me know what you think of this lib). 
 
@@ -159,7 +160,7 @@ The interface provides a method for open up an API's default leaderboard or achi
 
 At the moment, such a default UI is only provided by Google Play Games and GameCircle on Android.
 
-Fetching scores and achievement status to show in your own UI is currently not supported. If you implement it, please contribute.
+Fetching scores and achievement status to show in your own UI is not supported in this version. Use v0.2 if you need it.
     
 
 ## Updates & News
