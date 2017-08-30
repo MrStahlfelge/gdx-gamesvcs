@@ -27,13 +27,15 @@ The library provides an interface `IGameServiceClient` that you reference in you
 Every implemented game service client has its own project you can decide to include or not. So your game won't get blown up with code you don't need.
 
 There is a no-op implementation `NoGameServiceClient` provided that does absolutely nothing besides logging your calls. Use it to test platform-independant and to avoid `null` checks or NPEs.
+For testing your UI's behaviour on slow callback responses, you can use `MockGameServiceClient`.
 
 See the corresponding demo app https://github.com/MrStahlfelge/gdx-gamesvcs-app for an example and this project's wiki for further documentation.
 
 ## Working demos
 
-* Google Play Games: no published demo app, but my game [Falling Lightblocks](https://play.google.com/store/apps/details?id=de.golfgl.lightblocks&referrer=utm_source%3Dgh) is using this lib with GPGS
-* Amazon GameCircle: no published demo app, but my game [Falling Lightblocks](https://www.amazon.com/gp/mas/dl/android?p=de.golfgl.lightblocks) is using this lib with GameCircle.
+* Google Play Games: my game [Falling Lightblocks](https://play.google.com/store/apps/details?id=de.golfgl.lightblocks&referrer=utm_source%3Dgh) is using this lib with GPGS
+* Amazon GameCircle: my game [Falling Lightblocks](https://www.amazon.com/gp/mas/dl/android?p=de.golfgl.lightblocks) uses this lib with GameCircle.
+* Kongregate: my game [Headache Pacman](http://www.kongregate.com/games/MrStahlfelge/headache-pacman) uses this lib.
 * [GameJolt HTML5 demo app](http://gamejolt.com/games/gdx-gamesvcs-gj/263351)
 * [Newgrounds HTML5 demo app](http://www.newgrounds.com/projects/games/1110754/preview)
 
@@ -142,11 +144,11 @@ Please note: It depends of the game services which calls can be processed withou
 
 ### Cloud save
 
-Not every game service and client implementation supports cloud save, so you must check the availability by checking
+Not every game service and client implementation supports cloud save, check the overview table in the wiki. In your game, you can and must check the availability by calling
 
     if (gsClient.isFeatureSupported(GameServiceFeature.GameStateStorage))
 
-If you ensured that cloud save feature is available, use this methods to invoke it:    
+If you ensured that cloud save feature is available, use these methods to invoke it:    
 
     gsClient.loadGameState(fileId, new ILoadGameStateResponseListener() {...});
 
@@ -169,16 +171,16 @@ so you need to check with `gsClient.isFeatureSupported()` before calling.
 
 Fetching scores and achievement status to show in your own UI can be done by calling
      
-     gsClient.fetchLeaderboardEntries()
-     gsClient.fetchAchievements()
+     gsClient.fetchLeaderboardEntries(...)
+     gsClient.fetchAchievements(...)
      
 after checking
     
-     gsClient.isFeatureSupported(IGameServiceClient.GameServiceFeature.FetchLeaderBoardEntries)
-     gsClient.isFeatureSupported(IGameServiceClient.GameServiceFeature.FetchAchievements))
+     gsClient.isFeatureSupported(GameServiceFeature.FetchLeaderBoardEntries)
+     gsClient.isFeatureSupported(GameServiceFeature.FetchAchievements))
 
-Your given listener will be called with a list of achievement or leader board 
-entries in response. Please refer to the JavaDocs or the demo application for more information.
+You give a listener as a parameter which will be called with a list of achievement or leader board 
+entries in response. See to the JavaDocs or the demo application for more information.
 
 ## Updates & News
 Follow me to receive release updates about this
