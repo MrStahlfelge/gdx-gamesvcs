@@ -6,20 +6,24 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.utils.Array;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.drive.Drive;
 import com.google.android.gms.games.Games;
 import com.google.android.gms.games.GamesActivityResultCodes;
 import com.google.android.gms.games.GamesStatusCodes;
+import com.google.android.gms.games.achievement.Achievement;
+import com.google.android.gms.games.achievement.AchievementBuffer;
+import com.google.android.gms.games.achievement.Achievements;
 import com.google.android.gms.games.snapshot.Snapshot;
 import com.google.android.gms.games.snapshot.SnapshotMetadataChange;
 import com.google.android.gms.games.snapshot.Snapshots;
 import com.google.example.games.basegameutils.BaseGameUtils;
 
+import de.golfgl.gdxgamesvcs.achievement.IAchievement;
 import de.golfgl.gdxgamesvcs.achievement.IFetchAchievementsResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
@@ -50,6 +54,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     protected boolean driveApiEnabled;
     protected IGameServiceIdMapper<String> gpgsLeaderboardIdMapper;
     protected IGameServiceIdMapper<String> gpgsAchievementIdMapper;
+    protected boolean forceRefresh;
     private boolean mResolvingConnectionFailure = false;
     private boolean mAutoStartSignInflow = true;
     private boolean mSignInClicked = false;
@@ -74,6 +79,13 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     public GpgsClient setGpgsAchievementIdMapper(IGameServiceIdMapper<String> gpgsAchievementIdMapper) {
         this.gpgsAchievementIdMapper = gpgsAchievementIdMapper;
         return this;
+    }
+
+    /**
+     * set to true if you want to force refreshes when fetching data
+     */
+    public void setFetchForceRefresh(boolean forceRefresh) {
+        this.forceRefresh = forceRefresh;
     }
 
     /**
@@ -157,7 +169,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         if (isSessionActive())
             return true;
 
-        Log.i(GAMESERVICE_ID, "Trying to connect with autostart " + autoStart);
+        Gdx.app.log(GAMESERVICE_ID, "Trying to connect with autostart " + autoStart);
         mAutoStartSignInflow = autoStart;
         mSignInClicked = !autoStart;
         isConnectionPending = true;
@@ -179,7 +191,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     public void disconnect(boolean autoEnd) {
 
         if (isSessionActive()) {
-            Log.i(GAMESERVICE_ID, "Disconnecting with autoEnd " + autoEnd);
+            Gdx.app.log(GAMESERVICE_ID, "Disconnecting with autoEnd " + autoEnd);
             if (!autoEnd)
                 try {
                     Games.signOut(mGoogleApiClient);
@@ -195,7 +207,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     public void onConnected(@Nullable Bundle bundle) {
         // The player is signed in. Hide the sign-in button and allow the
         // player to proceed.
-        Log.i(GAMESERVICE_ID, "Successfully signed in with player id " + getPlayerDisplayName());
+        Gdx.app.log(GAMESERVICE_ID, "Successfully signed in with player id " + getPlayerDisplayName());
         // reset counter for max connection retry apptemts. Important if app is not exited
         // and stays in memory, but is not used for a long time.
         firstConnectAttempt = MAX_CONNECTFAIL_RETRIES;
@@ -224,7 +236,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
 
     @Override
     public void onConnectionSuspended(int i) {
-        Log.i(GAMESERVICE_ID, "Connection suspended, trying to reconnect");
+        Gdx.app.log(GAMESERVICE_ID, "Connection suspended, trying to reconnect");
         // Attempt to reconnect
         isConnectionPending = true;
         mGoogleApiClient.connect();
@@ -236,7 +248,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
             // already resolving
             return;
         }
-        Log.w(GAMESERVICE_ID, "onConnectFailed: " + connectionResult.getErrorCode());
+        Gdx.app.log(GAMESERVICE_ID, "onConnectFailed: " + connectionResult.getErrorCode());
 
         boolean isPendingBefore = isConnectionPending;
 
@@ -262,7 +274,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         // Just retry some times solves the problem.
         else if (firstConnectAttempt > 0 && connectionResult.getErrorCode() == 4) {
             firstConnectAttempt -= 1;
-            Log.w(GAMESERVICE_ID, "Retrying to connect...");
+            Gdx.app.log(GAMESERVICE_ID, "Retrying to connect...");
 
             AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>() {
                 @Override
@@ -296,7 +308,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
             isConnectionPending = true;
             mGoogleApiClient.connect();
         } else {
-            Log.w(GAMESERVICE_ID, "SignInResult - Unable to sign in: " + resultCode);
+            Gdx.app.log(GAMESERVICE_ID, "SignInResult - Unable to sign in: " + resultCode);
 
             boolean isPendingBefore = isConnectionPending;
             isConnectionPending = false;
@@ -356,9 +368,62 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     }
 
     @Override
-    public boolean fetchAchievements(IFetchAchievementsResponseListener callback) {
-        //TODO supported by GPGS
-        throw new UnsupportedOperationException();
+    public boolean fetchAchievements(final IFetchAchievementsResponseListener callback) {
+        if (!isSessionActive())
+            return false;
+
+        AsyncTask<Void, Void, Boolean> task = new AsyncTask<Void, Void, Boolean>() {
+            @Override
+            protected Boolean doInBackground(Void... params) {
+                return fetchAchievementsSync(callback);
+            }
+        };
+
+        task.execute();
+
+        return true;
+
+    }
+
+    public boolean fetchAchievementsSync(IFetchAchievementsResponseListener callback) {
+        if (!isSessionActive())
+            return false;
+
+        Achievements.LoadAchievementsResult achievementsResult = Games.Achievements.load(
+                mGoogleApiClient, forceRefresh).await();
+
+        if (!achievementsResult.getStatus().isSuccess()) {
+            Gdx.app.log(GAMESERVICE_ID, "Failed to fetch achievements:" +
+                    achievementsResult.getStatus().getStatusMessage());
+            callback.onFetchAchievementsResponse(null);
+            return false;
+        }
+
+        AchievementBuffer achievements = achievementsResult.getAchievements();
+
+        Array<IAchievement> gpgsAchs = new Array<IAchievement>(achievements.getCount());
+
+        for (Achievement ach : achievements) {
+            GpgsAchievement gpgsAchievement = new GpgsAchievement();
+
+            gpgsAchievement.achievementId = ach.getAchievementId();
+            gpgsAchievement.achievementMapper = gpgsAchievementIdMapper;
+            gpgsAchievement.description = ach.getDescription();
+            gpgsAchievement.title = ach.getName();
+
+            if (ach.getState() == Achievement.STATE_UNLOCKED)
+                gpgsAchievement.percCompl = 1f;
+            else if (ach.getType() == Achievement.TYPE_INCREMENTAL)
+                gpgsAchievement.percCompl = (float) ach.getCurrentSteps() / ach.getTotalSteps();
+
+            gpgsAchs.add(gpgsAchievement);
+        }
+
+        achievements.release();
+
+        callback.onFetchAchievementsResponse(gpgsAchs);
+
+        return true;
     }
 
     @Override
@@ -456,14 +521,14 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         Snapshot snapshot = processSnapshotOpenResult(open, 0);
 
         if (snapshot == null) {
-            Log.w(GAMESERVICE_ID, "Could not open Snapshot.");
+            Gdx.app.log(GAMESERVICE_ID, "Could not open Snapshot.");
             if (listener != null)
                 listener.onGameStateSaved(false, "Could not open Snapshot.");
             return false;
         }
 
         if (progressValue < snapshot.getMetadata().getProgressValue()) {
-            Log.e(GAMESERVICE_ID, "Progress of saved game state higher than current one. Did not save.");
+            Gdx.app.error(GAMESERVICE_ID, "Progress of saved game state higher than current one. Did not save.");
             if (listener != null)
                 listener.onGameStateSaved(true, null);
             return false;
@@ -482,14 +547,14 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
                 mGoogleApiClient, snapshot, metadataChange).await();
 
         if (!commit.getStatus().isSuccess()) {
-            Log.w(GAMESERVICE_ID, "Failed to commit Snapshot:" + commit.getStatus().getStatusMessage());
+            Gdx.app.log(GAMESERVICE_ID, "Failed to commit Snapshot:" + commit.getStatus().getStatusMessage());
             if (listener != null)
                 listener.onGameStateSaved(false, commit.getStatus().getStatusMessage());
             return false;
         }
 
         // No failures
-        Log.i(GAMESERVICE_ID, "Successfully saved gamestate with " + gameState.length + "B");
+        Gdx.app.log(GAMESERVICE_ID, "Successfully saved gamestate with " + gameState.length + "B");
         if (listener != null)
             listener.onGameStateSaved(true, null);
         return true;
@@ -553,6 +618,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
             case ShowAllLeaderboardsUI:
             case ShowLeaderboardUI:
             case SubmitEvents:
+            case FetchAchievements:
                 return true;
             default:
                 return false;
@@ -573,7 +639,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         Snapshot snapshot = processSnapshotOpenResult(open, 0);
 
         if (snapshot == null) {
-            Log.w(GAMESERVICE_ID, "Could not open Snapshot.");
+            Gdx.app.log(GAMESERVICE_ID, "Could not open Snapshot.");
             listener.gsGameStateLoaded(null);
             return false;
         }
@@ -585,7 +651,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
             listener.gsGameStateLoaded(mSaveGameData);
             return true;
         } catch (Throwable t) {
-            Log.e(GAMESERVICE_ID, "Error while reading Snapshot.", t);
+            Gdx.app.error(GAMESERVICE_ID, "Error while reading Snapshot.", t);
             listener.gsGameStateLoaded(null);
             return false;
         }
@@ -601,7 +667,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         retryCount++;
 
         int status = result.getStatus().getStatusCode();
-        Log.i(GAMESERVICE_ID, "Open Snapshot Result status: " + result.getStatus().getStatusMessage());
+        Gdx.app.log(GAMESERVICE_ID, "Open Snapshot Result status: " + result.getStatus().getStatusMessage());
 
         if (status == GamesStatusCodes.STATUS_OK) {
             return result.getSnapshot();
