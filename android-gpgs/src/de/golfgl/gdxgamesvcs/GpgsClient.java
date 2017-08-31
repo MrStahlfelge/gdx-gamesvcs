@@ -8,6 +8,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -18,6 +19,10 @@ import com.google.android.gms.games.GamesStatusCodes;
 import com.google.android.gms.games.achievement.Achievement;
 import com.google.android.gms.games.achievement.AchievementBuffer;
 import com.google.android.gms.games.achievement.Achievements;
+import com.google.android.gms.games.leaderboard.LeaderboardScore;
+import com.google.android.gms.games.leaderboard.LeaderboardScoreBuffer;
+import com.google.android.gms.games.leaderboard.LeaderboardVariant;
+import com.google.android.gms.games.leaderboard.Leaderboards;
 import com.google.android.gms.games.snapshot.Snapshot;
 import com.google.android.gms.games.snapshot.SnapshotMetadataChange;
 import com.google.android.gms.games.snapshot.Snapshots;
@@ -29,6 +34,7 @@ import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
+import de.golfgl.gdxgamesvcs.leaderboard.ILeaderBoardEntry;
 
 /**
  * Client for Google Play Games
@@ -94,7 +100,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
      * Don't forget to add onActivityResult method there with call to onGpgsActivityResult.
      *
      * @param context        your AndroidLauncher class
-     * @param enableDriveAPI yes if you activate save gamestate feature
+     * @param enableDriveAPI true if you activate save gamestate feature
      * @return this for method chunking
      */
     public GpgsClient initialize(Activity context, boolean enableDriveAPI) {
@@ -128,7 +134,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
      * @param requestCode requestCode
      * @param resultCode  resultCode
      * @param data        Intent
-     * @return yes if this was a Gpgs activity
+     * @return true if this was a Gpgs activity
      */
     public boolean onGpgsActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == RC_GPGS_SIGNIN) {
@@ -442,10 +448,73 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     }
 
     @Override
-    public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
-                                           IFetchLeaderBoardEntriesResponseListener callback) {
-        //TODO supported by GPGS
-        throw new UnsupportedOperationException();
+    public boolean fetchLeaderboardEntries(final String leaderBoardId, final int limit,
+                                           final boolean relatedToPlayer,
+                                           final IFetchLeaderBoardEntriesResponseListener callback) {
+        if (!isSessionActive())
+            return false;
+
+        AsyncTask<Void, Void, Boolean> task = new AsyncTask<Void, Void, Boolean>() {
+            @Override
+            protected Boolean doInBackground(Void... params) {
+                return fetchLeaderboardEntriesSync(leaderBoardId, limit, relatedToPlayer, callback);
+            }
+        };
+
+        task.execute();
+
+        return true;
+    }
+
+    private boolean fetchLeaderboardEntriesSync(String leaderBoardId, int limit, boolean relatedToPlayer,
+                                                IFetchLeaderBoardEntriesResponseListener callback) {
+        if (!isSessionActive())
+            return false;
+
+        if (gpgsLeaderboardIdMapper != null)
+            leaderBoardId = gpgsLeaderboardIdMapper.mapToGsId(leaderBoardId);
+
+        Leaderboards.LoadScoresResult scoresResult =
+                (relatedToPlayer ?
+                        Games.Leaderboards.loadTopScores(mGoogleApiClient, leaderBoardId,
+                                LeaderboardVariant.TIME_SPAN_ALL_TIME, LeaderboardVariant.COLLECTION_PUBLIC,
+                                MathUtils.clamp(limit, 1, 25), forceRefresh).await()
+                        :
+                        Games.Leaderboards.loadPlayerCenteredScores(mGoogleApiClient, leaderBoardId,
+                                LeaderboardVariant.TIME_SPAN_ALL_TIME, LeaderboardVariant.COLLECTION_PUBLIC,
+                                MathUtils.clamp(limit, 1, 25), forceRefresh).await());
+
+        if (!scoresResult.getStatus().isSuccess()) {
+            Gdx.app.log(GAMESERVICE_ID, "Failed to fetch leaderboard entries:" +
+                    scoresResult.getStatus().getStatusMessage());
+            callback.onLeaderBoardResponse(null);
+            return false;
+        }
+
+        LeaderboardScoreBuffer scores = scoresResult.getScores();
+
+        Array<ILeaderBoardEntry> gpgsLbEs = new Array<ILeaderBoardEntry>(scores.getCount());
+        String playerDisplayName = getPlayerDisplayName();
+
+        for (LeaderboardScore score : scores) {
+            GpgsLeaderBoardEntry gpgsLbE = new GpgsLeaderBoardEntry();
+
+            gpgsLbE.userDisplayName = score.getScoreHolderDisplayName();
+            gpgsLbE.currentPlayer = gpgsLbE.userDisplayName.equalsIgnoreCase(playerDisplayName);
+            gpgsLbE.formattedValue = score.getDisplayScore();
+            gpgsLbE.scoreRank = score.getDisplayRank();
+            gpgsLbE.userId = score.getScoreHolder().getPlayerId();
+            gpgsLbE.sortValue = score.getRawScore();
+            gpgsLbE.scoreTag = score.getScoreTag();
+
+            gpgsLbEs.add(gpgsLbE);
+        }
+
+        scores.release();
+
+        callback.onLeaderBoardResponse(gpgsLbEs);
+
+        return true;
     }
 
     @Override
@@ -619,6 +688,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
             case ShowLeaderboardUI:
             case SubmitEvents:
             case FetchAchievements:
+            case FetchLeaderBoardEntries:
                 return true;
             default:
                 return false;
