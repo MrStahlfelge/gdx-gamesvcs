@@ -24,6 +24,8 @@ import com.google.android.gms.games.leaderboard.LeaderboardScoreBuffer;
 import com.google.android.gms.games.leaderboard.LeaderboardVariant;
 import com.google.android.gms.games.leaderboard.Leaderboards;
 import com.google.android.gms.games.snapshot.Snapshot;
+import com.google.android.gms.games.snapshot.SnapshotMetadata;
+import com.google.android.gms.games.snapshot.SnapshotMetadataBuffer;
 import com.google.android.gms.games.snapshot.SnapshotMetadataChange;
 import com.google.android.gms.games.snapshot.Snapshots;
 import com.google.example.games.basegameutils.BaseGameUtils;
@@ -666,15 +668,112 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     }
 
     @Override
-    public boolean deleteGameState(String fileId, ISaveGameStateResponseListener success) {
-        //TODO supported by GPGS
-        throw new UnsupportedOperationException();
+    public boolean deleteGameState(final String fileId, final ISaveGameStateResponseListener success) {
+        if (!driveApiEnabled)
+            throw new UnsupportedOperationException("To use game states, enable Drive API when initializing");
+
+        if (!isSessionActive())
+            return false;
+
+        AsyncTask<Void, Void, Boolean> task = new AsyncTask<Void, Void, Boolean>() {
+            @Override
+            protected Boolean doInBackground(Void... params) {
+                return deleteGameStateSync(fileId, success);
+            }
+        };
+
+        task.execute();
+
+        return true;
+    }
+
+    public boolean deleteGameStateSync(String fileId, ISaveGameStateResponseListener success) {
+        if (!isSessionActive()) {
+            if (success != null)
+                success.onGameStateSaved(false, "NO_CONNECTION");
+            return false;
+        }
+
+        // Open the snapshot, creating if necessary
+        Snapshots.OpenSnapshotResult open = Games.Snapshots.open(
+                mGoogleApiClient, fileId, false).await();
+
+        Snapshot snapshot = processSnapshotOpenResult(open, 0);
+
+        if (snapshot == null) {
+            Gdx.app.log(GAMESERVICE_ID, "Could not delete game state " + fileId + ": " +
+                    open.getStatus().getStatusMessage());
+            if (success != null)
+                success.onGameStateSaved(false, open.getStatus().getStatusMessage());
+            return false;
+        }
+
+        Snapshots.DeleteSnapshotResult deleteResult = Games.Snapshots.delete(mGoogleApiClient,
+                snapshot.getMetadata()).await();
+
+        boolean deletionDone = deleteResult.getStatus().isSuccess();
+
+        Gdx.app.log(GAMESERVICE_ID, "Delete game state " + fileId + ": " + deletionDone +
+                " - " + open.getStatus().getStatusMessage());
+
+        if (success != null) {
+
+            success.onGameStateSaved(deletionDone,
+                    deleteResult.getStatus().getStatusMessage());
+        }
+
+        return deletionDone;
     }
 
     @Override
-    public boolean fetchGameStates(IFetchGameStatesListResponseListener callback) {
-        //TODO supported by GPGS
-        throw new UnsupportedOperationException();
+    public boolean fetchGameStates(final IFetchGameStatesListResponseListener callback) {
+        if (!driveApiEnabled)
+            throw new UnsupportedOperationException("To use game states, enable Drive API when initializing");
+
+        if (!isSessionActive())
+            return false;
+
+        AsyncTask<Void, Void, Boolean> task = new AsyncTask<Void, Void, Boolean>() {
+            @Override
+            protected Boolean doInBackground(Void... params) {
+                return fetchGameStatesSync(callback);
+            }
+        };
+
+        task.execute();
+
+        return true;
+    }
+
+    private boolean fetchGameStatesSync(IFetchGameStatesListResponseListener callback) {
+        if (!isSessionActive())
+            return false;
+
+        if (!driveApiEnabled)
+            throw new UnsupportedOperationException();
+
+        Snapshots.LoadSnapshotsResult loadResult = Games.Snapshots.load(mGoogleApiClient, forceRefresh).await();
+
+        if (!loadResult.getStatus().isSuccess()) {
+            Gdx.app.log(GAMESERVICE_ID, "Failed to fetch game states:" +
+                    loadResult.getStatus().getStatusMessage());
+            callback.onFetchGameStatesListResponse(null);
+            return false;
+        }
+
+        SnapshotMetadataBuffer snapshots = loadResult.getSnapshots();
+
+        Array<String> gameStates = new Array<String>(snapshots.getCount());
+
+        for (SnapshotMetadata snapshot : snapshots) {
+            gameStates.add(snapshot.getTitle());
+        }
+
+        snapshots.release();
+
+        callback.onFetchGameStatesListResponse(gameStates);
+
+        return true;
     }
 
     @Override
@@ -682,6 +781,8 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         switch (feature) {
             case GameStateStorage:
             case GameStateMultipleFiles:
+            case FetchGameStates:
+            case GameStateDelete:
                 return driveApiEnabled;
             case ShowAchievementsUI:
             case ShowAllLeaderboardsUI:
