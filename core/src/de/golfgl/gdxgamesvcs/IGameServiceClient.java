@@ -98,10 +98,9 @@ public interface IGameServiceClient {
     /**
      * Returns if a user session is active.
      * <p>
-     * The game service and some of its features may be available even if this method returns false.
-     * Some game services allow submitting events or scores without user context. So do not use this
-     * method to check whether calling submit-Methods. Game service implementations will check all prerequisites for
-     * you.
+     * You can safely call game service methods without checking if a user session exists.
+     * Implementations will check all prerequisites for you. Depending on the game service, some of its features may be
+     * available without user context.
      *
      * @return true if a user session is available and active, false otherwise
      * @see #isConnectionPending()
