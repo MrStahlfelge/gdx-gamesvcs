@@ -182,6 +182,11 @@ after checking
 You give a listener as a parameter which will be called with a list of achievement or leader board 
 entries in response. See to the JavaDocs or the demo application for more information.
 
+### Explicit log in and out
+Some game services support user sign in and out, some need the user to log in manually for the first time. Use the game service interface's `logIn()` and `logOut()` methods for doing so. These methods should only be called when the user manually requested an explicit log in/out. 
+
+Note: For Google Play Games your game even *must* provide a sign in/out button to be considered Google Play Games Services-compatible.
+
 ## Updates & News
 Follow me to receive release updates about this
 
