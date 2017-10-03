@@ -35,7 +35,7 @@ See the corresponding demo app https://github.com/MrStahlfelge/gdx-gamesvcs-app 
 
 * Google Play Games: my game [Falling Lightblocks](https://play.google.com/store/apps/details?id=de.golfgl.lightblocks&referrer=utm_source%3Dgh) is using this lib with GPGS
 * Amazon GameCircle: my game [Falling Lightblocks](https://www.amazon.com/gp/mas/dl/android?p=de.golfgl.lightblocks) uses this lib with GameCircle.
-* Kongregate: my game [Headache Pacman](http://www.kongregate.com/games/MrStahlfelge/headache-pacman) uses this lib.
+* [Kongregate HTML5 demo app](http://www.kongregate.com/games/MrStahlfelge/kongregate-api-for-libgdx-example)
 * [GameJolt HTML5 demo app](http://gamejolt.com/games/gdx-gamesvcs-gj/263351)
 * [Newgrounds HTML5 demo app](http://www.newgrounds.com/projects/games/1110754/preview)
 
