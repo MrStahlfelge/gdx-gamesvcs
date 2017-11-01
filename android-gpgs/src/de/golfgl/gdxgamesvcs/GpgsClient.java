@@ -207,7 +207,8 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
                     // eat security exceptions when already signed out via gpgs ui
                 }
             mGoogleApiClient.disconnect();
-            gameListener.gsOnSessionInactive();
+            if (gameListener != null)
+                gameListener.gsOnSessionInactive();
         }
     }
 
@@ -220,7 +221,8 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         // and stays in memory, but is not used for a long time.
         firstConnectAttempt = MAX_CONNECTFAIL_RETRIES;
         isConnectionPending = false;
-        gameListener.gsOnSessionActive();
+        if (gameListener != null)
+            gameListener.gsOnSessionActive();
     }
 
     @Override
@@ -345,7 +347,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
                     errorMsg = null;
             }
 
-            if (errorMsg != null)
+            if (errorMsg != null && gameListener != null)
                 gameListener.gsShowErrorToUser(IGameServiceListener.GsErrorType.errorLoginFailed,
                         "Google Play Games: " + errorMsg, null);
 
