@@ -55,7 +55,8 @@ import de.golfgl.gdxgamesvcs.leaderboard.ILeaderBoardEntry;
  * <p>
  * Service must be initialized prior to call other methods except features querying
  * {@link #isFeatureSupported(de.golfgl.gdxgamesvcs.IGameServiceClient.GameServiceFeature)}
- * It is recommended to call one of {@link #initialize(String, FileHandle)} or {@link #initialize(String, InputStream)}
+ * It is recommended to call one of {@link #initialize(String, FileHandle, boolean)} or
+ * {@link #initialize(String, InputStream, boolean)}
  * at application startup.
  * <p>
  * Credential storage default behavior can be overridden by subclasses, see :
@@ -65,6 +66,7 @@ import de.golfgl.gdxgamesvcs.leaderboard.ILeaderBoardEntry;
  */
 public class GpgsClient implements IGameServiceClient {
     private static final String TAG = IGameServiceClient.GS_GOOGLEPLAYGAMES_ID;
+    protected boolean driveApiEnabled;
 
     /**
      * Shortcut for current user as per Google API doc.
@@ -188,11 +190,13 @@ public class GpgsClient implements IGameServiceClient {
      *                          }
      *                        }
      *                        </pre>
+     * @param enableDriveAPI true if you want to use game state sync
      * @return method chaining
      * @throws GdxRuntimeException if initialisation fails.
      */
-    public GpgsClient initialize(String applicationName, InputStream clientSecret) {
+    public GpgsClient initialize(String applicationName, InputStream clientSecret, boolean enableDriveAPI) {
         this.applicationName = applicationName;
+        this.driveApiEnabled = enableDriveAPI;
         try {
             GApiGateway.init(applicationName, clientSecret, getDataStoreDirectory());
             initialized = true;
@@ -207,14 +211,14 @@ public class GpgsClient implements IGameServiceClient {
 
     /**
      * Initialize with a clientSecretFile.
-     * see {@link #initialize(String, InputStream)}
+     * see {@link #initialize(String, InputStream, boolean)}
      *
      * @param applicationName
      * @param clientSecretFile
      * @return method chaining
      */
-    public GpgsClient initialize(String applicationName, FileHandle clientSecretFile) {
-        initialize(applicationName, clientSecretFile.read());
+    public GpgsClient initialize(String applicationName, FileHandle clientSecretFile, boolean enableDriveAPI) {
+        initialize(applicationName, clientSecretFile.read(), enableDriveAPI);
         return this;
     }
 
@@ -244,15 +248,15 @@ public class GpgsClient implements IGameServiceClient {
      * Try to authorize user. This method is blocking until user accept
      * autorization.
      */
-    private void waitForUserAuthorization() {
+    private void waitForUserAuthorization(boolean silent) {
         // load user token or open browser for user authorizations.
         boolean success = false;
         try {
-            GApiGateway.authorize(getUserId());
+            GApiGateway.authorize(getUserId(), driveApiEnabled);
             success = true;
         } catch (IOException e) {
-            if (gameListener != null)
-                gameListener.gsShowErrorToUser(GsErrorType.errorUnknown, "failed to get authorization from user", e);
+            if (gameListener != null && !silent)
+                gameListener.gsShowErrorToUser(GsErrorType.errorLoginFailed, "failed to get authorization from user", e);
         }
 
         // try to retreive palyer name
@@ -261,8 +265,10 @@ public class GpgsClient implements IGameServiceClient {
                 Player player = GApiGateway.games.players().get(ME).execute();
                 playerName = player.getDisplayName();
             } catch (IOException e) {
-                if (gameListener != null)
-                    gameListener.gsShowErrorToUser(GsErrorType.errorUnknown, "Failed to retreive player name", e);
+                // if that does not work, connection is not possible
+                success = false;
+                if (gameListener != null && !silent)
+                    gameListener.gsShowErrorToUser(GsErrorType.errorLoginFailed, "Request to Google API failed.", e);
             }
         }
 
@@ -288,7 +294,7 @@ public class GpgsClient implements IGameServiceClient {
         return connect(false);
     }
 
-    public boolean connect(boolean silent) {
+    public boolean connect(final boolean silent) {
         if (initialized && !connected && !connecting) {
             connecting = true;
             playerName = null;
@@ -296,7 +302,7 @@ public class GpgsClient implements IGameServiceClient {
                 @Override
                 public void run() {
                     try {
-                        waitForUserAuthorization();
+                        waitForUserAuthorization(silent);
                     } finally {
                         connecting = false;
                     }
@@ -460,13 +466,16 @@ public class GpgsClient implements IGameServiceClient {
 
     @Override
     public boolean fetchGameStates(final IFetchGameStatesListResponseListener callback) {
+        if (!driveApiEnabled)
+            throw new UnsupportedOperationException("To use game states, enable Drive API when initializing");
+
         if (connected) {
             background(new SafeRunnable() {
                 @Override
                 public void run() throws IOException {
                     Array<String> result = null;
                     try {
-                        result = fetchGamesSync();
+                        result = fetchGameStatesSync();
                     } finally {
                         callback.onFetchGameStatesListResponse(result);
                     }
@@ -477,12 +486,15 @@ public class GpgsClient implements IGameServiceClient {
     }
 
     /**
-     * Blocking version of {@link #fetchGamesSync()}
+     * Blocking version of {@link #fetchGameStatesSync()}
      *
      * @return game states
      * @throws IOException
      */
-    public Array<String> fetchGamesSync() throws IOException {
+    public Array<String> fetchGameStatesSync() throws IOException {
+
+        if (!driveApiEnabled)
+            throw new UnsupportedOperationException();
 
         Array<String> games = new Array<String>();
 
@@ -500,6 +512,9 @@ public class GpgsClient implements IGameServiceClient {
 
     @Override
     public boolean deleteGameState(final String fileId, final ISaveGameStateResponseListener listener) {
+        if (!driveApiEnabled)
+            throw new UnsupportedOperationException("To use game states, enable Drive API when initializing");
+
         if (connected) {
             background(new SafeRunnable() {
                 @Override
@@ -527,6 +542,9 @@ public class GpgsClient implements IGameServiceClient {
     @Override
     public void saveGameState(final String fileId, final byte[] gameState, final long progressValue, final
 	ISaveGameStateResponseListener listener) {
+        if (!driveApiEnabled)
+            throw new UnsupportedOperationException();
+
         background(new SafeRunnable() {
             @Override
             public void run() throws IOException {
@@ -601,6 +619,9 @@ public class GpgsClient implements IGameServiceClient {
 
     @Override
     public void loadGameState(final String fileId, final ILoadGameStateResponseListener listener) {
+        if (!driveApiEnabled)
+            throw new UnsupportedOperationException();
+
         background(new SafeRunnable() {
 
             @Override
@@ -818,12 +839,13 @@ public class GpgsClient implements IGameServiceClient {
     @Override
     public boolean isFeatureSupported(GameServiceFeature feature) {
         switch (feature) {
-            case FetchAchievements:
             case FetchGameStates:
-            case FetchLeaderBoardEntries:
             case GameStateDelete:
             case GameStateMultipleFiles:
             case GameStateStorage:
+                return driveApiEnabled;
+            case FetchAchievements:
+            case FetchLeaderBoardEntries:
                 return true;
             default:
                 return false;

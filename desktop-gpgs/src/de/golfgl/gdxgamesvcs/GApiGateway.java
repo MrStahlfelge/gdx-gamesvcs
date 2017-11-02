@@ -65,13 +65,14 @@ class GApiGateway {
     /**
      * Authorizes the installed application to access user's protected data.
      */
-    public static void authorize(String userID) throws IOException {
+    public static void authorize(String userID, boolean driveAPI) throws IOException {
         // load client secrets
 
         // set up authorization code flow
         Collection<String> scopes = new ArrayList<String>();
         scopes.add(GamesScopes.GAMES);
-        scopes.add(DriveScopes.DRIVE_APPDATA);
+        if (driveAPI)
+            scopes.add(DriveScopes.DRIVE_APPDATA);
 
         GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(httpTransport, JSON_FACTORY,
                 clientSecrets, scopes).setDataStoreFactory(dataStoreFactory).build();
@@ -85,7 +86,8 @@ class GApiGateway {
         }.authorize(userID);
 
         games = new Games.Builder(httpTransport, JSON_FACTORY, credential).setApplicationName(applicationName).build();
-        drive = new Drive.Builder(httpTransport, JSON_FACTORY, credential).setApplicationName(applicationName).build();
+        if (driveAPI)
+            drive = new Drive.Builder(httpTransport, JSON_FACTORY, credential).setApplicationName(applicationName).build();
 
     }
 
