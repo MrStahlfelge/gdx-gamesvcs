@@ -1,6 +1,7 @@
 package de.golfgl.gdxgamesvcs;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Net;
 
 import de.golfgl.gdxgamesvcs.achievement.IFetchAchievementsResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
@@ -26,12 +27,13 @@ public class GpgsClient implements IGameServiceClient {
 
     protected boolean initialized;
     protected boolean connectionPending;
+    protected boolean enableDrive;
     private boolean isSilentConnect;
     private String clientId;
-    private boolean enableDrive;
     private IGameServiceIdMapper<String> gpgsLeaderboardIdMapper;
     private IGameServiceIdMapper<String> gpgsAchievementIdMapper;
     private String displayName;
+    protected String oAuthToken;
 
     /**
      * sets up the mapper for leader board ids
@@ -130,6 +132,7 @@ public class GpgsClient implements IGameServiceClient {
         displayName = "";
         boolean sessionActive = isSessionActive();
         if (sessionActive) {
+            oAuthToken = getOAuthToken();
             sendNowPlayingEvent();
             refreshDisplayname();
         }
@@ -141,6 +144,11 @@ public class GpgsClient implements IGameServiceClient {
                 gsListener.gsOnSessionInactive();
         }
     }
+
+    private native String getOAuthToken() /*-{
+        var user = $wnd.gapi.auth2.getAuthInstance().currentUser.get();
+        return user.getAuthResponse().access_token;
+    }-*/;
 
     private native void sendNowPlayingEvent() /*-{
         $wnd.gapi.client.request({
@@ -297,9 +305,63 @@ public class GpgsClient implements IGameServiceClient {
 
     @Override
     public void loadGameState(String fileId, ILoadGameStateResponseListener responseListener) {
-        //TODO
+        if (!enableDrive)
+            throw new UnsupportedOperationException();
 
+        if (!isSessionActive()) {
+            responseListener.gsGameStateLoaded(null);
+            return;
+        }
+
+        nativeLoadGameState(fileId, responseListener);
     }
+
+    protected native void nativeLoadGameState(String fileId, ILoadGameStateResponseListener responseListener) /*-{
+        var that = this;
+        $wnd.gapi.client.request({
+              path: 'drive/v3/files',
+              params: {spaces: 'appDataFolder'},
+              callback: function(response) {
+                var driveFileId = null;
+                if (response.files) {
+                    response.files.forEach(function (file) {
+                       if (file.name == fileId)
+                          driveFileId = file.id;
+                    });
+                }
+                if (driveFileId == null)
+                  responseListener.@de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener::gsGameStateLoaded([B)(null);
+                else
+                  that.@de.golfgl.gdxgamesvcs.GpgsClient::loadFileFromDrive(Ljava/lang/String;Lde/golfgl/gdxgamesvcs/gamestate/ILoadGameStateResponseListener;)(driveFileId, responseListener);
+              }
+        });
+
+    }-*/;
+
+    protected void loadFileFromDrive(String driveFileId, final ILoadGameStateResponseListener responseListener) {
+        Net.HttpRequest httpRequest = new Net.HttpRequest(Net.HttpMethods.GET);
+        httpRequest.setUrl("https://content.googleapis.com/drive/v3/files/" + driveFileId + "?alt=media");
+        httpRequest.setHeader("Authorization", "Bearer " + oAuthToken);
+        Gdx.net.sendHttpRequest(httpRequest, new Net.HttpResponseListener() {
+            @Override
+            public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                byte[] result = httpResponse.getResultAsString().getBytes();
+                responseListener.gsGameStateLoaded(result);
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                responseListener.gsGameStateLoaded(null);
+            }
+
+            @Override
+            public void cancelled() {
+                responseListener.gsGameStateLoaded(null);
+            }
+        });
+    }
+
+
 
     @Override
     public boolean deleteGameState(String fileId, ISaveGameStateResponseListener success) {
@@ -339,7 +401,6 @@ public class GpgsClient implements IGameServiceClient {
                 callback.@de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener::onFetchGameStatesListResponse(Lcom/badlogic/gdx/utils/Array;)(stringarray);
               }
         });
-
     }-*/;
 
     @Override
