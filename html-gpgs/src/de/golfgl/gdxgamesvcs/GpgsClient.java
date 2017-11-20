@@ -101,11 +101,14 @@ public class GpgsClient implements IGameServiceClient {
     }
 
     public boolean connect(boolean silent) {
+        if (clientId == null)
+            throw new IllegalStateException("Call initialize() and set client id before connecting to GPGS.");
+
         isSilentConnect = silent;
         if (!initialized && !connectionPending) {
             try {
                 connectionPending = true;
-                loadGApi(clientId);
+                loadGApi(clientId, enableDrive);
                 return true;
             } catch (Throwable t) {
                 connectionPending = false;
@@ -126,8 +129,10 @@ public class GpgsClient implements IGameServiceClient {
         // if Google API has initialized, check if user session is active
         displayName = "";
         boolean sessionActive = isSessionActive();
-        if (sessionActive)
+        if (sessionActive) {
+            sendNowPlayingEvent();
             refreshDisplayname();
+        }
 
         if (gsListener != null) {
             if (sessionActive)
@@ -136,6 +141,16 @@ public class GpgsClient implements IGameServiceClient {
                 gsListener.gsOnSessionInactive();
         }
     }
+
+    private native void sendNowPlayingEvent() /*-{
+        $wnd.gapi.client.request({
+              path: 'games/v1/applications/played',
+              method: 'POST',
+              callback: function(response) {
+                //nothing to do
+              }
+        });
+    }-*/;
 
     private native void refreshDisplayname() /*-{
         var that = this;
@@ -164,12 +179,16 @@ public class GpgsClient implements IGameServiceClient {
         }
     }
 
-    private native void loadGApi(String clientId) /*-{
+    private native void loadGApi(String clientId, boolean enableDrive) /*-{
         var that = this;
+        var scopes = 'https://www.googleapis.com/auth/games';
+        if (enableDrive)
+            scopes = scopes + ' https://www.googleapis.com/auth/drive.appdata';
+
         $wnd.gapi.load('client:auth2', function(){
             $wnd.gapi.client.init({
                     clientId: clientId,
-                    scope: 'https://www.googleapis.com/auth/games'
+                    scope: scopes
             }).then(function () {
                 // Listen for sign-in state changes.
                 $wnd.gapi.auth2.getAuthInstance().isSignedIn.listen(function(){
@@ -290,13 +309,49 @@ public class GpgsClient implements IGameServiceClient {
 
     @Override
     public boolean fetchGameStates(IFetchGameStatesListResponseListener callback) {
-        //TODO
-        return false;
+        if (!enableDrive)
+            throw new UnsupportedOperationException("To use game states, enable Drive API when initializing");
+
+        if (!isSessionActive())
+            return false;
+
+        try {
+            nativeFetchGameStates(callback);
+        } catch (Throwable t) {
+            return false;
+        }
+        return true;
     }
+
+    private native void nativeFetchGameStates(IFetchGameStatesListResponseListener callback) /*-{
+        $wnd.gapi.client.request({
+              path: 'drive/v3/files',
+              params: {spaces: 'appDataFolder'},
+              callback: function(response) {
+                var stringarray;
+                if (response.files) {
+                    stringarray = @com.badlogic.gdx.utils.Array::new()();
+                    response.files.forEach(function (file) {
+                       stringarray.@com.badlogic.gdx.utils.Array::add(Ljava/lang/Object;)(file.name);
+                    });
+                } else
+                    stringarray = null;
+                callback.@de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener::onFetchGameStatesListResponse(Lcom/badlogic/gdx/utils/Array;)(stringarray);
+              }
+        });
+
+    }-*/;
 
     @Override
     public boolean isFeatureSupported(GameServiceFeature feature) {
-        //TODO
-        return false;
+        switch (feature) {
+            case GameStateStorage:
+            case GameStateMultipleFiles:
+            case FetchGameStates:
+            case GameStateDelete:
+                return enableDrive;
+            default:
+                return false;
+        }
     }
 }
