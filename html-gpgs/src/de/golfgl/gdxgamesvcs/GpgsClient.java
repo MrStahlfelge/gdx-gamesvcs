@@ -28,12 +28,12 @@ public class GpgsClient implements IGameServiceClient {
     protected boolean initialized;
     protected boolean connectionPending;
     protected boolean enableDrive;
+    protected String oAuthToken;
     private boolean isSilentConnect;
     private String clientId;
     private IGameServiceIdMapper<String> gpgsLeaderboardIdMapper;
     private IGameServiceIdMapper<String> gpgsAchievementIdMapper;
     private String displayName;
-    protected String oAuthToken;
 
     /**
      * sets up the mapper for leader board ids
@@ -297,14 +297,72 @@ public class GpgsClient implements IGameServiceClient {
     }
 
     @Override
-    public void saveGameState(String fileId, byte[] gameState, long progressValue, ISaveGameStateResponseListener
-            success) {
-        //TODO
+    public void saveGameState(final String fileId, final byte[] gameState, long progressValue, final ISaveGameStateResponseListener success) {
+        if (!enableDrive)
+            throw new UnsupportedOperationException();
 
+        if (!isSessionActive()) {
+            if (success != null)
+                success.onGameStateSaved(false, "NOT_CONNECTED");
+            return;
+        }
+
+        findDriveFileId(fileId, new IDoWithDriveFileId() {
+            @Override
+            public void doWithDriveFileId(String driveFileId) {
+                saveFileToDrive(fileId, driveFileId, gameState, success);
+            }
+        });
+    }
+
+    protected void saveFileToDrive(String fileName, String driveFileId, byte[] gameState, final ISaveGameStateResponseListener success) {
+        String request = "--foo_bar_baz\n" +
+                "Content-Type: application/json; charset=UTF-8\n" +
+                "\n" +
+                "{\"name\": \"" + fileName + "\", \"parents\": [\"appDataFolder\"]}\n" +
+                "\n" +
+                "--foo_bar_baz\n" +
+                "Content-Type: application/octet-stream\n" +
+                "\n" + new String(gameState) +
+                "\n--foo_bar_baz--";
+
+        Net.HttpRequest httpRequest;
+        if (driveFileId == null) {
+            // create new file
+            httpRequest = new Net.HttpRequest(Net.HttpMethods.POST);
+            httpRequest.setUrl("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart");
+        } else {
+            //v3 needs PATCH and PATCH is not supported by libgdx, so use v2 and PUT
+            httpRequest = new Net.HttpRequest(Net.HttpMethods.PUT);
+            httpRequest.setUrl("https://www.googleapis.com/upload/drive/v2/files/" + driveFileId + "?uploadType=multipart");
+        }
+        httpRequest.setHeader("Authorization", "Bearer " + oAuthToken);
+        httpRequest.setHeader("Content-Type", "multipart/related; boundary=foo_bar_baz");
+        //httpRequest.setHeader("Content-Length", String.valueOf(request.length()));
+        httpRequest.setContent(request);
+        Gdx.net.sendHttpRequest(httpRequest, new Net.HttpResponseListener() {
+            @Override
+            public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                if (success != null)
+                    success.onGameStateSaved(true, null);
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                if (success != null)
+                    success.onGameStateSaved(false, t.getMessage());
+            }
+
+            @Override
+            public void cancelled() {
+                if (success != null)
+                    success.onGameStateSaved(true, "CANCELLED");
+            }
+        });
     }
 
     @Override
-    public void loadGameState(String fileId, ILoadGameStateResponseListener responseListener) {
+    public void loadGameState(String fileId, final ILoadGameStateResponseListener responseListener) {
         if (!enableDrive)
             throw new UnsupportedOperationException();
 
@@ -313,11 +371,24 @@ public class GpgsClient implements IGameServiceClient {
             return;
         }
 
-        nativeLoadGameState(fileId, responseListener);
+        findDriveFileId(fileId, new IDoWithDriveFileId() {
+            @Override
+            public void doWithDriveFileId(String driveFileId) {
+                if (driveFileId == null)
+                    responseListener.gsGameStateLoaded(null);
+                else
+                    loadFileFromDrive(driveFileId, responseListener);
+            }
+        });
     }
 
-    protected native void nativeLoadGameState(String fileId, ILoadGameStateResponseListener responseListener) /*-{
-        var that = this;
+    /**
+     * finds a file with the given id (name) and calls dowithDriveFileId with the internal drive id, or null
+     *
+     * @param fileId            the file name
+     * @param doWithDriveFileId callback interface
+     */
+    protected native void findDriveFileId(String fileId, IDoWithDriveFileId doWithDriveFileId) /*-{
         $wnd.gapi.client.request({
               path: 'drive/v3/files',
               params: {spaces: 'appDataFolder'},
@@ -329,10 +400,7 @@ public class GpgsClient implements IGameServiceClient {
                           driveFileId = file.id;
                     });
                 }
-                if (driveFileId == null)
-                  responseListener.@de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener::gsGameStateLoaded([B)(null);
-                else
-                  that.@de.golfgl.gdxgamesvcs.GpgsClient::loadFileFromDrive(Ljava/lang/String;Lde/golfgl/gdxgamesvcs/gamestate/ILoadGameStateResponseListener;)(driveFileId, responseListener);
+                doWithDriveFileId.@de.golfgl.gdxgamesvcs.GpgsClient.IDoWithDriveFileId::doWithDriveFileId(Ljava/lang/String;)(driveFileId);
               }
         });
 
@@ -362,11 +430,48 @@ public class GpgsClient implements IGameServiceClient {
     }
 
 
-
     @Override
-    public boolean deleteGameState(String fileId, ISaveGameStateResponseListener success) {
-        //TODO
-        return false;
+    public boolean deleteGameState(String fileId, final ISaveGameStateResponseListener success) {
+        if (!enableDrive)
+            throw new UnsupportedOperationException("To use game states, enable Drive API when initializing");
+
+        if (!isSessionActive())
+            return false;
+
+        findDriveFileId(fileId, new IDoWithDriveFileId() {
+            @Override
+            public void doWithDriveFileId(String driveFileId) {
+                if (driveFileId == null)
+                    success.onGameStateSaved(true, null);
+                else {
+                    Net.HttpRequest httpRequest = new Net.HttpRequest(Net.HttpMethods.DELETE);
+                    httpRequest.setUrl("https://www.googleapis.com/drive/v3/files/" + driveFileId);
+                    httpRequest.setHeader("Authorization", "Bearer " + oAuthToken);
+                    Gdx.net.sendHttpRequest(httpRequest, new Net.HttpResponseListener() {
+                        @Override
+                        public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                            if (success != null)
+                                success.onGameStateSaved(true, "");
+                        }
+
+                        @Override
+                        public void failed(Throwable t) {
+                            if (success != null)
+                                success.onGameStateSaved(false, t.getMessage());
+                        }
+
+                        @Override
+                        public void cancelled() {
+                            if (success != null)
+                                success.onGameStateSaved(true, "CANCELLED");
+                        }
+                    });
+
+                }
+            }
+        });
+
+        return true;
     }
 
     @Override
@@ -408,11 +513,15 @@ public class GpgsClient implements IGameServiceClient {
         switch (feature) {
             case GameStateStorage:
             case GameStateMultipleFiles:
-            case FetchGameStates:
             case GameStateDelete:
+            case FetchGameStates:
                 return enableDrive;
             default:
                 return false;
         }
+    }
+
+    protected interface IDoWithDriveFileId {
+        void doWithDriveFileId(String driveFileId);
     }
 }
