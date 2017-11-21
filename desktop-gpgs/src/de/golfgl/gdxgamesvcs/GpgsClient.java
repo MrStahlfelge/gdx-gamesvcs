@@ -545,6 +545,12 @@ public class GpgsClient implements IGameServiceClient {
         if (!driveApiEnabled)
             throw new UnsupportedOperationException();
 
+        if (!isSessionActive()) {
+            if (listener != null)
+                listener.onGameStateSaved(false, "NOT_CONNECTED");
+            return;
+        }
+
         background(new SafeRunnable() {
             @Override
             public void run() throws IOException {
@@ -621,6 +627,11 @@ public class GpgsClient implements IGameServiceClient {
     public void loadGameState(final String fileId, final ILoadGameStateResponseListener listener) {
         if (!driveApiEnabled)
             throw new UnsupportedOperationException();
+
+        if (!isSessionActive()) {
+            listener.gsGameStateLoaded(null);
+            return;
+        }
 
         background(new SafeRunnable() {
 
