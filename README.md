@@ -6,17 +6,17 @@ Framework and implementations for using Game Services (BaaS) with libGDX.
 
 ## Supported game services
 
-* [Google Play Games](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Google-Play-Games) (Android and Desktop)
+* [Google Play Games](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Google-Play-Games) (Android, Desktop, HTML5)
 * [Amazon GameCircle](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Amazon-GameCircle) (Android)
 * [Kongregate](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Kongregate) (HTML5)
 * [GameJolt](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/GameJolt) (all platforms)
 * [Newgrounds](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Newgrounds) (HTML5)
 
-Further contributes are very welcome! Very wanted: Steam, Apple GameCenter, Play Games HTML5. :-)
+Further contributes (Steam, Apple GameCenter) are very welcome!
 
 ## Motivation
 
-When I wrote my first libGDX game, I realized there was no good library for Google Play Games (GPGS) integration available. So I implemented all the stuff myself. Luckily, because GPGS is basically Android-only, I kept things clean and implemented against an interface. Nevertheless, testing was a pain. I had no desktop implementation for the interface, so I always had to test on Android and check for `null` everywhere.
+When I wrote my first libGDX game, I realized there was no good library for Google Play Games (GPGS) integration available. So I implemented all the stuff myself. Luckily, because GPGS is platform-dependant, I kept things clean and implemented against an interface. Nevertheless, testing was a pain. I had no desktop implementation for the interface, so I always had to test on Android and check for `null` everywhere.
 
 When I then published my HTML5 release, users complained that their highscores were not posted to the hosting site's highscore system. Not to mention releasing to the Amazon App Store where GameCircle support is needed. So I felt in charge to do something.
 
