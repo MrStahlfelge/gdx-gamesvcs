@@ -268,9 +268,33 @@ public class GpgsClient implements IGameServiceClient {
 
     @Override
     public boolean submitToLeaderboard(String leaderboardId, long score, String tag) {
-        //TODO
-        return false;
+        if (gpgsLeaderboardIdMapper != null)
+            leaderboardId = gpgsLeaderboardIdMapper.mapToGsId(leaderboardId);
+
+        if (leaderboardId != null && isSessionActive()) {
+            nativeSubmitScore(leaderboardId, score, tag);
+            return true;
+        } else
+            return false;
     }
+
+    private native void nativeSubmitScore(String leaderboardId, double scoreVar, String tag) /*-{
+        var param;
+
+        if (tag == null)
+            param = {score: scoreVar};
+        else
+            param = {score: scoreVar, scoreTag: tag};
+
+        $wnd.gapi.client.request({
+              path: 'games/v1/leaderboards/' + leaderboardId + '/scores',
+              params: param,
+              method: 'POST',
+              callback: function(response) {
+                //response.beatenScoreTimeSpans existance could be checked to toast
+              }
+        });
+    }-*/;
 
     @Override
     public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
