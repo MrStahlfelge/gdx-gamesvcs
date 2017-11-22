@@ -2,6 +2,11 @@ package de.golfgl.gdxgamesvcs;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Net;
+import com.badlogic.gdx.utils.JsonValue;
+import com.badlogic.gdx.utils.JsonWriter;
+import com.badlogic.gdx.utils.Timer;
+
+import java.util.HashMap;
 
 import de.golfgl.gdxgamesvcs.achievement.IFetchAchievementsResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
@@ -22,15 +27,20 @@ import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListene
 
 public class GpgsClient implements IGameServiceClient {
     public static final String GAMESERVICE_ID = IGameServiceClient.GS_GOOGLEPLAYGAMES_ID;
+    private static final String CONTENT_BOUNDARY = "foo_bar_baz";
+    //GPGS does not allow sending events more frequent
+    public static final int GPGS_SENDEVENTS_INTERVAL = 61;
+
     protected IGameServiceListener gsListener;
     protected IGameServiceIdMapper<Integer> statIdMapper;
     protected IGameServiceIdMapper<String> gpgsLeaderboardIdMapper;
     protected IGameServiceIdMapper<String> gpgsAchievementIdMapper;
-
     protected boolean initialized;
     protected boolean connectionPending;
     protected boolean enableDrive;
     protected String oAuthToken;
+    protected Timer.Task updateEventsTask;
+    protected HashMap<String, Integer> eventsToRecord;
     private boolean isSilentConnect;
     private String clientId;
 
@@ -89,6 +99,7 @@ public class GpgsClient implements IGameServiceClient {
 
         this.clientId = clientId;
         this.enableDrive = enableDriveAPI;
+        eventsToRecord = new HashMap<>();
 
         return this;
     }
@@ -132,10 +143,20 @@ public class GpgsClient implements IGameServiceClient {
         // if Google API has initialized, check if user session is active
         displayName = "";
         boolean sessionActive = isSessionActive();
+
+        if (updateEventsTask != null)
+            updateEventsTask.cancel();
+
         if (sessionActive) {
             oAuthToken = getOAuthToken();
             sendNowPlayingEvent();
             refreshDisplayname();
+            updateEventsTask = Timer.schedule(new Timer.Task() {
+                @Override
+                public void run() {
+                    recordEvents();
+                }
+            }, GPGS_SENDEVENTS_INTERVAL, GPGS_SENDEVENTS_INTERVAL);
         }
 
         if (gsListener != null) {
@@ -144,6 +165,74 @@ public class GpgsClient implements IGameServiceClient {
             else
                 gsListener.gsOnSessionInactive();
         }
+    }
+
+    protected void recordEvents() {
+        JsonValue root = null;
+
+        synchronized (eventsToRecord) {
+            long time = System.currentTimeMillis();
+
+            if (eventsToRecord.size() == 0)
+                return;
+
+            JsonValue recordList = new JsonValue(JsonValue.ValueType.array);
+
+            for (String eventId : eventsToRecord.keySet()) {
+                JsonValue event = new JsonValue(JsonValue.ValueType.object);
+                event.addChild("kind", new JsonValue("games#eventUpdateRequest"));
+                event.addChild("definitionId", new JsonValue(eventId));
+                event.addChild("updateCount", new JsonValue(eventsToRecord.get(eventId)));
+                recordList.addChild(event);
+            }
+
+            eventsToRecord.clear();
+
+            root = new JsonValue(JsonValue.ValueType.object);
+            root.addChild("kind", new JsonValue("games#eventRecordRequest"));
+            root.addChild("requestId", new JsonValue(time));
+            root.addChild("currentTimeMillis", new JsonValue(time));
+
+            JsonValue timePeriodParams = new JsonValue(JsonValue.ValueType.object);
+            timePeriodParams.addChild("kind", new JsonValue("games#eventPeriodRange"));
+            timePeriodParams.addChild("periodStartMillis", new JsonValue(time - GPGS_SENDEVENTS_INTERVAL * 1000));
+            timePeriodParams.addChild("periodEndMillis", new JsonValue(time - 10));
+
+            JsonValue timePeriods = new JsonValue(JsonValue.ValueType.array);
+            JsonValue timePeriod = new JsonValue(JsonValue.ValueType.object);
+            timePeriod.addChild("kind", new JsonValue("games#eventPeriodUpdate"));
+            timePeriod.addChild("timePeriod", timePeriodParams);
+            timePeriod.addChild("updates", recordList);
+            timePeriods.addChild(timePeriod);
+
+            root.addChild("timePeriods", timePeriods);
+        }
+
+        if (root == null)
+            return;
+
+        Net.HttpRequest httpRequest = new Net.HttpRequest(Net.HttpMethods.POST);
+        httpRequest.setUrl("https://www.googleapis.com/games/v1/events");
+        httpRequest.setHeader("Authorization", "Bearer " + oAuthToken);
+        httpRequest.setHeader("Content-Type", "application/json");
+        httpRequest.setContent(root.toJson(JsonWriter.OutputType.json));
+        Gdx.net.sendHttpRequest(httpRequest, new Net.HttpResponseListener() {
+            @Override
+            public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                // check if ok?
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                // :-S
+            }
+
+            @Override
+            public void cancelled() {
+                // :-S
+            }
+        });
+
     }
 
     private native String getOAuthToken() /*-{
@@ -305,8 +394,17 @@ public class GpgsClient implements IGameServiceClient {
 
     @Override
     public boolean submitEvent(String eventId, int increment) {
-        //TODO
-        return false;
+        if (!isSessionActive())
+            return false;
+
+        synchronized (eventsToRecord) {
+            if (eventsToRecord.containsKey(eventId))
+                increment = increment + eventsToRecord.get(eventId);
+
+            eventsToRecord.put(eventId, increment);
+        }
+
+        return true;
     }
 
     @Override
@@ -375,15 +473,15 @@ public class GpgsClient implements IGameServiceClient {
     }
 
     protected void saveFileToDrive(String fileName, String driveFileId, byte[] gameState, final ISaveGameStateResponseListener success) {
-        String request = "--foo_bar_baz\n" +
+        String request = "--" + CONTENT_BOUNDARY + "\n" +
                 "Content-Type: application/json; charset=UTF-8\n" +
                 "\n" +
                 "{\"name\": \"" + fileName + "\", \"parents\": [\"appDataFolder\"]}\n" +
                 "\n" +
-                "--foo_bar_baz\n" +
+                "--" + CONTENT_BOUNDARY + "\n" +
                 "Content-Type: application/octet-stream\n" +
                 "\n" + new String(gameState) +
-                "\n--foo_bar_baz--";
+                "\n--" + CONTENT_BOUNDARY + "--";
 
         Net.HttpRequest httpRequest;
         if (driveFileId == null) {
@@ -396,7 +494,7 @@ public class GpgsClient implements IGameServiceClient {
             httpRequest.setUrl("https://www.googleapis.com/upload/drive/v2/files/" + driveFileId + "?uploadType=multipart");
         }
         httpRequest.setHeader("Authorization", "Bearer " + oAuthToken);
-        httpRequest.setHeader("Content-Type", "multipart/related; boundary=foo_bar_baz");
+        httpRequest.setHeader("Content-Type", "multipart/related; boundary=" + CONTENT_BOUNDARY);
         //httpRequest.setHeader("Content-Length", String.valueOf(request.length()));
         httpRequest.setContent(request);
         Gdx.net.sendHttpRequest(httpRequest, new Net.HttpResponseListener() {
