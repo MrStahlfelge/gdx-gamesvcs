@@ -24,6 +24,8 @@ public class GpgsClient implements IGameServiceClient {
     public static final String GAMESERVICE_ID = IGameServiceClient.GS_GOOGLEPLAYGAMES_ID;
     protected IGameServiceListener gsListener;
     protected IGameServiceIdMapper<Integer> statIdMapper;
+    protected IGameServiceIdMapper<String> gpgsLeaderboardIdMapper;
+    protected IGameServiceIdMapper<String> gpgsAchievementIdMapper;
 
     protected boolean initialized;
     protected boolean connectionPending;
@@ -31,8 +33,7 @@ public class GpgsClient implements IGameServiceClient {
     protected String oAuthToken;
     private boolean isSilentConnect;
     private String clientId;
-    private IGameServiceIdMapper<String> gpgsLeaderboardIdMapper;
-    private IGameServiceIdMapper<String> gpgsAchievementIdMapper;
+
     private String displayName;
 
     /**
@@ -286,15 +287,49 @@ public class GpgsClient implements IGameServiceClient {
 
     @Override
     public boolean unlockAchievement(String achievementId) {
-        //TODO
-        return false;
+        if (gpgsAchievementIdMapper != null)
+            achievementId = gpgsAchievementIdMapper.mapToGsId(achievementId);
+
+        if (achievementId != null && isSessionActive()) {
+            nativeUnlockAchievement(achievementId);
+            return true;
+        } else
+            return false;
+
     }
+
+    private native void nativeUnlockAchievement(String achievementId) /*-{
+        $wnd.gapi.client.request({
+              path: 'games/v1/achievements/' + achievementId + '/unlock',
+              method: 'POST',
+              callback: function(response) {
+                //response.newlyUnlocked could be checked to toast
+              }
+        });
+    }-*/;
 
     @Override
     public boolean incrementAchievement(String achievementId, int incNum, float completionPercentage) {
-        //TODO
-        return false;
+        if (gpgsAchievementIdMapper != null)
+            achievementId = gpgsAchievementIdMapper.mapToGsId(achievementId);
+
+        if (achievementId != null && isSessionActive()) {
+            nativeIncAchievement(achievementId, incNum);
+            return true;
+        } else
+            return false;
     }
+
+    private native void nativeIncAchievement(String achievementId, int incNum) /*-{
+        $wnd.gapi.client.request({
+              path: 'games/v1/achievements/' + achievementId + '/increment',
+              params: {stepsToIncrement: incNum},
+              method: 'POST',
+              callback: function(response) {
+                //response.newlyUnlocked could be checked to toast
+              }
+        });
+    }-*/;
 
     @Override
     public void saveGameState(final String fileId, final byte[] gameState, long progressValue, final ISaveGameStateResponseListener success) {
