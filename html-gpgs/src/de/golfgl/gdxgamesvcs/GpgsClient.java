@@ -320,7 +320,6 @@ public class GpgsClient implements IGameServiceClient {
 
     @Override
     public String getPlayerDisplayName() {
-        //TODO
         return isSessionActive() ? displayName : null;
     }
 
@@ -335,8 +334,7 @@ public class GpgsClient implements IGameServiceClient {
 
     @Override
     public boolean isConnectionPending() {
-        //TODO
-        return false;
+        return connectionPending;
     }
 
     @Override
