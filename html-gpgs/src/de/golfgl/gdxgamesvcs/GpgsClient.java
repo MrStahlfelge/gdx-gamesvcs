@@ -30,6 +30,7 @@ public class GpgsClient implements IGameServiceClient {
     private static final String CONTENT_BOUNDARY = "foo_bar_baz";
     //GPGS does not allow sending events more frequent
     public static final int GPGS_SENDEVENTS_INTERVAL = 61;
+    public static final int GPGS_CHECKEVENTS_INTERVAL = 5;
 
     protected IGameServiceListener gsListener;
     protected IGameServiceIdMapper<Integer> statIdMapper;
@@ -41,6 +42,7 @@ public class GpgsClient implements IGameServiceClient {
     protected String oAuthToken;
     protected Timer.Task updateEventsTask;
     protected HashMap<String, Integer> eventsToRecord;
+    protected long lastEventRecordTime;
     private boolean isSilentConnect;
     private String clientId;
 
@@ -156,7 +158,7 @@ public class GpgsClient implements IGameServiceClient {
                 public void run() {
                     recordEvents();
                 }
-            }, GPGS_SENDEVENTS_INTERVAL, GPGS_SENDEVENTS_INTERVAL);
+            }, GPGS_CHECKEVENTS_INTERVAL, GPGS_CHECKEVENTS_INTERVAL);
         }
 
         if (gsListener != null) {
@@ -173,7 +175,8 @@ public class GpgsClient implements IGameServiceClient {
         synchronized (eventsToRecord) {
             long time = System.currentTimeMillis();
 
-            if (eventsToRecord.size() == 0)
+            // do not record if there is nothing to record or if minimal waiting time not reached
+            if (eventsToRecord.size() == 0 || time - lastEventRecordTime < GPGS_SENDEVENTS_INTERVAL * 1000)
                 return;
 
             JsonValue recordList = new JsonValue(JsonValue.ValueType.array);
@@ -187,6 +190,7 @@ public class GpgsClient implements IGameServiceClient {
             }
 
             eventsToRecord.clear();
+            lastEventRecordTime = time;
 
             root = new JsonValue(JsonValue.ValueType.object);
             root.addChild("kind", new JsonValue("games#eventRecordRequest"));
