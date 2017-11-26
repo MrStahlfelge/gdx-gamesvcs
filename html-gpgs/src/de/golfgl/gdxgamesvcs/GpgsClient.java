@@ -565,7 +565,55 @@ public class GpgsClient implements IGameServiceClient {
 
     }-*/;
 
-    protected void loadFileFromDrive(String driveFileId, final ILoadGameStateResponseListener responseListener) {
+    /**
+     * gets the real download url and calls downloadFileFromDrive, or the response listener
+     * @param driveFileId
+     * @param responseListener
+     */
+    protected native void loadFileFromDrive(String driveFileId, final ILoadGameStateResponseListener responseListener) /*-{
+        var that=this;
+        $wnd.gapi.client.request({
+              path: 'drive/v2/files/' + driveFileId,
+              callback: function(response) {
+                if (response.downloadUrl)
+                  that.@de.golfgl.gdxgamesvcs.GpgsClient::downloadFileFromDrive(Ljava/lang/String;Lde/golfgl/gdxgamesvcs/gamestate/ILoadGameStateResponseListener;)(response.downloadUrl, responseListener);
+                else
+                  responseListener.@de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener::gsGameStateLoaded([B)(null);
+              }
+        });
+
+    }-*/;
+
+    protected void downloadFileFromDrive(String url, final ILoadGameStateResponseListener responseListener) {
+        Net.HttpRequest httpRequest = new Net.HttpRequest(Net.HttpMethods.GET);
+        httpRequest.setUrl(url);
+        httpRequest.setHeader("Authorization", "Bearer " + oAuthToken);
+        Gdx.net.sendHttpRequest(httpRequest, new Net.HttpResponseListener() {
+            @Override
+            public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                byte[] result = httpResponse.getResultAsString().getBytes();
+                responseListener.gsGameStateLoaded(result);
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                responseListener.gsGameStateLoaded(null);
+            }
+
+            @Override
+            public void cancelled() {
+                responseListener.gsGameStateLoaded(null);
+            }
+        });
+    }
+
+    /**
+     * this can be used instead of loadFileFromDrive/downloadFileFromDrive... but it does not work on Firefox
+     * Firefox does not follow a redirect that is given back to the real download url
+     * @param driveFileId
+     * @param responseListener
+     */
+    protected void loadFileFromDriveV3(String driveFileId, final ILoadGameStateResponseListener responseListener) {
         Net.HttpRequest httpRequest = new Net.HttpRequest(Net.HttpMethods.GET);
         httpRequest.setUrl("https://content.googleapis.com/drive/v3/files/" + driveFileId + "?alt=media");
         httpRequest.setHeader("Authorization", "Bearer " + oAuthToken);
