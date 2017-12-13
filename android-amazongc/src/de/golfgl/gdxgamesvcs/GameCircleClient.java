@@ -108,21 +108,33 @@ public class GameCircleClient implements IGameServiceClient {
     }
 
     protected void agcServiceReady(AmazonGamesClient amazonGamesClient) {
-        isConnectionPending = false;
+        // The Amazon Game Service is ready, but that does not imply that an authenticated user session is active.
+        // Therefore, check for the player
         Gdx.app.log(GS_CLIENT_ID, "onServiceReady");
         agsClient = amazonGamesClient;
         agsClient.setPopUpLocation(PopUpLocation.TOP_CENTER);
-        isConnected = true;
 
         // Request Alias
         AmazonGamesClient.getInstance().getPlayerClient().getLocalPlayer().setCallback(
                 new AGResponseCallback<RequestPlayerResponse>() {
                     @Override
                     public void onComplete(final RequestPlayerResponse response) {
-                        if (!response.isError()) {
+                        isConnectionPending = false;
+                        isConnected = !response.isError();
+                        Gdx.app.log(GS_CLIENT_ID, "Player response, connected: " + isConnected);
+
+                        if (isConnected) {
                             cachedPlayerAlias = response.getPlayer().getAlias();
                             if (gsListener != null)
                                 gsListener.gsOnSessionActive();
+                        } else {
+                            cachedPlayerAlias = null;
+                            if (gsListener != null) {
+                                gsListener.gsOnSessionInactive();
+                                if (!autoStartSignInFlow)
+                                    gsListener.gsShowErrorToUser(IGameServiceListener.GsErrorType.errorLoginFailed,
+                                            response.getError().name(), null);
+                            }
                         }
                     }
                 }
@@ -151,11 +163,6 @@ public class GameCircleClient implements IGameServiceClient {
                     Gdx.app.log(GameCircleClient.GS_CLIENT_ID, "Game data not synced: " + reason.name());
                 }
             });
-
-
-        if (gsListener != null)
-            gsListener.gsOnSessionActive();
-
     }
 
     @Override
@@ -182,7 +189,7 @@ public class GameCircleClient implements IGameServiceClient {
         if (myContext == null || agsFeatures == null)
             throw new IllegalStateException("Call initialize() before connecting");
 
-        if (isSessionActive())
+        if (isSessionActive() || isConnectionPending())
             return true;
 
         isConnectionPending = true;
