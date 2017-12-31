@@ -7,9 +7,9 @@ Framework and implementations for using Game Services (BaaS) with libGDX.
 ## Supported game services
 
 * [Google Play Games](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Google-Play-Games) (Android, Desktop, HTML5)
+* [GameJolt](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/GameJolt) (all platforms)
 * [Amazon GameCircle](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Amazon-GameCircle) (Android)
 * [Kongregate](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Kongregate) (HTML5)
-* [GameJolt](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/GameJolt) (all platforms)
 * [Newgrounds](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Newgrounds) (HTML5)
 
 Further contributes (Steam, Apple GameCenter) are very welcome!
@@ -19,6 +19,9 @@ Further contributes (Steam, Apple GameCenter) are very welcome!
 When I wrote my first libGDX game, I realized there was no good library for Google Play Games (GPGS) integration available. So I implemented all the stuff myself. Luckily, because GPGS is platform-dependant, I kept things clean and implemented against an interface. Nevertheless, testing was a pain. I had no desktop implementation for the interface, so I always had to test on Android and check for `null` everywhere.
 
 When I then published my HTML5 release, users complained that their highscores were not posted to the hosting site's highscore system. Not to mention releasing to the Amazon App Store where GameCircle support is needed. So I felt in charge to do something.
+
+**With this extension, you can integrate one or more Game Services in your libGDX games with ease.
+You can choose the wanted Game Service client in your Launcher classes dynamically.**
 
 ## Basic concept
 
@@ -33,10 +36,10 @@ See the corresponding demo app https://github.com/MrStahlfelge/gdx-gamesvcs-app 
 
 ## Working demos
 
-* Google Play Games: my game [Falling Lightblocks](https://play.google.com/store/apps/details?id=de.golfgl.lightblocks&referrer=utm_source%3Dgh) is using this lib with GPGS
-* Amazon GameCircle: my game [Falling Lightblocks](https://www.amazon.com/gp/mas/dl/android?p=de.golfgl.lightblocks) uses this lib with GameCircle.
+* Google Play Games: my game [Falling Lightblocks](https://play.google.com/store/apps/details?id=de.golfgl.lightblocks&referrer=utm_source%3Dgh) is using this lib with GPGS on Android. GPGS on HTML is used by [Secret Chronicles Classic Platformer](https://www.kongregate.com/games/MrStahlfelge/secret-chronicles-classic-platformer) on Kongregate.
+* Amazon GameCircle: my game [Secret Chronicles Classic Platformer](https://www.amazon.com/gp/mas/dl/android?p=de.golfgl.smc.android) uses this lib with GameCircle, even on FireTV devices
+* GameJolt: check out the [HTML5 demo app](http://gamejolt.com/games/gdx-gamesvcs-gj/263351), or web version of my game [Secret Chronicles Classic Platformer](https://mrstahlfelge.gamejolt.io/scc)
 * [Kongregate HTML5 demo app](http://www.kongregate.com/games/MrStahlfelge/kongregate-api-for-libgdx-example)
-* [GameJolt HTML5 demo app](http://gamejolt.com/games/gdx-gamesvcs-gj/263351)
 * [Newgrounds HTML5 demo app](http://www.newgrounds.com/projects/games/1110754/preview)
 
 ## Installation
@@ -113,14 +116,17 @@ Main game class:
         gsClient.resumeSession();
     }
 
-In the launcher class you instantiate and initialize the GameServiceClient you really want to use:
+In the launcher class you instantiate and initialize the GameServiceClient for the service you want to use:
 
-        YourGameserviceClient gsClient = new YourGameserviceClient();
+        DesiredGameserviceClient gsClient = new DesiredGameserviceClient();
 
         gsClient.initialize( game service dependant initialization parameters );
 
         myGdxGame.gsClient = gsClient;
 
+Initialization depends on the game service; see the [wiki pages](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki) on how to instantiate the included Game Service clients.
+
+As you see, you assign the game service client dynamically here - so it is no problem to support different game services with only a single build of your game.
 
 If you want to know if you established a connection to a user session, you can use 
 `gsClient.isSessionActive()`, or set a listener and wait for the call to 
