@@ -844,8 +844,6 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
 
         if (status == GamesStatusCodes.STATUS_OK) {
             return result.getSnapshot();
-        } else if (status == GamesStatusCodes.STATUS_SNAPSHOT_CONTENTS_UNAVAILABLE) {
-            return result.getSnapshot();
         } else if (status == GamesStatusCodes.STATUS_SNAPSHOT_CONFLICT) {
             Snapshot snapshot = result.getSnapshot();
             Snapshot conflictSnapshot = result.getConflictingSnapshot();
