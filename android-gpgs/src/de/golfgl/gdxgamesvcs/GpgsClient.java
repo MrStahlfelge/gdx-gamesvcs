@@ -587,50 +587,54 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
             return false;
         }
 
-        // Open the snapshot, creating if necessary
-        Snapshots.OpenSnapshotResult open = Games.Snapshots.open(
-                mGoogleApiClient, id, true).await();
+        try {
+            // Open the snapshot, creating if necessary
+            Snapshots.OpenSnapshotResult open = Games.Snapshots.open(
+                    mGoogleApiClient, id, true).await();
 
-        Snapshot snapshot = processSnapshotOpenResult(open, 0);
+            Snapshot snapshot = processSnapshotOpenResult(open, 0);
 
-        if (snapshot == null) {
-            Gdx.app.log(GAMESERVICE_ID, "Could not open Snapshot.");
-            if (listener != null)
-                listener.onGameStateSaved(false, "Could not open Snapshot.");
-            return false;
-        }
+            if (snapshot == null) {
+                Gdx.app.log(GAMESERVICE_ID, "Could not open Snapshot.");
+                if (listener != null)
+                    listener.onGameStateSaved(false, "Could not open Snapshot.");
+                return false;
+            }
 
-        if (progressValue < snapshot.getMetadata().getProgressValue()) {
-            Gdx.app.error(GAMESERVICE_ID, "Progress of saved game state higher than current one. Did not save.");
+            if (progressValue < snapshot.getMetadata().getProgressValue()) {
+                Gdx.app.error(GAMESERVICE_ID, "Progress of saved game state higher than current one. Did not save.");
+                if (listener != null)
+                    listener.onGameStateSaved(true, null);
+                return false;
+            }
+
+            // Write the new data to the snapshot
+            snapshot.getSnapshotContents().writeBytes(gameState);
+
+            // Change metadata
+            SnapshotMetadataChange.Builder metaDataBuilder = new SnapshotMetadataChange.Builder()
+                    .fromMetadata(snapshot.getMetadata());
+            metaDataBuilder = setSaveGameMetaData(metaDataBuilder, id, gameState, progressValue);
+            SnapshotMetadataChange metadataChange = metaDataBuilder.build();
+
+            Snapshots.CommitSnapshotResult commit = Games.Snapshots.commitAndClose(
+                    mGoogleApiClient, snapshot, metadataChange).await();
+
+            if (!commit.getStatus().isSuccess())
+                throw new RuntimeException(commit.getStatus().getStatusMessage());
+
+            // No failures
+            Gdx.app.log(GAMESERVICE_ID, "Successfully saved gamestate with " + gameState.length + "B");
             if (listener != null)
                 listener.onGameStateSaved(true, null);
-            return false;
-        }
+            return true;
 
-        // Write the new data to the snapshot
-        snapshot.getSnapshotContents().writeBytes(gameState);
-
-        // Change metadata
-        SnapshotMetadataChange.Builder metaDataBuilder = new SnapshotMetadataChange.Builder()
-                .fromMetadata(snapshot.getMetadata());
-        metaDataBuilder = setSaveGameMetaData(metaDataBuilder, id, gameState, progressValue);
-        SnapshotMetadataChange metadataChange = metaDataBuilder.build();
-
-        Snapshots.CommitSnapshotResult commit = Games.Snapshots.commitAndClose(
-                mGoogleApiClient, snapshot, metadataChange).await();
-
-        if (!commit.getStatus().isSuccess()) {
-            Gdx.app.log(GAMESERVICE_ID, "Failed to commit Snapshot:" + commit.getStatus().getStatusMessage());
+        } catch (Throwable t) {
+            Gdx.app.error(GAMESERVICE_ID, "Failed to commit snapshot:" + t.getMessage());
             if (listener != null)
-                listener.onGameStateSaved(false, commit.getStatus().getStatusMessage());
+                listener.onGameStateSaved(false, t.getMessage());
             return false;
         }
-
-        // No failures
-        Gdx.app.log(GAMESERVICE_ID, "Successfully saved gamestate with " + gameState.length + "B");
-        if (listener != null)
-            listener.onGameStateSaved(true, null);
-        return true;
     }
 
     /**
