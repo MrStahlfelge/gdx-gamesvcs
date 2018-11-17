@@ -10,7 +10,6 @@ Framework and implementations for using Game Services (BaaS) with libGDX.
 * [GameJolt](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/GameJolt) (all platforms)
 * [Amazon GameCircle](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Amazon-GameCircle) (Android)
 * [Kongregate](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Kongregate) (HTML5)
-* [Newgrounds](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Newgrounds) (HTML5)
 
 Further contributes (Steam, Apple GameCenter) are very welcome!
 
@@ -37,10 +36,9 @@ See the corresponding demo app https://github.com/MrStahlfelge/gdx-gamesvcs-app 
 ## Working demos
 
 * Google Play Games: my game [Falling Lightblocks](https://play.google.com/store/apps/details?id=de.golfgl.lightblocks&referrer=utm_source%3Dgh) is using this lib with GPGS on Android. GPGS on HTML is used by [Secret Chronicles Classic Platformer](https://www.kongregate.com/games/MrStahlfelge/secret-chronicles-classic-platformer) on Kongregate.
-* Amazon GameCircle: my game [Secret Chronicles Classic Platformer](https://www.amazon.com/gp/mas/dl/android?p=de.golfgl.smc.android) uses this lib with GameCircle, even on FireTV devices
-* GameJolt: check out the [HTML5 demo app](http://gamejolt.com/games/gdx-gamesvcs-gj/263351), or web version of my game [Secret Chronicles Classic Platformer](https://mrstahlfelge.gamejolt.io/scc)
+* Amazon GameCircle: my game [Falling Lightblocks](https://www.amazon.com/gp/mas/dl/android?p=de.golfgl.lightblocks) uses this lib with GameCircle, even on FireTV devices
+* GameJolt: check out the [HTML5 demo app](http://gamejolt.com/games/gdx-gamesvcs-gj/263351), or web version of my game [Falling Lightblocks](https://gamejolt.com/games/lightblocks/259654)
 * [Kongregate HTML5 demo app](http://www.kongregate.com/games/MrStahlfelge/kongregate-api-for-libgdx-example)
-* [Newgrounds HTML5 demo app](http://www.newgrounds.com/projects/games/1110754/preview)
 
 ## Installation
 

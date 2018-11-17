@@ -224,35 +224,6 @@ project(":html") {
 
 
 
-project(":html-ngio") {
-    apply plugin: 'java'
-
-
-    apply from: '../publish.gradle'
-
-    configurations {
-        custom
-        compile.extendsFrom custom
-    }
-
-    eclipse {
-        project {
-            name = appName + "-html-ngio"
-        }
-    }
-
-    dependencies {
-        compile project(':core')
-    }
-    dependencies {
-        compile "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion"
-        compile "com.badlogicgames.gdx:gdx:$gdxVersion:sources"
-        compile "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion:sources"
-    }
-}
-
-
-
 project(":html-kong") {
     apply plugin: 'java'
 
