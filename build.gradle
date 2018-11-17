@@ -39,6 +39,7 @@ allprojects {
         mavenLocal()
         maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
         maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+        maven { url "https://maven.google.com" }
     }
 
     group = GROUPID
@@ -78,21 +79,11 @@ project(":android-gpgs") {
     }
 
     dependencies {
-        // Set defaults so that com.google.example.games.basegameutils.BaseGameUtils can be used outside of BasicSamples
-        if (!project.hasProperty('appcompat_library_version')) {
-            ext.appcompat_library_version = '20.0.0'
-        }
-        if (!project.hasProperty('support_library_version')) {
-            ext.support_library_version = '20.0.0'
-        }
         if (!project.hasProperty('gms_library_version')) {
             ext.gms_library_version = '8.4.0'
         }
 
-        compile "com.android.support:appcompat-v7:${appcompat_library_version}"
-        compile "com.android.support:support-v4:${support_library_version}"
         compile "com.google.android.gms:play-services-games:${gms_library_version}"
-        compile "com.google.android.gms:play-services-plus:${gms_library_version}"
 
         compile project(':core')
     }
