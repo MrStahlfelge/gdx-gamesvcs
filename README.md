@@ -2,6 +2,9 @@
 
 Framework and implementations for using Game Services (BaaS) with libGDX.
 
+[![Build Status](https://travis-ci.org/MrStahlfelge/gdx-gamesvcs.svg?branch=master)](https://travis-ci.org/MrStahlfelge/gdx-gamesvcs)
+![Maven Central](http://maven-badges.herokuapp.com/maven-central/de.golfgl.gdxgamesvcs/gdx-gamesvcs-core/badge.svg)
+
 ![Demo app](/assets/gdxgsgpgs.gif?raw=true "Demo app")
 
 ## Supported game services
