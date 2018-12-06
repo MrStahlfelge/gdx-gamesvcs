@@ -22,8 +22,8 @@ public class GpgsAchievement implements IAchievement {
 
     @Override
     public boolean isAchievementId(String achievementId) {
-        return (achievementMapper == null ? achievementId.equals(achievementId) :
-                achievementId.equals(achievementMapper.mapToGsId(achievementId)));
+        return (achievementMapper == null ? this.achievementId.equals(achievementId) :
+                this.achievementId.equals(achievementMapper.mapToGsId(achievementId)));
     }
 
     @Override

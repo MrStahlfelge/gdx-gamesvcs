@@ -802,29 +802,27 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         }
     }
 
-    @NonNull
-    public Boolean loadGameStateSync(String id, ILoadGameStateResponseListener listener) {
+    public boolean loadGameStateSync(String id, ILoadGameStateResponseListener listener) {
         if (!isSessionActive()) {
             listener.gsGameStateLoaded(null);
             return false;
         }
 
-        // Open the snapshot, creating if necessary
-        Snapshots.OpenSnapshotResult open = Games.Snapshots.open(
-                mGoogleApiClient, id, true).await();
-
-        Snapshot snapshot = processSnapshotOpenResult(open, 0);
-
-        if (snapshot == null) {
-            Gdx.app.log(GAMESERVICE_ID, "Could not open Snapshot.");
-            listener.gsGameStateLoaded(null);
-            return false;
-        }
-
-        // Read
         try {
-            byte[] mSaveGameData = null;
-            mSaveGameData = snapshot.getSnapshotContents().readFully();
+            // Open the snapshot, creating if necessary
+            Snapshots.OpenSnapshotResult open = Games.Snapshots.open(
+                    mGoogleApiClient, id, true).await();
+
+            Snapshot snapshot = processSnapshotOpenResult(open, 0);
+
+            if (snapshot == null) {
+                Gdx.app.log(GAMESERVICE_ID, "Could not open Snapshot.");
+                listener.gsGameStateLoaded(null);
+                return false;
+            }
+
+            // Read
+            byte[] mSaveGameData = snapshot.getSnapshotContents().readFully();
             listener.gsGameStateLoaded(mSaveGameData);
             return true;
         } catch (Throwable t) {
