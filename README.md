@@ -34,14 +34,19 @@ Every implemented game service client has its own project you can decide to incl
 There is a no-op implementation `NoGameServiceClient` provided that does absolutely nothing besides logging your calls. Use it to test platform-independant and to avoid `null` checks or NPEs.
 For testing your UI's behaviour on slow callback responses, you can use `MockGameServiceClient`.
 
-See the corresponding demo app https://github.com/MrStahlfelge/gdx-gamesvcs-app for an example and this project's wiki for further documentation.
+See the corresponding [demo app](https://github.com/MrStahlfelge/gdx-gamesvcs-app) for an example and this project's wiki for further documentation.
 
 ## Working demos
 
+Ready to play:
 * Google Play Games: my game [Falling Lightblocks](https://play.google.com/store/apps/details?id=de.golfgl.lightblocks&referrer=utm_source%3Dgh) is using this lib with GPGS on Android. GPGS on HTML is used by [Secret Chronicles Classic Platformer](https://www.kongregate.com/games/MrStahlfelge/secret-chronicles-classic-platformer) on Kongregate.
 * Amazon GameCircle: my game [Falling Lightblocks](https://www.amazon.com/gp/mas/dl/android?p=de.golfgl.lightblocks) uses this lib with GameCircle, even on FireTV devices
 * GameJolt: check out the [HTML5 demo app](http://gamejolt.com/games/gdx-gamesvcs-gj/263351), or web version of my game [Falling Lightblocks](https://gamejolt.com/games/lightblocks/259654)
 * [Kongregate HTML5 demo app](http://www.kongregate.com/games/MrStahlfelge/kongregate-api-for-libgdx-example)
+
+Source examples:
+* [Demo app](https://github.com/MrStahlfelge/gdx-gamesvcs-app)
+* [Secret Chronicles Classic](https://github.com/MrStahlfelge/SMC-libgdx)
 
 ## Installation
 
@@ -75,10 +80,6 @@ To build from source, clone or download this repository, then open it in Android
 See `build.gradle` file for current version to use in your dependencies.
 
 ## Usage
-**This documentation is only valid for v0.2. If you want to use older version v0.1, please see documentation on release/0.1.x branch.**
-
-When updating from v0.1 to v0.2, please note that main interface methods were 
-renamed to clarify their purpose. See [issue #15](https://github.com/MrStahlfelge/gdx-gamesvcs/issues/15) for the full list.
 
 ### Initializing the game service client
 
