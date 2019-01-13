@@ -639,9 +639,9 @@ public class GpgsClient implements IGameServiceClient {
             public void run() throws IOException {
                 try {
                     byte[] data = loadGameStateSync(fileId);
-                    if (gameListener != null) listener.gsGameStateLoaded(data);
+                    if (listener != null) listener.gsGameStateLoaded(data);
                 } catch (IOException e) {
-                    if (gameListener != null) listener.gsGameStateLoaded(null);
+                    if (listener != null) listener.gsGameStateLoaded(null);
                     throw e;
                 }
             }
