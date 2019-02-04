@@ -9,5 +9,4 @@ include ':html'
 include ':html-gpgs'
 include ':html-kong'
 include ':ios'
-include ':ios-moe'
 
