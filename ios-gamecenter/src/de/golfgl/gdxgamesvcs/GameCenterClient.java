@@ -5,12 +5,12 @@ import com.badlogic.gdx.Gdx;
 import org.robovm.apple.foundation.NSArray;
 import org.robovm.apple.foundation.NSError;
 import org.robovm.apple.gamekit.GKAchievement;
+import org.robovm.apple.gamekit.GKGameCenterControllerDelegateAdapter;
 import org.robovm.apple.gamekit.GKGameCenterViewController;
 import org.robovm.apple.gamekit.GKGameCenterViewControllerState;
 import org.robovm.apple.gamekit.GKLocalPlayer;
 import org.robovm.apple.gamekit.GKScore;
 import org.robovm.apple.uikit.UIViewController;
-import org.robovm.apple.uikit.UIWindow;
 import org.robovm.objc.block.VoidBlock1;
 import org.robovm.objc.block.VoidBlock2;
 
@@ -23,12 +23,14 @@ import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListene
 // TODO support GameServiceIdMapper
 public class GameCenterClient implements IGameServiceClient {
 	public static final String GAMESERVICE_ID = IGameServiceClient.GS_GAMECENTER_ID;
-	private final UIWindow appWindow;
+	private final UIViewController viewController;
 	private IGameServiceListener gsListener;
 	private boolean connecting;
+	private boolean handlerSet;
+	private UIViewController lastGotLoginScreen;
 
-	public GameCenterClient(UIWindow appWindow) {
-		this.appWindow = appWindow;
+	public GameCenterClient(UIViewController viewController) {
+		this.viewController = viewController;
 	}
 
 	@Override
@@ -43,17 +45,15 @@ public class GameCenterClient implements IGameServiceClient {
 
 	@Override
 	public boolean resumeSession() {
-		return connect(true);
-	}
-
-	private boolean connect(final boolean silent) {
-		if (!isSessionActive()) {
+		if (!handlerSet) {
 			connecting = true;
+			handlerSet = true;
 			final GKLocalPlayer localPlayer = GKLocalPlayer.getLocalPlayer();
 			localPlayer.setAuthenticateHandler(new VoidBlock2<UIViewController, NSError>() {
 				@Override
 				public void invoke(UIViewController gkViewController, NSError nsError) {
 					connecting = false;
+					lastGotLoginScreen = gkViewController;
 
 					if (isSessionActive()) {
 						Gdx.app.debug(GAMESERVICE_ID, "Successfully logged into GameCenter");
@@ -61,27 +61,23 @@ public class GameCenterClient implements IGameServiceClient {
 							gsListener.gsOnSessionActive();
 						}
 					} else {
-						Gdx.app.debug(GAMESERVICE_ID,
-								"Did not authenticate, errror: " +
-										(nsError != null ? nsError.getErrorCode().value() : "(none)"));
-						if (!silent && gkViewController != null)
-							// unfortunately, the login window will never call back
-							appWindow.getRootViewController()
-									.presentViewController(gkViewController, true, null);
-
+						Gdx.app.debug(GAMESERVICE_ID, "Did not authenticate.");
 						if (gsListener != null)
 							gsListener.gsOnSessionInactive();
 					}
 				}
 			});
 		}
-
 		return isSessionActive() || isConnectionPending();
 	}
 
 	@Override
 	public boolean logIn() {
-		return connect(false);
+		if (!isSessionActive() && lastGotLoginScreen != null) {
+			// unfortunately, the login window will never call back
+			viewController.presentViewController(lastGotLoginScreen, true, null);
+		}
+		return isSessionActive() || lastGotLoginScreen != null;
 	}
 
 	@Override
@@ -121,7 +117,13 @@ public class GameCenterClient implements IGameServiceClient {
 		gameCenterView.setViewState(GKGameCenterViewControllerState.Leaderboards);
 		if (leaderBoardId != null)
 			gameCenterView.setLeaderboardIdentifier(leaderBoardId);
-		appWindow.getRootViewController().presentViewController(gameCenterView, true, null);
+		gameCenterView.setGameCenterDelegate(new GKGameCenterControllerDelegateAdapter() {
+			@Override
+			public void didFinish(GKGameCenterViewController gameCenterViewController) {
+				gameCenterViewController.dismissViewController(true, null);
+			}
+		});
+		viewController.presentViewController(gameCenterView, true, null);
 	}
 
 	@Override
@@ -131,7 +133,13 @@ public class GameCenterClient implements IGameServiceClient {
 
 		GKGameCenterViewController gameCenterView = new GKGameCenterViewController();
 		gameCenterView.setViewState(GKGameCenterViewControllerState.Achievements);
-		appWindow.getRootViewController().presentViewController(gameCenterView, true, null);
+		gameCenterView.setGameCenterDelegate(new GKGameCenterControllerDelegateAdapter() {
+			@Override
+			public void didFinish(GKGameCenterViewController gameCenterViewController) {
+				gameCenterViewController.dismissViewController(true, null);
+			}
+		});
+		viewController.presentViewController(gameCenterView, true, null);
 	}
 
 	@Override
