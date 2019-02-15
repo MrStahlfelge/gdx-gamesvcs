@@ -8,5 +8,5 @@ include ':desktop-gpgs'
 include ':html'
 include ':html-gpgs'
 include ':html-kong'
-include ':ios'
+include ':ios-gamecenter'
 
