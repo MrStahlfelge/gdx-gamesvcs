@@ -389,6 +389,7 @@ public class GameCircleClient implements IGameServiceClient {
             case ShowAchievementsUI:
             case ShowAllLeaderboardsUI:
             case ShowLeaderboardUI:
+            case PlayerLogOut:
                 return true;
             default:
                 return false;

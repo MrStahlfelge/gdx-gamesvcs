@@ -723,6 +723,8 @@ public class GpgsClient implements IGameServiceClient {
             case GameStateDelete:
             case FetchGameStates:
                 return enableDrive;
+            case PlayerLogOut:
+                return true;
             default:
                 return false;
         }

@@ -796,6 +796,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
             case SubmitEvents:
             case FetchAchievements:
             case FetchLeaderBoardEntries:
+            case PlayerLogOut:
                 return true;
             default:
                 return false;

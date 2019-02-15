@@ -828,6 +828,7 @@ public class GameJoltClient implements IGameServiceClient {
             case FetchAchievements:
             case GameStateDelete:
             case FetchGameStates:
+            case PlayerLogOut:
                 return true;
             default:
                 return false;

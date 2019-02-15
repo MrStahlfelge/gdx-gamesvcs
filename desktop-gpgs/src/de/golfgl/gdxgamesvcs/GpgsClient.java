@@ -857,6 +857,7 @@ public class GpgsClient implements IGameServiceClient {
                 return driveApiEnabled;
             case FetchAchievements:
             case FetchLeaderBoardEntries:
+            case PlayerLogOut:
                 return true;
             default:
                 return false;
