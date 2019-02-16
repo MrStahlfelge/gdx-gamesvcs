@@ -15,7 +15,6 @@ Framework and implementations for using Game Services (BaaS) with libGDX.
 * [Amazon GameCircle](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Amazon-GameCircle) (Android)
 * [Kongregate](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Kongregate) (HTML5)
 
-Further contributes (Steam, Apple GameCenter) are very welcome!
 
 ## Motivation
 
@@ -56,7 +55,7 @@ into your project by just adding the dependencies to your `build.gradle` file.
 
 Define the version of this API right after the gdxVersion: 
    
-    gdxVersion = '1.9.6'
+    gdxVersion = '1.9.8'
     gamesvcsVersion = '0.2.5'
 
 Core:
