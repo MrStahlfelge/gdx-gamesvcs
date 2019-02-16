@@ -5,5 +5,5 @@ sourceSets.main.java.srcDirs = [ "src/" ]
 
 
 ext {
-	ARTIFACTID = 'gdx-gamesvcs-ios'
+	ARTIFACTID = 'gdx-gamesvcs-ios-gamecenter'
 }	

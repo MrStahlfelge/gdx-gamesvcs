@@ -10,6 +10,7 @@ Framework and implementations for using Game Services (BaaS) with libGDX.
 ## Supported game services
 
 * [Google Play Games](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Google-Play-Games) (Android, Desktop, HTML5)
+* [Apple Game Center](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Apple-Game-Center) (iOS RoboVM)
 * [GameJolt](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/GameJolt) (all platforms)
 * [Amazon GameCircle](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Amazon-GameCircle) (Android)
 * [Kongregate](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Kongregate) (HTML5)

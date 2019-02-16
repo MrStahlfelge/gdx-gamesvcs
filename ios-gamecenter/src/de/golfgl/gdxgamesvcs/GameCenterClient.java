@@ -20,7 +20,9 @@ import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
 
-// TODO support GameServiceIdMapper
+/**
+ * Apple Game Center implementation
+ */
 public class GameCenterClient implements IGameServiceClient {
 	public static final String GAMESERVICE_ID = IGameServiceClient.GS_GAMECENTER_ID;
 	private final UIViewController viewController;
@@ -28,6 +30,7 @@ public class GameCenterClient implements IGameServiceClient {
 	private boolean connecting;
 	private boolean handlerSet;
 	private UIViewController lastGotLoginScreen;
+	private boolean callLoginFromHandler;
 
 	public GameCenterClient(UIViewController viewController) {
 		this.viewController = viewController;
@@ -53,17 +56,21 @@ public class GameCenterClient implements IGameServiceClient {
 				@Override
 				public void invoke(UIViewController gkViewController, NSError nsError) {
 					connecting = false;
-					lastGotLoginScreen = gkViewController;
 
 					if (isSessionActive()) {
+						lastGotLoginScreen = null;
 						Gdx.app.debug(GAMESERVICE_ID, "Successfully logged into GameCenter");
 						if (gsListener != null) {
 							gsListener.gsOnSessionActive();
 						}
 					} else {
+						if (gkViewController != null)
+							lastGotLoginScreen = gkViewController;
 						Gdx.app.debug(GAMESERVICE_ID, "Did not authenticate.");
 						if (gsListener != null)
 							gsListener.gsOnSessionInactive();
+						if (callLoginFromHandler)
+							logIn();
 					}
 				}
 			});
@@ -73,9 +80,20 @@ public class GameCenterClient implements IGameServiceClient {
 
 	@Override
 	public boolean logIn() {
-		if (!isSessionActive() && lastGotLoginScreen != null) {
-			// unfortunately, the login window will never call back
-			viewController.presentViewController(lastGotLoginScreen, true, null);
+		callLoginFromHandler = false;
+
+		if (!isSessionActive()) {
+			if (!handlerSet) {
+				callLoginFromHandler = true;
+				return resumeSession();
+			}
+
+			if (lastGotLoginScreen != null)
+			    // unfortunately, the login window will never call back
+			    viewController.presentViewController(lastGotLoginScreen, true, null);
+			else if (gsListener != null)
+			    gsListener.gsShowErrorToUser(IGameServiceListener.GsErrorType.errorLoginFailed,
+                        "Please use Game Center settings to log in", null);
 		}
 		return isSessionActive() || lastGotLoginScreen != null;
 	}
@@ -95,7 +113,7 @@ public class GameCenterClient implements IGameServiceClient {
 
 	@Override
 	public String getPlayerDisplayName() {
-		return isSessionActive() ? GKLocalPlayer.getLocalPlayer().getDisplayName() : null;
+		return isSessionActive() ? GKLocalPlayer.getLocalPlayer().getAlias() : null;
 	}
 
 	@Override
