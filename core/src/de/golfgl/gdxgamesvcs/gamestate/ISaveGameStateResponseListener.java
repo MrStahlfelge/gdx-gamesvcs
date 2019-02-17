@@ -13,7 +13,7 @@ public interface ISaveGameStateResponseListener {
      * Result of save game request
      *
      * @param success   true if game state was sucessfully saved
-     * @param errorCode null of succesful
+     * @param errorCode null if succesful
      */
     void onGameStateSaved(boolean success, String errorCode);
 }

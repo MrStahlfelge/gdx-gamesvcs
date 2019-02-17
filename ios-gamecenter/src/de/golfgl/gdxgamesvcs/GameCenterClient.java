@@ -1,18 +1,23 @@
 package de.golfgl.gdxgamesvcs;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.utils.Array;
 
 import org.robovm.apple.foundation.NSArray;
+import org.robovm.apple.foundation.NSData;
 import org.robovm.apple.foundation.NSError;
 import org.robovm.apple.gamekit.GKAchievement;
 import org.robovm.apple.gamekit.GKGameCenterControllerDelegateAdapter;
 import org.robovm.apple.gamekit.GKGameCenterViewController;
 import org.robovm.apple.gamekit.GKGameCenterViewControllerState;
 import org.robovm.apple.gamekit.GKLocalPlayer;
+import org.robovm.apple.gamekit.GKSavedGame;
 import org.robovm.apple.gamekit.GKScore;
 import org.robovm.apple.uikit.UIViewController;
 import org.robovm.objc.block.VoidBlock1;
 import org.robovm.objc.block.VoidBlock2;
+
+import java.util.ArrayList;
 
 import de.golfgl.gdxgamesvcs.achievement.IFetchAchievementsResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
@@ -167,7 +172,7 @@ public class GameCenterClient implements IGameServiceClient {
 
 	@Override
 	public boolean submitToLeaderboard(String leaderboardId, long score, String tag) {
-		if (isSessionActive()) {
+		if (isSessionActive() && leaderboardId != null) {
 			GKScore scoreReporter = new GKScore();
 			scoreReporter.setValue(score);
 			scoreReporter.setLeaderboardIdentifier(leaderboardId);
@@ -201,7 +206,7 @@ public class GameCenterClient implements IGameServiceClient {
 
 	@Override
 	public boolean incrementAchievement(String achievementId, int incNum, float completionPercentage) {
-		if (isSessionActive()) {
+		if (isSessionActive() && achievementId != null) {
 			GKAchievement achievement = new GKAchievement(achievementId);
 			achievement.setPercentComplete(completionPercentage * 100);
 			achievement.setShowsCompletionBanner(true);
@@ -221,34 +226,135 @@ public class GameCenterClient implements IGameServiceClient {
 	}
 
 	@Override
-	public void saveGameState(String fileId, byte[] gameState, long progressValue, ISaveGameStateResponseListener success) {
+	public void saveGameState(String fileId, byte[] gameState, long progressValue, final ISaveGameStateResponseListener success) {
+        if (!isSessionActive()) {
+            if (success != null)
+                success.onGameStateSaved(false, "NOT_CONNECTED");
+            return;
+        }
 
+        NSData nsData = new NSData(gameState);
+
+        GKLocalPlayer.getLocalPlayer().saveGameData(nsData, fileId, new VoidBlock2<GKSavedGame, NSError>() {
+            @Override
+            public void invoke(GKSavedGame savedGame, NSError error) {
+                if (success == null)
+                    return;
+
+                if (error == null)
+                    success.onGameStateSaved(true, null);
+                else
+                    success.onGameStateSaved(false, String.valueOf(error.getCode()));
+            }
+        });
 	}
 
 	@Override
-	public void loadGameState(String fileId, ILoadGameStateResponseListener responseListener) {
+	public void loadGameState(final String fileId, final ILoadGameStateResponseListener responseListener) {
+        if (!isSessionActive()) {
+            responseListener.gsGameStateLoaded(null);
+            return;
+        }
 
+        GKLocalPlayer.getLocalPlayer().fetchSavedGames(new VoidBlock2<NSArray<GKSavedGame>, NSError>() {
+            @Override
+            public void invoke(NSArray<GKSavedGame> savedGames, NSError error) {
+                if (error == null && savedGames != null) {
+                    final ArrayList<GKSavedGame> snapshots = new ArrayList<>();
+                    for (GKSavedGame snapshot : savedGames) {
+                        if (snapshot.getName().equals(fileId))
+                            snapshots.add(snapshot);
+                    }
+
+                    GKSavedGame mySnapshot = null;
+                    final NSArray<GKSavedGame> resolved = new NSArray<>();
+                    if (snapshots.isEmpty()) {
+                        responseListener.gsGameStateLoaded(null);
+                        return;
+                    } else if (snapshots.size() == 1) {
+                        mySnapshot = snapshots.get(0);
+                    } else {
+                        // look for the newest one
+                        mySnapshot = snapshots.get(0);
+                        for (int i = 1; i < snapshots.size(); i++) {
+                            if (snapshots.get(i).getModificationDate().getTimeIntervalSinceReferenceDate()
+                                    > mySnapshot.getModificationDate().getTimeIntervalSinceReferenceDate())
+                                mySnapshot = snapshots.get(i);
+                        }
+                        for (GKSavedGame snapshot : snapshots)
+                            resolved.add(snapshot);
+                    }
+
+                    mySnapshot.loadData(new VoidBlock2<NSData, NSError>() {
+                        @Override
+                        public void invoke(NSData data, NSError error) {
+                            if (error == null) {
+                                // if there were conflicts, resolve them now
+                                if (snapshots.size() > 1)
+                                    GKLocalPlayer.getLocalPlayer().resolveConflictingSavedGames(resolved, data, null);
+                                responseListener.gsGameStateLoaded(data.getBytes());
+                            } else {
+                                responseListener.gsGameStateLoaded(null);
+                            }
+                        }
+                    });
+                }
+            }
+        });
 	}
 
 	@Override
-	public boolean deleteGameState(String fileId, ISaveGameStateResponseListener success) {
-		return false;
-	}
+    public boolean deleteGameState(String fileId, final ISaveGameStateResponseListener success) {
+        if (!isSessionActive())
+            return false;
+
+        GKLocalPlayer.getLocalPlayer().deleteSavedGames(fileId, new VoidBlock1<NSError>() {
+            @Override
+            public void invoke(NSError error) {
+                if (success == null)
+                    return;
+
+                if (error == null)
+                    success.onGameStateSaved(true, null);
+                else
+                    success.onGameStateSaved(false, String.valueOf(error.getCode()));
+            }
+        });
+        return true;
+    }
 
 	@Override
-	public boolean fetchGameStates(IFetchGameStatesListResponseListener callback) {
-		return false;
-	}
+    public boolean fetchGameStates(final IFetchGameStatesListResponseListener callback) {
+        if (!isSessionActive())
+            return false;
 
-	@Override
+        GKLocalPlayer.getLocalPlayer().fetchSavedGames(new VoidBlock2<NSArray<GKSavedGame>, NSError>() {
+            @Override
+            public void invoke(NSArray<GKSavedGame> savedGames, NSError error) {
+                if (error == null && savedGames != null) {
+                    Array<String> gameStates = new Array<String>(savedGames.size());
+
+                    for (GKSavedGame snapshot : savedGames) {
+                        gameStates.add(snapshot.getName());
+                    }
+
+                    callback.onFetchGameStatesListResponse(gameStates);
+                } else {
+                    callback.onFetchGameStatesListResponse(null);
+                }
+            }
+        });
+        return true;
+    }
+
+    @Override
 	public boolean isFeatureSupported(GameServiceFeature feature) {
 		switch (feature) {
 			case FetchGameStates:
 			case GameStateStorage:
 			case GameStateDelete:
 			case GameStateMultipleFiles:
-				// TODO
-				return false;
+				return true;
 
 			case FetchAchievements:
 			case FetchLeaderBoardEntries:
