@@ -365,8 +365,10 @@ public class GameCenterClient implements IGameServiceClient {
 			case SubmitEvents:
 			case ShowLeaderboardUI:
 			case ShowAllLeaderboardsUI:
-			case PlayerLogOut:
 				return true;
+
+            case PlayerLogOut:
+                return false;
 
 			default:
 				return false;
