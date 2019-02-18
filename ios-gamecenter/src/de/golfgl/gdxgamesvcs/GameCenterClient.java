@@ -238,14 +238,16 @@ public class GameCenterClient implements IGameServiceClient {
         GKLocalPlayer.getLocalPlayer().saveGameData(nsData, fileId, new VoidBlock2<GKSavedGame, NSError>() {
             @Override
             public void invoke(GKSavedGame savedGame, NSError error) {
-                if (success == null)
-                    return;
+				if (success == null)
+					return;
 
-                if (error == null)
-                    success.onGameStateSaved(true, null);
-                else
-                    success.onGameStateSaved(false, String.valueOf(error.getCode()));
-            }
+				if (error == null)
+					success.onGameStateSaved(true, null);
+				else {
+					Gdx.app.log(GAMESERVICE_ID, "Could not save gamestate: " + error.getCode());
+					success.onGameStateSaved(false, String.valueOf(error.getCode()));
+				}
+			}
         });
 	}
 
@@ -294,11 +296,18 @@ public class GameCenterClient implements IGameServiceClient {
                                     GKLocalPlayer.getLocalPlayer().resolveConflictingSavedGames(resolved, data, null);
                                 responseListener.gsGameStateLoaded(data.getBytes());
                             } else {
-                                responseListener.gsGameStateLoaded(null);
+								Gdx.app.log(GAMESERVICE_ID, "Failed to load gamestate: " + error.getCode());
+								responseListener.gsGameStateLoaded(null);
                             }
                         }
                     });
-                }
+                } else if (error != null) {
+                	Gdx.app.log(GAMESERVICE_ID, "Failed to list gamestates: " + error.getCode());
+                	responseListener.gsGameStateLoaded(null);
+				} else {
+					Gdx.app.log(GAMESERVICE_ID, "No gamestates to list.");
+					responseListener.gsGameStateLoaded(null);
+				}
             }
         });
 	}
