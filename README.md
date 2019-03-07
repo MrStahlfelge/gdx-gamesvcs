@@ -56,7 +56,7 @@ into your project by just adding the dependencies to your `build.gradle` file.
 Define the version of this API right after the gdxVersion: 
    
     gdxVersion = '1.9.8'
-    gamesvcsVersion = '0.2.5'
+    gamesvcsVersion = '1.0.0'
 
 Core:
 
@@ -195,11 +195,10 @@ Some game services support user sign in and out, some need the user to log in ma
 
 Note: For Google Play Games your game even *must* provide a sign in/out button to be considered Google Play Games Services-compatible.
 
-## Updates & News
-Follow me to receive release updates about this
+## News & Community
 
-https://twitter.com/MrStahlfelge
+You can get help on the [libgdx discord](https://discord.gg/6pgDK9F).
 
-# License
+## License
 
 The project is licensed under the Apache 2 License, meaning you can use it free of charge, without strings attached in commercial and non-commercial projects. We love to get (non-mandatory) credit in case you release a game or app using this project!
