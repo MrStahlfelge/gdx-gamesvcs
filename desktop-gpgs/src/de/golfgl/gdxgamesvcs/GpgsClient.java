@@ -573,7 +573,7 @@ public class GpgsClient implements IGameServiceClient {
             File snapshotFile = null;
             for (File file : files) {
                 if (file.getMimeType().equals("application/vnd.google-play-games.snapshot")) {
-                    // Search for snapshot files and choose the first founded one
+                    // Search for snapshot files and choose the first found one
                     snapshotFile = file;
                     break;
                 }
