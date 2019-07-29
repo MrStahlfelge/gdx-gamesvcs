@@ -570,7 +570,15 @@ public class GpgsClient implements IGameServiceClient {
         List<File> files = GApiGateway.drive.files().list().setSpaces("appDataFolder").setQ("name='" + name + "'")
                 .execute().getFiles();
         if (files.size() > 1) {
-            throw new GdxRuntimeException("multiple files with name " + name + " exists.");
+            File snapshotFile = null;
+            for (File file : files) {
+                if (file.getMimeType().equals("application/vnd.google-play-games.snapshot")) {
+                    // Search for snapshot files and choose the first founded one
+                    snapshotFile = file;
+                    break;
+                }
+            }
+            return snapshotFile;
         } else if (files.size() < 1) {
             return null;
         } else {
