@@ -578,6 +578,10 @@ public class GpgsClient implements IGameServiceClient {
                     break;
                 }
             }
+            if (snapshotFile == null)
+                Gdx.app.error(TAG, "Multiple files with name " + name + " exists. No snapshot file found");
+            else
+                Gdx.app.log(TAG, "Multiple files with name " + name + " exists. Choose snapshot file with ID:  " + snapshotFile.getId());
             return snapshotFile;
         } else if (files.size() < 1) {
             return null;
