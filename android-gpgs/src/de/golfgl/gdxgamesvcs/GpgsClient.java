@@ -480,11 +480,11 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
 
         Leaderboards.LoadScoresResult scoresResult =
                 (relatedToPlayer ?
-                        Games.Leaderboards.loadTopScores(mGoogleApiClient, leaderBoardId,
+                        Games.Leaderboards.loadPlayerCenteredScores(mGoogleApiClient, leaderBoardId,
                                 LeaderboardVariant.TIME_SPAN_ALL_TIME, LeaderboardVariant.COLLECTION_PUBLIC,
                                 MathUtils.clamp(limit, 1, 25), forceRefresh).await()
                         :
-                        Games.Leaderboards.loadPlayerCenteredScores(mGoogleApiClient, leaderBoardId,
+                        Games.Leaderboards.loadTopScores(mGoogleApiClient, leaderBoardId,
                                 LeaderboardVariant.TIME_SPAN_ALL_TIME, LeaderboardVariant.COLLECTION_PUBLIC,
                                 MathUtils.clamp(limit, 1, 25), forceRefresh).await());
 
