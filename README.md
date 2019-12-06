@@ -57,7 +57,7 @@ into your project by just adding the dependencies to your `build.gradle` file.
 Define the version of this API right after the gdxVersion: 
    
     gdxVersion = '1.9.8'
-    gamesvcsVersion = '1.0.0'
+    gamesvcsVersion = '1.0.1'
 
 Core:
 
