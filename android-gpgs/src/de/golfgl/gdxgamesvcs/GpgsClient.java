@@ -121,7 +121,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
 
         driveApiEnabled = enableDriveAPI;
         if (driveApiEnabled)
-            builder.addApi(Drive.API).addScope(Drive.SCOPE_APPFOLDER);
+            builder.addScope(Drive.SCOPE_APPFOLDER);
 
         // add other APIs and scopes here as needed
 
