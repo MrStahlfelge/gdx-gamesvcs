@@ -21,9 +21,11 @@ import com.huawei.hms.jos.games.Games;
 import com.huawei.hms.jos.games.PlayersClient;
 import com.huawei.hms.jos.games.RankingsClient;
 import com.huawei.hms.jos.games.achievement.Achievement;
+import com.huawei.hms.jos.games.archive.Archive;
 import com.huawei.hms.jos.games.archive.ArchiveDetails;
 import com.huawei.hms.jos.games.archive.ArchiveSummary;
 import com.huawei.hms.jos.games.archive.ArchiveSummaryUpdate;
+import com.huawei.hms.jos.games.archive.OperationResult;
 import com.huawei.hms.jos.games.player.Player;
 import com.huawei.hms.jos.games.ranking.RankingScore;
 import com.huawei.hms.support.api.entity.auth.Scope;
@@ -36,6 +38,7 @@ import com.huawei.hms.support.hwid.service.HuaweiIdAuthService;
 
 import org.json.JSONException;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -137,12 +140,25 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
 
     @Override
     public void pauseSession() {
-
     }
 
     @Override
     public void logOff() {
+        Task<Void> authHuaweiIdTask = HuaweiIdAuthManager
+                .getService(this.activity, getHuaweiIdParams())
+                .signOut();
 
+        authHuaweiIdTask.addOnSuccessListener(new OnSuccessListener<Void>() {
+            @Override
+            public void onSuccess(Void v) {
+                isSessionActive = false;
+                currentPlayer = null;
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(Exception e) {
+            }
+        });
     }
 
     @Override
@@ -161,7 +177,7 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
 
     @Override
     public boolean isConnectionPending() {
-        return false;
+        return this.isSessionActive;
     }
 
     @Override
@@ -309,7 +325,7 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
 
     @Override
     public void saveGameState(String fileId, byte[] gameState, long progressValue, final ISaveGameStateResponseListener success) {
-        if (!isSaveDataEnabled) {
+        if (!this.isSaveDataEnabled) {
             throw new UnsupportedOperationException();
         }
 
@@ -320,7 +336,7 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
                         .setCurrentProgress(progressValue)
                         .build();
 
-        Task<ArchiveSummary> addArchiveTask = Games.getArchiveClient(this.activity).addArchive(details, archiveSummaryUpdate, true);
+        Task<ArchiveSummary> addArchiveTask = this.archivesClient.addArchive(details, archiveSummaryUpdate, true);
         addArchiveTask.addOnSuccessListener(new OnSuccessListener<ArchiveSummary>() {
             @Override
             public void onSuccess(ArchiveSummary archiveSummary) {
@@ -337,23 +353,121 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
     }
 
     @Override
-    public void loadGameState(String fileId, ILoadGameStateResponseListener responseListener) {
+    public void loadGameState(String fileId, final ILoadGameStateResponseListener responseListener) {
+        if (!this.isSaveDataEnabled) {
+            throw new UnsupportedOperationException();
+        }
 
+        Task<OperationResult> addArchiveTask = this.archivesClient.loadArchiveDetails(fileId);
+        addArchiveTask.addOnSuccessListener(new OnSuccessListener<OperationResult>() {
+            @Override
+            public void onSuccess(OperationResult result) {
+                Archive archive = result.getArchive();
+
+                if (archive != null) {
+                    try {
+                        byte[] data = archive.getDetails().get();
+                        responseListener.gsGameStateLoaded(data);
+                    } catch(IOException e) {
+
+                    }
+                }
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(Exception e) {
+            }
+        });
     }
 
     @Override
-    public boolean deleteGameState(String fileId, ISaveGameStateResponseListener success) {
-        return false;
+    public boolean deleteGameState(String fileId, final ISaveGameStateResponseListener successCallback) {
+        if (!this.isSaveDataEnabled) {
+            throw new UnsupportedOperationException();
+        }
+
+        Task<OperationResult> task = this.archivesClient.loadArchiveDetails(fileId);
+        task.addOnSuccessListener(new OnSuccessListener<OperationResult>() {
+            @Override
+            public void onSuccess(OperationResult operationResult) {
+                Archive archive = operationResult.getArchive();
+
+                if (archive != null) {
+                    deleteSaveGame(archive.getSummary(), successCallback);
+                }
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(Exception e) {
+
+            }
+        });
+
+        return true;
+    }
+
+    private void deleteSaveGame(ArchiveSummary archiveSummary, final ISaveGameStateResponseListener successCallback) {
+        Task<String> task = this.archivesClient.removeArchive(archiveSummary);
+        task.addOnSuccessListener(new OnSuccessListener<String>() {
+            @Override
+            public void onSuccess(String result) {
+                successCallback.onGameStateSaved(true, null);
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(Exception e) {
+                successCallback.onGameStateSaved(false, e.getMessage());
+            }
+        });
     }
 
     @Override
-    public boolean fetchGameStates(IFetchGameStatesListResponseListener callback) {
-        return false;
+    public boolean fetchGameStates(final IFetchGameStatesListResponseListener callback) {
+        if (!this.isSaveDataEnabled) {
+            throw new UnsupportedOperationException();
+        }
+
+        Task<List<ArchiveSummary>> task = this.archivesClient.getArchiveSummaryList(true);
+        task.addOnSuccessListener(new OnSuccessListener<List<ArchiveSummary>>() {
+            @Override
+            public void onSuccess(List<ArchiveSummary> archiveSummaries) {
+                Array<String> saveGames = new Array<>();
+
+                for (ArchiveSummary summary: archiveSummaries) {
+                    saveGames.add(summary.getId());
+                }
+
+                callback.onFetchGameStatesListResponse(saveGames);
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(Exception e) {
+
+            }
+        });
+
+        return true;
     }
 
     @Override
     public boolean isFeatureSupported(GameServiceFeature feature) {
-        return false;
+        switch (feature) {
+            case GameStateStorage:
+            case GameStateMultipleFiles:
+            case FetchGameStates:
+            case GameStateDelete:
+                return this.isSaveDataEnabled;
+            case ShowAchievementsUI:
+            case ShowAllLeaderboardsUI:
+            case ShowLeaderboardUI:
+            case SubmitEvents:
+            case FetchAchievements:
+            case FetchLeaderBoardEntries:
+            case PlayerLogOut:
+                return true;
+            default:
+                return false;
+        }
     }
 
     private void loadPlayerInfo() {
