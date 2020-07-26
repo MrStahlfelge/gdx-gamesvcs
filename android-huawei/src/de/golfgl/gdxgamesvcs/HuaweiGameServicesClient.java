@@ -1,6 +1,5 @@
 package de.golfgl.gdxgamesvcs;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.text.TextUtils;
 
@@ -27,7 +26,6 @@ import com.huawei.hms.jos.games.archive.ArchiveSummary;
 import com.huawei.hms.jos.games.archive.ArchiveSummaryUpdate;
 import com.huawei.hms.jos.games.archive.OperationResult;
 import com.huawei.hms.jos.games.player.Player;
-import com.huawei.hms.jos.games.ranking.RankingScore;
 import com.huawei.hms.support.api.entity.auth.Scope;
 import com.huawei.hms.support.hwid.HuaweiIdAuthManager;
 import com.huawei.hms.support.hwid.request.HuaweiIdAuthParams;
@@ -100,6 +98,12 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
         return true;
     }
 
+    private void sendError(IGameServiceListener.GsErrorType type, String msg, Throwable t) {
+        if (gsListener != null) {
+            gsListener.gsShowErrorToUser(type, msg, t);
+        }
+    }
+
     private HuaweiIdAuthParams getHuaweiIdParams() {
         List<Scope> scopes = new ArrayList<>();
 
@@ -127,10 +131,11 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
             @Override
             public void onFailure(Exception e) {
                 if (e instanceof ApiException) {
-                    ApiException apiException = (ApiException) e;
                     //Sign in explicitly. The sign-in result is obtained in onActivityResult.
                     HuaweiIdAuthService service = HuaweiIdAuthManager.getService(activity, getHuaweiIdParams());
                     activity.startActivityForResult(service.getSignInIntent(), HUAWEI_GAMESVCS_AUTH_REQUEST);
+                } else {
+                    sendError(IGameServiceListener.GsErrorType.errorLoginFailed, e.getMessage(), e);
                 }
             }
         });
@@ -157,6 +162,7 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(Exception e) {
+                sendError(IGameServiceListener.GsErrorType.errorLogoutFailed, e.getMessage(), e);
             }
         });
     }
@@ -182,57 +188,63 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
 
     @Override
     public void showLeaderboards(String leaderBoardId) throws GameServiceException {
-        Task<Intent> task = this.leaderboardsClient.getRankingIntent(leaderBoardId);
-        task.addOnSuccessListener(new OnSuccessListener<Intent>() {
-            @Override
-            public void onSuccess(Intent intent) {
-                if (intent == null) {
-                } else {
+        if (!TextUtils.isEmpty(leaderBoardId)) {
+            Task<Intent> task = this.leaderboardsClient.getRankingIntent(leaderBoardId);
+            task.addOnSuccessListener(new OnSuccessListener<Intent>() {
+                @Override
+                public void onSuccess(Intent intent) {
                     try {
                         activity.startActivityForResult(intent, HUAWEI_GAMESVCS_LEADERBOARDS_REQUEST);
                     } catch (Exception e) {
+                        sendError(IGameServiceListener.GsErrorType.errorUnknown, e.getMessage(), e);
                     }
                 }
-            }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(Exception e) {
-                if (e instanceof ApiException) {
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(Exception e) {
+                    sendError(IGameServiceListener.GsErrorType.errorUnknown, e.getMessage(), e);
                 }
-            }
-        });
+            });
+        }
     }
 
     @Override
     public void showAchievements() throws GameServiceException {
-        Task<Intent> task = this.achievementsClient.getShowAchievementListIntent();
-        task.addOnSuccessListener(new OnSuccessListener<Intent>() {
-            @Override
-            public void onSuccess(Intent intent) {
-                if (intent == null) {
-                } else {
+        if (this.isSessionActive) {
+            Task<Intent> task = this.achievementsClient.getShowAchievementListIntent();
+            task.addOnSuccessListener(new OnSuccessListener<Intent>() {
+                @Override
+                public void onSuccess(Intent intent) {
                     try {
                         activity.startActivityForResult(intent, HUAWEI_GAMESVCS_ACHIEVEMENTS_REQUEST);
                     } catch (Exception e) {
+                        sendError(IGameServiceListener.GsErrorType.errorUnknown, e.getMessage(), e);
                     }
                 }
-            }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(Exception e) {
-                if (e instanceof ApiException) {
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(Exception e) {
+                    sendError(IGameServiceListener.GsErrorType.errorUnknown, e.getMessage(), e);
                 }
-            }
-        });
+            });
+        } else {
+            throw new GameServiceException.NoSessionException();
+        }
     }
 
     @Override
     public boolean fetchAchievements(final IFetchAchievementsResponseListener callback) {
+        if (!this.isSessionActive) {
+            return false;
+        }
+
         Task<List<Achievement>> task = this.achievementsClient.getAchievementList(true);
         task.addOnSuccessListener(new OnSuccessListener<List<Achievement>>() {
             @Override
             public void onSuccess(List<Achievement> data) {
                 if (data == null) {
+                    sendError(IGameServiceListener.GsErrorType.errorUnknown,
+                            "data is null", new NullPointerException());
                     return;
                 }
                 Array<IAchievement> achievements = HuaweiGameServicesUtils.getIAchievementsList(data);
@@ -241,8 +253,7 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(Exception e) {
-                if (e instanceof ApiException) {
-                }
+                sendError(IGameServiceListener.GsErrorType.errorUnknown, e.getMessage(), e);
             }
         });
         return true;
@@ -250,6 +261,10 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
 
     @Override
     public boolean submitToLeaderboard(String leaderboardId, long score, String scoreTips) {
+        if (!this.isSessionActive) {
+            return false;
+        }
+
         this.leaderboardsClient.submitRankingScore(leaderboardId, score, scoreTips);
 
         return true;
@@ -257,6 +272,10 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
 
     @Override
     public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer, IFetchLeaderBoardEntriesResponseListener callback) {
+        if (!this.isSessionActive) {
+            return false;
+        }
+
         if (relatedToPlayer) {
             this.fetchLeadeboardEntriesRelatedToPLayer(leaderBoardId, limit, callback);
         } else {
@@ -279,7 +298,7 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
         task.addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(Exception e) {
-
+                sendError(IGameServiceListener.GsErrorType.errorUnknown, e.getMessage(), e);
             }
         });
     }
@@ -297,13 +316,17 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
         task.addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(Exception e) {
-
+                sendError(IGameServiceListener.GsErrorType.errorUnknown, e.getMessage(), e);
             }
         });
     }
 
     @Override
     public boolean submitEvent(String eventId, int increment) {
+        if (!isSessionActive) {
+            return false;
+        }
+
         this.eventsClient.grow(eventId, increment);
 
         return true;
@@ -311,6 +334,10 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
 
     @Override
     public boolean unlockAchievement(String achievementId) {
+        if (!isSessionActive) {
+            return false;
+        }
+
         this.achievementsClient.reach(achievementId);
 
         return true;
@@ -318,25 +345,49 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
 
     @Override
     public boolean incrementAchievement(String achievementId, int incNum, float completionPercentage) {
+        if (!isSessionActive) {
+            return false;
+        }
+
         this.achievementsClient.grow(achievementId, incNum);
 
         return true;
     }
 
     @Override
-    public void saveGameState(String fileId, byte[] gameState, long progressValue, final ISaveGameStateResponseListener success) {
+    public void saveGameState(String fileId, final byte[] gameState, final long progressValue, final ISaveGameStateResponseListener success) {
         if (!this.isSaveDataEnabled) {
             throw new UnsupportedOperationException();
         }
 
         ArchiveDetails details = new ArchiveDetails.Builder().build();
-        details.set(fileId.getBytes());
+        details.set(gameState);
 
         ArchiveSummaryUpdate archiveSummaryUpdate = new ArchiveSummaryUpdate.Builder()
-                        .setCurrentProgress(progressValue)
-                        .build();
+                .setCurrentProgress(progressValue)
+                .setDescInfo("Progress: " + progressValue)
+                .build();
 
-        Task<ArchiveSummary> addArchiveTask = this.archivesClient.addArchive(details, archiveSummaryUpdate, true);
+        if (TextUtils.isEmpty(fileId)) {
+            saveArchive(details, archiveSummaryUpdate, success);
+        } else {
+            Task<OperationResult> addArchiveTask = this.archivesClient.updateArchive(fileId, archiveSummaryUpdate, details);
+            addArchiveTask.addOnSuccessListener(new OnSuccessListener<OperationResult>() {
+                @Override
+                public void onSuccess(OperationResult result) {
+                    success.onGameStateSaved(true, null);
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(Exception e) {
+                    success.onGameStateSaved(false, e.getMessage());
+                }
+            });
+        }
+    }
+
+    private void saveArchive(ArchiveDetails details, ArchiveSummaryUpdate summary, final ISaveGameStateResponseListener success) {
+        Task<ArchiveSummary> addArchiveTask = this.archivesClient.addArchive(details, summary, true);
         addArchiveTask.addOnSuccessListener(new OnSuccessListener<ArchiveSummary>() {
             @Override
             public void onSuccess(ArchiveSummary archiveSummary) {
@@ -364,18 +415,17 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
             public void onSuccess(OperationResult result) {
                 Archive archive = result.getArchive();
 
-                if (archive != null) {
-                    try {
-                        byte[] data = archive.getDetails().get();
-                        responseListener.gsGameStateLoaded(data);
-                    } catch(IOException e) {
-
-                    }
+                try {
+                    byte[] data = archive.getDetails().get();
+                    responseListener.gsGameStateLoaded(data);
+                } catch (IOException e) {
+                    sendError(IGameServiceListener.GsErrorType.errorUnknown, e.getMessage(), e);
                 }
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(Exception e) {
+                sendError(IGameServiceListener.GsErrorType.errorUnknown, e.getMessage(), e);
             }
         });
     }
@@ -383,7 +433,7 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
     @Override
     public boolean deleteGameState(String fileId, final ISaveGameStateResponseListener successCallback) {
         if (!this.isSaveDataEnabled) {
-            throw new UnsupportedOperationException();
+            return false;
         }
 
         Task<OperationResult> task = this.archivesClient.loadArchiveDetails(fileId);
@@ -391,15 +441,12 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
             @Override
             public void onSuccess(OperationResult operationResult) {
                 Archive archive = operationResult.getArchive();
-
-                if (archive != null) {
-                    deleteSaveGame(archive.getSummary(), successCallback);
-                }
+                deleteSaveGame(archive.getSummary(), successCallback);
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(Exception e) {
-
+                sendError(IGameServiceListener.GsErrorType.errorUnknown, e.getMessage(), e);
             }
         });
 
@@ -433,7 +480,7 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
             public void onSuccess(List<ArchiveSummary> archiveSummaries) {
                 Array<String> saveGames = new Array<>();
 
-                for (ArchiveSummary summary: archiveSummaries) {
+                for (ArchiveSummary summary : archiveSummaries) {
                     saveGames.add(summary.getId());
                 }
 
@@ -442,7 +489,7 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(Exception e) {
-
+                sendError(IGameServiceListener.GsErrorType.errorUnknown, e.getMessage(), e);
             }
         });
 
@@ -486,9 +533,7 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(Exception e) {
-                //  Failed to obtain player information.
-                if (e instanceof ApiException) {
-                }
+                sendError(IGameServiceListener.GsErrorType.errorUnknown, e.getMessage(), e);
             }
         });
     }
@@ -497,11 +542,17 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
             case HUAWEI_GAMESVCS_AUTH_REQUEST:
-                if (null == data) {
+                if (data == null) {
+                    sendError(IGameServiceListener.GsErrorType.errorLoginFailed,
+                            "data is null",
+                            new NullPointerException());
                     return;
                 }
                 String jsonSignInResult = data.getStringExtra("HUAWEIID_SIGNIN_RESULT");
                 if (TextUtils.isEmpty(jsonSignInResult)) {
+                    sendError(IGameServiceListener.GsErrorType.errorLoginFailed,
+                            "empty result",
+                            new IllegalStateException());
                     return;
                 }
                 try {
@@ -509,16 +560,16 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
                     if (signInResult.getStatus().getStatusCode() == 0) {
                         loadPlayerInfo();
                     } else {
-
+                        sendError(IGameServiceListener.GsErrorType.errorLoginFailed,
+                                "" + signInResult.getStatus().getStatusCode(),
+                                new IllegalStateException());
                     }
-                } catch (JSONException var7) {
+                } catch (JSONException je) {
+                    sendError(IGameServiceListener.GsErrorType.errorLoginFailed, je.getMessage(), je);
                 }
                 break;
             case HUAWEI_GAMESVCS_ACHIEVEMENTS_REQUEST:
-
-                break;
             case HUAWEI_GAMESVCS_LEADERBOARDS_REQUEST:
-
                 break;
         }
     }
