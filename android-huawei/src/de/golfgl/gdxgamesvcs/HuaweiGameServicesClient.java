@@ -360,18 +360,57 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
             throw new UnsupportedOperationException();
         }
 
-        ArchiveDetails details = new ArchiveDetails.Builder().build();
+        final ArchiveDetails details = new ArchiveDetails.Builder().build();
         details.set(gameState);
 
-        ArchiveSummaryUpdate archiveSummaryUpdate = new ArchiveSummaryUpdate.Builder()
+        final ArchiveSummaryUpdate archiveSummaryUpdate = new ArchiveSummaryUpdate.Builder()
                 .setCurrentProgress(progressValue)
                 .setDescInfo("Progress: " + progressValue)
                 .build();
 
-        if (TextUtils.isEmpty(fileId)) {
-            saveArchive(details, archiveSummaryUpdate, success);
-        } else {
-            Task<OperationResult> addArchiveTask = this.archivesClient.updateArchive(fileId, archiveSummaryUpdate, details);
+        Task<List<ArchiveSummary>> task = this.archivesClient.getArchiveSummaryList(true);
+        task.addOnSuccessListener(new OnSuccessListener<List<ArchiveSummary>>() {
+            @Override
+            public void onSuccess(List<ArchiveSummary> archiveSummaries) {
+                String firstSaveDataId = archiveSummaries != null && !archiveSummaries.isEmpty() ? archiveSummaries.get(0).getId() : null;
+                if (TextUtils.isEmpty(firstSaveDataId)) {
+                    saveArchive(details, archiveSummaryUpdate, success);
+                } else {
+                    updateArchive(firstSaveDataId, details, archiveSummaryUpdate, success);
+                }
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(Exception e) {
+                sendError(IGameServiceListener.GsErrorType.errorUnknown, e.getMessage(), e);
+            }
+        });
+    }
+
+    private void saveArchive(ArchiveDetails details, ArchiveSummaryUpdate summary, final ISaveGameStateResponseListener success) {
+        Task<ArchiveSummary> addArchiveTask = this.archivesClient.addArchive(details, summary, true);
+
+        if (success != null) {
+            addArchiveTask.addOnSuccessListener(new OnSuccessListener<ArchiveSummary>() {
+                @Override
+                public void onSuccess(ArchiveSummary archiveSummary) {
+                    if (archiveSummary != null) {
+                        success.onGameStateSaved(true, null);
+                    }
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(Exception e) {
+                    success.onGameStateSaved(false, e.getMessage());
+                }
+            });
+        }
+    }
+
+    private void updateArchive(String fileId, ArchiveDetails details, ArchiveSummaryUpdate summary, final ISaveGameStateResponseListener success) {
+        Task<OperationResult> addArchiveTask = archivesClient.updateArchive(fileId, summary, details);
+
+        if (success != null) {
             addArchiveTask.addOnSuccessListener(new OnSuccessListener<OperationResult>() {
                 @Override
                 public void onSuccess(OperationResult result) {
@@ -386,29 +425,33 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
         }
     }
 
-    private void saveArchive(ArchiveDetails details, ArchiveSummaryUpdate summary, final ISaveGameStateResponseListener success) {
-        Task<ArchiveSummary> addArchiveTask = this.archivesClient.addArchive(details, summary, true);
-        addArchiveTask.addOnSuccessListener(new OnSuccessListener<ArchiveSummary>() {
-            @Override
-            public void onSuccess(ArchiveSummary archiveSummary) {
-                if (archiveSummary != null) {
-                    success.onGameStateSaved(true, null);
-                }
-            }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(Exception e) {
-                success.onGameStateSaved(false, e.getMessage());
-            }
-        });
-    }
-
     @Override
     public void loadGameState(String fileId, final ILoadGameStateResponseListener responseListener) {
         if (!this.isSaveDataEnabled) {
             throw new UnsupportedOperationException();
         }
 
+        Task<List<ArchiveSummary>> task = this.archivesClient.getArchiveSummaryList(true);
+        task.addOnSuccessListener(new OnSuccessListener<List<ArchiveSummary>>() {
+            @Override
+            public void onSuccess(List<ArchiveSummary> archiveSummaries) {
+                String firstSaveDataId = archiveSummaries != null && !archiveSummaries.isEmpty() ? archiveSummaries.get(0).getId() : null;
+
+                if (TextUtils.isEmpty(firstSaveDataId)) {
+                    responseListener.gsGameStateLoaded(null);
+                } else {
+                    loadGameData(firstSaveDataId, responseListener);
+                }
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(Exception e) {
+                sendError(IGameServiceListener.GsErrorType.errorUnknown, e.getMessage(), e);
+            }
+        });
+    }
+
+    private void loadGameData(String fileId, final ILoadGameStateResponseListener responseListener) {
         Task<OperationResult> addArchiveTask = this.archivesClient.loadArchiveDetails(fileId);
         addArchiveTask.addOnSuccessListener(new OnSuccessListener<OperationResult>() {
             @Override
@@ -436,12 +479,17 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
             return false;
         }
 
-        Task<OperationResult> task = this.archivesClient.loadArchiveDetails(fileId);
-        task.addOnSuccessListener(new OnSuccessListener<OperationResult>() {
+        Task<List<ArchiveSummary>> task = this.archivesClient.getArchiveSummaryList(true);
+        task.addOnSuccessListener(new OnSuccessListener<List<ArchiveSummary>>() {
             @Override
-            public void onSuccess(OperationResult operationResult) {
-                Archive archive = operationResult.getArchive();
-                deleteSaveGame(archive.getSummary(), successCallback);
+            public void onSuccess(List<ArchiveSummary> archiveSummaries) {
+                ArchiveSummary firstSaveData = archiveSummaries != null && !archiveSummaries.isEmpty() ? archiveSummaries.get(0) : null;
+
+                if (firstSaveData != null) {
+                    deleteSaveGame(firstSaveData, successCallback);
+                } else if (successCallback != null){
+                    successCallback.onGameStateSaved(true, null);
+                }
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
@@ -455,17 +503,20 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
 
     private void deleteSaveGame(ArchiveSummary archiveSummary, final ISaveGameStateResponseListener successCallback) {
         Task<String> task = this.archivesClient.removeArchive(archiveSummary);
-        task.addOnSuccessListener(new OnSuccessListener<String>() {
-            @Override
-            public void onSuccess(String result) {
-                successCallback.onGameStateSaved(true, null);
-            }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(Exception e) {
-                successCallback.onGameStateSaved(false, e.getMessage());
-            }
-        });
+
+        if (successCallback != null) {
+            task.addOnSuccessListener(new OnSuccessListener<String>() {
+                @Override
+                public void onSuccess(String result) {
+                    successCallback.onGameStateSaved(true, null);
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(Exception e) {
+                    successCallback.onGameStateSaved(false, e.getMessage());
+                }
+            });
+        }
     }
 
     @Override
@@ -478,13 +529,17 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
         task.addOnSuccessListener(new OnSuccessListener<List<ArchiveSummary>>() {
             @Override
             public void onSuccess(List<ArchiveSummary> archiveSummaries) {
-                Array<String> saveGames = new Array<>();
+                if (archiveSummaries != null) {
+                    Array<String> saveGames = new Array<>();
 
-                for (ArchiveSummary summary : archiveSummaries) {
-                    saveGames.add(summary.getId());
+                    for (ArchiveSummary summary : archiveSummaries) {
+                        saveGames.add(summary.getDescInfo());
+                    }
+
+                    callback.onFetchGameStatesListResponse(saveGames);
+                } else {
+                    callback.onFetchGameStatesListResponse(null);
                 }
-
-                callback.onFetchGameStatesListResponse(saveGames);
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
@@ -500,7 +555,6 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
     public boolean isFeatureSupported(GameServiceFeature feature) {
         switch (feature) {
             case GameStateStorage:
-            case GameStateMultipleFiles:
             case FetchGameStates:
             case GameStateDelete:
                 return this.isSaveDataEnabled;
