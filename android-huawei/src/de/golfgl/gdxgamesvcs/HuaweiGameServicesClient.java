@@ -60,6 +60,9 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
     private final int HUAWEI_GAMESVCS_LEADERBOARDS_REQUEST = 8973;
 
     private AndroidApplication activity;
+    private IGameServiceIdMapper<String> huaweiLeaderboardIdMapper;
+    private IGameServiceIdMapper<String> huaweiAchievementIdMapper;
+    private IGameServiceIdMapper<String> huaweiGameEventIdMapper;
     private JosAppsClient josAppsClient;
     private AchievementsClient achievementsClient;
     private RankingsClient leaderboardsClient;
@@ -68,7 +71,7 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
     private IGameServiceListener gsListener;
     private Player currentPlayer;
 
-    private boolean isSaveDataEnabled = false;
+    private boolean isSaveDataEnabled;
     private boolean isSessionActive = false;
 
     public HuaweiGameServicesClient(AndroidApplication activity, boolean isSaveDataEnabled) {
@@ -81,6 +84,39 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
         this.leaderboardsClient = Games.getRankingsClient(this.activity);
         this.eventsClient = Games.getEventsClient(this.activity);
         this.archivesClient = Games.getArchiveClient(this.activity);
+    }
+
+    /**
+     * sets up the mapper for leaderboard ids
+     *
+     * @param huaweiLeaderboardIdMapper
+     * @return this for method chaining
+     */
+    public HuaweiGameServicesClient setHuaweiLeaderboardIdMapper(IGameServiceIdMapper<String> huaweiLeaderboardIdMapper) {
+        this.huaweiLeaderboardIdMapper = huaweiLeaderboardIdMapper;
+        return this;
+    }
+
+    /**
+     * sets up the mapper for achievement ids
+     *
+     * @param huaweiAchievementIdMapper
+     * @return this for method chaining
+     */
+    public HuaweiGameServicesClient setHuaweiAchievementIdMapper(IGameServiceIdMapper<String> huaweiAchievementIdMapper) {
+        this.huaweiAchievementIdMapper = huaweiAchievementIdMapper;
+        return this;
+    }
+
+    /**
+     * sets up the mapper for game event ids
+     *
+     * @param huaweiGameEventIdMapper
+     * @return this for method chaining
+     */
+    public HuaweiGameServicesClient setHuaweiGameEventIdMapper(IGameServiceIdMapper<String> huaweiGameEventIdMapper) {
+        this.huaweiGameEventIdMapper = huaweiGameEventIdMapper;
+        return this;
     }
 
     @Override
@@ -195,6 +231,10 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
     @Override
     public void showLeaderboards(String leaderBoardId) throws GameServiceException {
         if (!TextUtils.isEmpty(leaderBoardId)) {
+            if (this.huaweiLeaderboardIdMapper != null) {
+                leaderBoardId = huaweiLeaderboardIdMapper.mapToGsId(leaderBoardId);
+            }
+
             Task<Intent> task = this.leaderboardsClient.getRankingIntent(leaderBoardId);
             task.addOnSuccessListener(new OnSuccessListener<Intent>() {
                 @Override
@@ -240,14 +280,39 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
 
     @Override
     public boolean fetchAchievements(final IFetchAchievementsResponseListener callback) {
-        //only single savegame is supported
-        return false;
+        if (!this.isSessionActive) {
+            return false;
+        }
+
+        Task<List<Achievement>> task = this.achievementsClient.getAchievementList(true);
+        task.addOnSuccessListener(new OnSuccessListener<List<Achievement>>() {
+            @Override
+            public void onSuccess(List<Achievement> data) {
+                if (data == null) {
+                    sendError(IGameServiceListener.GsErrorType.errorUnknown,
+                            "data is null", new NullPointerException());
+                    return;
+                }
+                Array<IAchievement> achievements = HuaweiGameServicesUtils.getIAchievementsList(data);
+                callback.onFetchAchievementsResponse(achievements);
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(Exception e) {
+                sendError(IGameServiceListener.GsErrorType.errorUnknown, e.getMessage(), e);
+            }
+        });
+        return true;
     }
 
     @Override
     public boolean submitToLeaderboard(String leaderboardId, long score, String scoreTips) {
         if (!this.isSessionActive) {
             return false;
+        }
+
+        if (this.huaweiLeaderboardIdMapper != null) {
+            leaderboardId = huaweiLeaderboardIdMapper.mapToGsId(leaderboardId);
         }
 
         this.leaderboardsClient.submitRankingScore(leaderboardId, score, scoreTips);
@@ -259,6 +324,10 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
     public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer, IFetchLeaderBoardEntriesResponseListener callback) {
         if (!this.isSessionActive) {
             return false;
+        }
+
+        if (this.huaweiLeaderboardIdMapper != null) {
+            leaderBoardId = huaweiLeaderboardIdMapper.mapToGsId(leaderBoardId);
         }
 
         if (relatedToPlayer) {
@@ -312,6 +381,10 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
             return false;
         }
 
+        if (this.huaweiGameEventIdMapper != null) {
+            eventId = huaweiGameEventIdMapper.mapToGsId(eventId);
+        }
+
         this.eventsClient.grow(eventId, increment);
 
         return true;
@@ -323,6 +396,10 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
             return false;
         }
 
+        if (this.huaweiAchievementIdMapper != null) {
+            achievementId = huaweiAchievementIdMapper.mapToGsId(achievementId);
+        }
+
         this.achievementsClient.reach(achievementId);
 
         return true;
@@ -332,6 +409,10 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
     public boolean incrementAchievement(String achievementId, int incNum, float completionPercentage) {
         if (!isSessionActive) {
             return false;
+        }
+
+        if (this.huaweiAchievementIdMapper != null) {
+            achievementId = huaweiAchievementIdMapper.mapToGsId(achievementId);
         }
 
         this.achievementsClient.grow(achievementId, incNum);
@@ -506,34 +587,8 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
 
     @Override
     public boolean fetchGameStates(final IFetchGameStatesListResponseListener callback) {
-        if (!this.isSaveDataEnabled) {
-            throw new UnsupportedOperationException();
-        }
-
-        Task<List<ArchiveSummary>> task = this.archivesClient.getArchiveSummaryList(true);
-        task.addOnSuccessListener(new OnSuccessListener<List<ArchiveSummary>>() {
-            @Override
-            public void onSuccess(List<ArchiveSummary> archiveSummaries) {
-                if (archiveSummaries != null) {
-                    Array<String> saveGames = new Array<>();
-
-                    for (ArchiveSummary summary : archiveSummaries) {
-                        saveGames.add(summary.getDescInfo());
-                    }
-
-                    callback.onFetchGameStatesListResponse(saveGames);
-                } else {
-                    callback.onFetchGameStatesListResponse(null);
-                }
-            }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(Exception e) {
-                sendError(IGameServiceListener.GsErrorType.errorUnknown, e.getMessage(), e);
-            }
-        });
-
-        return true;
+        //only single savegame is supported
+        return false;
     }
 
     @Override
