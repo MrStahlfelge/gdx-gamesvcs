@@ -6,11 +6,13 @@ import de.golfgl.gdxgamesvcs.achievement.IAchievement;
 
 public class HuaweiAchievement implements IAchievement {
 
-    protected String achievementId;
-    protected String title;
-    protected String description;
-    protected String iconUrl;
-    protected float percCompl = 0f;
+    public static final int UNLOCKED_STATUS = 3;
+
+    private String achievementId;
+    private String title;
+    private String description;
+    private String iconUrl;
+    private float percCompl = 0f;
 
     public HuaweiAchievement(Achievement achievement) {
         this.achievementId = achievement.getId();
@@ -18,8 +20,7 @@ public class HuaweiAchievement implements IAchievement {
         this.description = achievement.getDescInfo();
         this.iconUrl = achievement.getVisualizedThumbnailUri().toString();
 
-        //UNLOCKED STATUS IS '3'
-        if (achievement.getState() == 3) {
+        if (achievement.getState() == UNLOCKED_STATUS) {
             this.percCompl = 1f;
         } else if (achievement.getType() == Achievement.TYPE_GROW_ABLE)
             this.percCompl = (float) achievement.getReachedSteps() / achievement.getAllSteps();

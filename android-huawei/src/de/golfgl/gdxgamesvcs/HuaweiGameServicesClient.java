@@ -95,7 +95,7 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
 
     @Override
     public boolean resumeSession() {
-        return true;
+        return logIn();
     }
 
     private void sendError(IGameServiceListener.GsErrorType type, String msg, Throwable t) {
@@ -118,29 +118,33 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
 
     @Override
     public boolean logIn() {
-        Task<AuthHuaweiId> authHuaweiIdTask = HuaweiIdAuthManager
-                .getService(this.activity, getHuaweiIdParams())
-                .silentSignIn();
+        if (!this.isSessionActive) {
+            Task<AuthHuaweiId> authHuaweiIdTask = HuaweiIdAuthManager
+                    .getService(this.activity, getHuaweiIdParams())
+                    .silentSignIn();
 
-        authHuaweiIdTask.addOnSuccessListener(new OnSuccessListener<AuthHuaweiId>() {
-            @Override
-            public void onSuccess(AuthHuaweiId authHuaweiId) {
-                loadPlayerInfo();
-            }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(Exception e) {
-                if (e instanceof ApiException) {
-                    //Sign in explicitly. The sign-in result is obtained in onActivityResult.
-                    HuaweiIdAuthService service = HuaweiIdAuthManager.getService(activity, getHuaweiIdParams());
-                    activity.startActivityForResult(service.getSignInIntent(), HUAWEI_GAMESVCS_AUTH_REQUEST);
-                } else {
-                    sendError(IGameServiceListener.GsErrorType.errorLoginFailed, e.getMessage(), e);
+            authHuaweiIdTask.addOnSuccessListener(new OnSuccessListener<AuthHuaweiId>() {
+                @Override
+                public void onSuccess(AuthHuaweiId authHuaweiId) {
+                    loadPlayerInfo();
                 }
-            }
-        });
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(Exception e) {
+                    if (e instanceof ApiException) {
+                        //Sign in explicitly. The sign-in result is obtained in onActivityResult.
+                        HuaweiIdAuthService service = HuaweiIdAuthManager.getService(activity, getHuaweiIdParams());
+                        activity.startActivityForResult(service.getSignInIntent(), HUAWEI_GAMESVCS_AUTH_REQUEST);
+                    } else {
+                        sendError(IGameServiceListener.GsErrorType.errorLoginFailed, e.getMessage(), e);
+                    }
+                }
+            });
 
-        return true;
+            return true;
+        }
+
+        return false;
     }
 
     @Override
@@ -149,22 +153,24 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
 
     @Override
     public void logOff() {
-        Task<Void> authHuaweiIdTask = HuaweiIdAuthManager
-                .getService(this.activity, getHuaweiIdParams())
-                .signOut();
+        if (this.isSessionActive) {
+            Task<Void> authHuaweiIdTask = HuaweiIdAuthManager
+                    .getService(this.activity, getHuaweiIdParams())
+                    .signOut();
 
-        authHuaweiIdTask.addOnSuccessListener(new OnSuccessListener<Void>() {
-            @Override
-            public void onSuccess(Void v) {
-                isSessionActive = false;
-                currentPlayer = null;
-            }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(Exception e) {
-                sendError(IGameServiceListener.GsErrorType.errorLogoutFailed, e.getMessage(), e);
-            }
-        });
+            authHuaweiIdTask.addOnSuccessListener(new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void v) {
+                    isSessionActive = false;
+                    currentPlayer = null;
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(Exception e) {
+                    sendError(IGameServiceListener.GsErrorType.errorLogoutFailed, e.getMessage(), e);
+                }
+            });
+        }
     }
 
     @Override
@@ -234,29 +240,8 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
 
     @Override
     public boolean fetchAchievements(final IFetchAchievementsResponseListener callback) {
-        if (!this.isSessionActive) {
-            return false;
-        }
-
-        Task<List<Achievement>> task = this.achievementsClient.getAchievementList(true);
-        task.addOnSuccessListener(new OnSuccessListener<List<Achievement>>() {
-            @Override
-            public void onSuccess(List<Achievement> data) {
-                if (data == null) {
-                    sendError(IGameServiceListener.GsErrorType.errorUnknown,
-                            "data is null", new NullPointerException());
-                    return;
-                }
-                Array<IAchievement> achievements = HuaweiGameServicesUtils.getIAchievementsList(data);
-                callback.onFetchAchievementsResponse(achievements);
-            }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(Exception e) {
-                sendError(IGameServiceListener.GsErrorType.errorUnknown, e.getMessage(), e);
-            }
-        });
-        return true;
+        //only single savegame is supported
+        return false;
     }
 
     @Override
