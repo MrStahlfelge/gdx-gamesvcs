@@ -158,6 +158,7 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
         if (!this.isSessionActive && !this.isSessionPending) {
             this.isSessionPending = true;
 
+            //try with silentSignIn. If It fails for missing account/verification, It will forward to the Huawei signIn/signUp page.
             Task<AuthHuaweiId> authHuaweiIdTask = HuaweiIdAuthManager
                     .getService(this.activity, getHuaweiIdParams())
                     .silentSignIn();
