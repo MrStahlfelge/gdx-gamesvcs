@@ -165,7 +165,6 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
             authHuaweiIdTask.addOnSuccessListener(new OnSuccessListener<AuthHuaweiId>() {
                 @Override
                 public void onSuccess(AuthHuaweiId authHuaweiId) {
-                    isSessionPending = false;
                     loadPlayerInfo();
                 }
             }).addOnFailureListener(new OnFailureListener() {
@@ -622,6 +621,7 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
         playerTask.addOnSuccessListener(new OnSuccessListener<Player>() {
             @Override
             public void onSuccess(Player player) {
+                isSessionPending = false;
                 isSessionActive = true;
                 currentPlayer = player;
 
@@ -632,6 +632,7 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(Exception e) {
+                isSessionPending = false;
                 sendError(IGameServiceListener.GsErrorType.errorUnknown, e.getMessage(), e);
             }
         });
