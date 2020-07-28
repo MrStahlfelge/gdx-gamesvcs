@@ -63,12 +63,12 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
     private IGameServiceIdMapper<String> huaweiLeaderboardIdMapper;
     private IGameServiceIdMapper<String> huaweiAchievementIdMapper;
     private IGameServiceIdMapper<String> huaweiGameEventIdMapper;
-    private JosAppsClient josAppsClient;
-    private AchievementsClient achievementsClient;
-    private RankingsClient leaderboardsClient;
-    private EventsClient eventsClient;
-    private ArchivesClient archivesClient;
-    private IGameServiceListener gsListener;
+    protected JosAppsClient josAppsClient;
+    protected AchievementsClient achievementsClient;
+    protected RankingsClient leaderboardsClient;
+    protected EventsClient eventsClient;
+    protected ArchivesClient archivesClient;
+    protected IGameServiceListener gsListener;
     private Player currentPlayer;
 
     private boolean isSaveDataEnabled;
