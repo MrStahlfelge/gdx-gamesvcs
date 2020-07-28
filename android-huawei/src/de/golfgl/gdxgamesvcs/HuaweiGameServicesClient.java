@@ -73,6 +73,7 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
 
     private boolean isSaveDataEnabled;
     private boolean isSessionActive = false;
+    private boolean isSessionPending = false;
 
     public HuaweiGameServicesClient(AndroidApplication activity, boolean isSaveDataEnabled) {
         this.activity = activity;
@@ -155,6 +156,8 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
     @Override
     public boolean logIn() {
         if (!this.isSessionActive) {
+            this.isSessionPending = true;
+
             Task<AuthHuaweiId> authHuaweiIdTask = HuaweiIdAuthManager
                     .getService(this.activity, getHuaweiIdParams())
                     .silentSignIn();
@@ -162,11 +165,13 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
             authHuaweiIdTask.addOnSuccessListener(new OnSuccessListener<AuthHuaweiId>() {
                 @Override
                 public void onSuccess(AuthHuaweiId authHuaweiId) {
+                    isSessionPending = false;
                     loadPlayerInfo();
                 }
             }).addOnFailureListener(new OnFailureListener() {
                 @Override
                 public void onFailure(Exception e) {
+                    isSessionPending = false;
                     if (e instanceof ApiException) {
                         //Sign in explicitly. The sign-in result is obtained in onActivityResult.
                         HuaweiIdAuthService service = HuaweiIdAuthManager.getService(activity, getHuaweiIdParams());
@@ -225,7 +230,7 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
 
     @Override
     public boolean isConnectionPending() {
-        return this.isSessionActive;
+        return this.isSessionPending;
     }
 
     @Override
