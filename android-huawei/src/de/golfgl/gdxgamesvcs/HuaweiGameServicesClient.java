@@ -155,7 +155,7 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
 
     @Override
     public boolean logIn() {
-        if (!this.isSessionActive & !this.isSessionPending) {
+        if (!this.isSessionActive && !this.isSessionPending) {
             this.isSessionPending = true;
 
             Task<AuthHuaweiId> authHuaweiIdTask = HuaweiIdAuthManager
