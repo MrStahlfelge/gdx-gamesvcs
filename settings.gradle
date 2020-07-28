@@ -1,6 +1,7 @@
 include ':android'
 include ':android-gpgs'
 include ':android-amazongc'
+include ':android-huawei'
 include ':core'
 include ':core-gamejolt'
 include ':desktop'

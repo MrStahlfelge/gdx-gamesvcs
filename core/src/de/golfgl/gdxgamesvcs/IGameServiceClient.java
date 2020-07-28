@@ -24,6 +24,7 @@ public interface IGameServiceClient {
     public static final String GS_AMAZONGC_ID = "GS_AMAZONGC";
     public static final String GS_KONGREGATE_ID = "GS_KONG";
     public static final String GS_GAMECENTER_ID = "GS_APPLE";
+    public static final String GS_HUAWEI_ID = "GS_HUAWEI";
 
     /**
      * Gets an id for this game service for identifiying or showing labels

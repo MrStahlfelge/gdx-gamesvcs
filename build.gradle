@@ -8,6 +8,7 @@ buildscript {
     repositories {
         jcenter()
         google()
+        maven { url 'https://developer.huawei.com/repo/' }
     }
     dependencies {
         classpath 'org.wisepersist:gwt-gradle-plugin:1.0.6'
@@ -37,6 +38,7 @@ allprojects {
         maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
         maven { url "https://oss.sonatype.org/content/repositories/releases/" }
         maven { url "https://maven.google.com" }
+        maven { url 'https://developer.huawei.com/repo/' }
     }
 
     group = GROUPID
