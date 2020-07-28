@@ -1,6 +1,6 @@
 ext {
     GROUPID = 'de.golfgl.gdxgamesvcs'
-    VERSION = '1.1.0-SNAPHOT'
+    VERSION = '1.1.0-SNAPSHOT'
 
 }
 
@@ -8,7 +8,6 @@ buildscript {
     repositories {
         jcenter()
         google()
-        maven { url 'https://developer.huawei.com/repo/' }
     }
     dependencies {
         classpath 'org.wisepersist:gwt-gradle-plugin:1.0.6'
@@ -44,26 +43,6 @@ allprojects {
     group = GROUPID
     version = VERSION
 }
-
-project(":android") {
-    configurations {
-        custom
-        compile.extendsFrom custom
-    }
-
-    eclipse {
-        project {
-            name = appName + "-android"
-        }
-    }
-
-    dependencies {
-        compile project(':core')
-        compile "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
-
-    }
-}
-
 
 project(":android-gpgs") {
     configurations {
@@ -141,27 +120,6 @@ project(":core-gamejolt") {
 
 
 
-project(":desktop") {
-    apply plugin: 'java'
-
-    apply from: '../publish.gradle'
-
-    configurations {
-        custom
-        compile.extendsFrom custom
-    }
-
-    eclipse {
-        project {
-            name = appName + "-desktop"
-        }
-    }
-
-    dependencies {
-        compile project(':core')
-    }
-}
-
 project(":desktop-gpgs") {
     apply plugin: 'java'
 
@@ -193,35 +151,6 @@ project(":desktop-gpgs") {
         testCompile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
     }
 }
-
-
-project(":html") {
-    apply plugin: 'java'
-
-
-    apply from: '../publish.gradle'
-
-    configurations {
-        custom
-        compile.extendsFrom custom
-    }
-
-    eclipse {
-        project {
-            name = appName + "-html"
-        }
-    }
-
-    dependencies {
-        compile project(':core')
-    }
-    dependencies {
-        compile "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion"
-        compile "com.badlogicgames.gdx:gdx:$gdxVersion:sources"
-        compile "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion:sources"
-    }
-}
-
 
 
 project(":html-kong") {
