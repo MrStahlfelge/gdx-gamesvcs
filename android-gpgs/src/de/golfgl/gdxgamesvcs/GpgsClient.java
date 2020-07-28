@@ -8,6 +8,8 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.backends.android.AndroidApplication;
+import com.badlogic.gdx.backends.android.AndroidEventListener;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import com.google.android.gms.common.ConnectionResult;
@@ -45,7 +47,7 @@ import de.golfgl.gdxgamesvcs.leaderboard.ILeaderBoardEntry;
  */
 
 public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
-        IGameServiceClient {
+        IGameServiceClient, AndroidEventListener {
     public static final int RC_GPGS_SIGNIN = 9001;
     public static final int RC_LEADERBOARD = 9002;
     public static final int RC_ACHIEVEMENTS = 9003;
@@ -64,7 +66,6 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     protected IGameServiceIdMapper<String> gpgsAchievementIdMapper;
     protected boolean forceRefresh;
     private boolean mResolvingConnectionFailure = false;
-    private boolean mAutoStartSignInflow = true;
     private boolean mSignInClicked = false;
 
     /**
@@ -99,18 +100,21 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     /**
      * Initializes the GoogleApiClient. Give your main AndroidLauncher as context.
      * <p>
-     * Don't forget to add onActivityResult method there with call to onGpgsActivityResult.
      *
      * @param context        your AndroidLauncher class
      * @param enableDriveAPI true if you activate save gamestate feature
      * @return this for method chunking
      */
-    public GpgsClient initialize(Activity context, boolean enableDriveAPI) {
+    public GpgsClient initialize(AndroidApplication context, boolean enableDriveAPI) {
 
         if (mGoogleApiClient != null)
             throw new IllegalStateException("Already initialized.");
 
         myContext = context;
+
+        // we need to receive onActivityResult
+        context.addAndroidEventListener(this);
+
         // retry some times when connect fails (needed when game state sync is enabled)
         firstConnectAttempt = MAX_CONNECTFAIL_RETRIES;
 
@@ -130,27 +134,17 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         return this;
     }
 
-    /**
-     * Call this in the onActivityResult of the context you gave to initialize()
-     *
-     * @param requestCode requestCode
-     * @param resultCode  resultCode
-     * @param data        Intent
-     * @return true if this was a Gpgs activity
-     */
-    public boolean onGpgsActivityResult(int requestCode, int resultCode, Intent data) {
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == RC_GPGS_SIGNIN) {
             signInResult(resultCode, data);
-            return true;
 
             // check for "inconsistent state"
         } else if (resultCode == GamesActivityResultCodes.RESULT_RECONNECT_REQUIRED &&
                 (requestCode == RC_LEADERBOARD || requestCode == RC_ACHIEVEMENTS)) {
             // force a disconnect to sync up state, ensuring that mClient reports "not connected"
             disconnect(false);
-            return true;
         }
-        return false;
     }
 
     @Override
@@ -178,7 +172,6 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
             return true;
 
         Gdx.app.log(GAMESERVICE_ID, "Trying to connect with autostart " + autoStart);
-        mAutoStartSignInflow = autoStart;
         mSignInClicked = !autoStart;
         isConnectionPending = true;
         mGoogleApiClient.connect();
@@ -265,7 +258,6 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         // if the sign-in button was clicked
         // launch the sign-in flow
         if (mSignInClicked) {
-            mAutoStartSignInflow = false;
             mSignInClicked = false;
             mResolvingConnectionFailure = true;
 

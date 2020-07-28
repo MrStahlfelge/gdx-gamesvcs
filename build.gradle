@@ -81,6 +81,7 @@ project(":android-gpgs") {
         }
 
         compile "com.google.android.gms:play-services-games:${gms_library_version}"
+        compile "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
 
         compile project(':core')
     }
