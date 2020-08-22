@@ -43,8 +43,8 @@ android {
 
 dependencies {
     implementation project(":core")
-    implementation 'com.huawei.hms:game:5.0.0.300'
-    implementation 'com.huawei.hms:hwid:4.0.4.300'
+    implementation 'com.huawei.hms:game:5.0.1.301'
+    implementation 'com.huawei.hms:hwid:5.0.1.301'
     implementation "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
 }
 

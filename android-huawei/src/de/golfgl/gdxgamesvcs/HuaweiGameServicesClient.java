@@ -75,6 +75,8 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
     private boolean isSessionActive = false;
     private boolean isSessionPending = false;
 
+    private int currentLeaderboardsStatus = HuaweiGameServicesConstants.HUAWEI_GAMESVCS_LEADERBOARDS_DISABLED;
+
     public HuaweiGameServicesClient(AndroidApplication activity, boolean isSaveDataEnabled) {
         this.activity = activity;
         this.isSaveDataEnabled = isSaveDataEnabled;
@@ -167,6 +169,7 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
                 @Override
                 public void onSuccess(AuthHuaweiId authHuaweiId) {
                     loadPlayerInfo();
+                    switchLeaderboardsStatus(HuaweiGameServicesConstants.HUAWEI_GAMESVCS_LEADERBOARDS_ENABLED);
                 }
             }).addOnFailureListener(new OnFailureListener() {
                 @Override
@@ -195,6 +198,8 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
     @Override
     public void logOff() {
         if (this.isSessionActive) {
+            switchLeaderboardsStatus(HuaweiGameServicesConstants.HUAWEI_GAMESVCS_LEADERBOARDS_DISABLED);
+
             Task<Void> authHuaweiIdTask = HuaweiIdAuthManager
                     .getService(this.activity, getHuaweiIdParams())
                     .signOut();
@@ -231,6 +236,24 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
     @Override
     public boolean isConnectionPending() {
         return this.isSessionPending;
+    }
+
+    private void switchLeaderboardsStatus(int newStatus) {
+        if (newStatus != this.currentLeaderboardsStatus) {
+            Task<Integer> task = this.leaderboardsClient.setRankingSwitchStatus(newStatus);
+            task.addOnSuccessListener(new OnSuccessListener<Integer>() {
+                @Override
+                public void onSuccess(Integer statusValue) {
+                    currentLeaderboardsStatus = statusValue;
+                }
+            });
+            task.addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(Exception e) {
+                    sendError(IGameServiceListener.GsErrorType.errorUnknown, e.getMessage(), e);
+                }
+            });
+        }
     }
 
     @Override
