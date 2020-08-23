@@ -7,6 +7,9 @@ Framework and implementations for using Game Services (BaaS) with libGDX.
 
 ![Demo app](/assets/gdxgsgpgs.gif?raw=true "Demo app")
 
+With this extension, you can integrate one or more Game Services in your libGDX games with ease.
+You can choose the wanted Game Service client in your Launcher classes dynamically.
+
 ## Supported game services
 
 * [Google Play Games](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Google-Play-Games) (Android, Desktop, HTML5)
@@ -17,22 +20,14 @@ Framework and implementations for using Game Services (BaaS) with libGDX.
 * [Kongregate](https://github.com/MrStahlfelge/gdx-gamesvcs/wiki/Kongregate) (HTML5)
 
 
-## Motivation
-
-When I wrote my first libGDX game, I realized there was no good library for Google Play Games (GPGS) integration available. So I implemented all the stuff myself. Luckily, because GPGS is platform-dependant, I kept things clean and implemented against an interface. Nevertheless, testing was a pain. I had no desktop implementation for the interface, so I always had to test on Android and check for `null` everywhere.
-
-When I then published my HTML5 release, users complained that their highscores were not posted to the hosting site's highscore system. Not to mention releasing to the Amazon App Store where GameCircle support is needed. So I felt in charge to do something.
-
-**With this extension, you can integrate one or more Game Services in your libGDX games with ease.
-You can choose the wanted Game Service client in your Launcher classes dynamically.**
-
 ## Basic concept
 
 The library provides an interface `IGameServiceClient` that you reference in your core code. Your platform-dependant launchers instantiate an actual implementation of the interface.
 
 Every implemented game service client has its own project you can decide to include or not. So your game won't get blown up with code you don't need.
 
-There is a no-op implementation `NoGameServiceClient` provided that does absolutely nothing besides logging your calls. Use it to test platform-independant and to avoid `null` checks or NPEs.
+There is a no-op implementation `NoGameServiceClient` provided that does absolutely nothing besides logging your calls. Use it to test platform-independant
+or to avoid `null` checks or NPEs.
 For testing your UI's behaviour on slow callback responses, you can use `MockGameServiceClient`.
 
 See the corresponding [demo app](https://github.com/MrStahlfelge/gdx-gamesvcs-app) for an example and this project's wiki for further documentation.
@@ -176,8 +171,7 @@ The interface provides a method for open up an API's default leaderboard or achi
     gsClient.showAchievements();
     // same for leaderboards
 
-At the moment, such a default UI is only provided by Google Play Games and GameCircle on Android, 
-so you need to check with `gsClient.isFeatureSupported()` before calling. 
+Default UI is provided by all game services, so you need to check with `gsClient.isFeatureSupported()` before calling.
 
 Fetching scores and achievement status to show in your own UI can be done by calling
      
