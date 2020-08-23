@@ -258,28 +258,33 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
 
     @Override
     public void showLeaderboards(String leaderBoardId) throws GameServiceException {
+        Task<Intent> task;
+
         if (!TextUtils.isEmpty(leaderBoardId)) {
             if (this.huaweiLeaderboardIdMapper != null) {
                 leaderBoardId = huaweiLeaderboardIdMapper.mapToGsId(leaderBoardId);
             }
 
-            Task<Intent> task = this.leaderboardsClient.getRankingIntent(leaderBoardId);
-            task.addOnSuccessListener(new OnSuccessListener<Intent>() {
-                @Override
-                public void onSuccess(Intent intent) {
-                    try {
-                        activity.startActivityForResult(intent, HUAWEI_GAMESVCS_LEADERBOARDS_REQUEST);
-                    } catch (Exception e) {
-                        sendError(IGameServiceListener.GsErrorType.errorUnknown, e.getMessage(), e);
-                    }
-                }
-            }).addOnFailureListener(new OnFailureListener() {
-                @Override
-                public void onFailure(Exception e) {
+            task = this.leaderboardsClient.getRankingIntent(leaderBoardId);
+        } else {
+            task = this.leaderboardsClient.getTotalRankingsIntent();
+        }
+
+        task.addOnSuccessListener(new OnSuccessListener<Intent>() {
+            @Override
+            public void onSuccess(Intent intent) {
+                try {
+                    activity.startActivityForResult(intent, HUAWEI_GAMESVCS_LEADERBOARDS_REQUEST);
+                } catch (Exception e) {
                     sendError(IGameServiceListener.GsErrorType.errorUnknown, e.getMessage(), e);
                 }
-            });
-        }
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(Exception e) {
+                sendError(IGameServiceListener.GsErrorType.errorUnknown, e.getMessage(), e);
+            }
+        });
     }
 
     @Override
