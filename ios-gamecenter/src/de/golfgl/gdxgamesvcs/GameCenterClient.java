@@ -269,7 +269,7 @@ public class GameCenterClient implements IGameServiceClient {
                     }
 
                     GKSavedGame mySnapshot = null;
-                    final NSArray<GKSavedGame> resolved = new NSArray<>();
+                    final ArrayList<GKSavedGame> resolved = new ArrayList<>();
                     if (snapshots.isEmpty()) {
                         responseListener.gsGameStateLoaded(null);
                         return;
@@ -283,8 +283,7 @@ public class GameCenterClient implements IGameServiceClient {
                                     > mySnapshot.getModificationDate().getTimeIntervalSinceReferenceDate())
                                 mySnapshot = snapshots.get(i);
                         }
-                        for (GKSavedGame snapshot : snapshots)
-                            resolved.add(snapshot);
+						resolved.addAll(snapshots);
                     }
 
                     mySnapshot.loadData(new VoidBlock2<NSData, NSError>() {
@@ -293,7 +292,7 @@ public class GameCenterClient implements IGameServiceClient {
                             if (error == null) {
                                 // if there were conflicts, resolve them now
                                 if (snapshots.size() > 1)
-                                    GKLocalPlayer.getLocalPlayer().resolveConflictingSavedGames(resolved, data, null);
+                                    GKLocalPlayer.getLocalPlayer().resolveConflictingSavedGames(new NSArray<>(resolved), data, null);
                                 responseListener.gsGameStateLoaded(data.getBytes());
                             } else {
 								Gdx.app.log(GAMESERVICE_ID, "Failed to load gamestate: " + error.getCode());
