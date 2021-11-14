@@ -57,11 +57,11 @@ Define the version of this API right after the gdxVersion:
 
 Core:
 
-    compile "de.golfgl.gdxgamesvcs:gdx-gamesvcs-core:$gamesvcsVersion"
+    api "de.golfgl.gdxgamesvcs:gdx-gamesvcs-core:$gamesvcsVersion"
     
 For the HTML5 project, you also have to include the sources
 
-    compile "de.golfgl.gdxgamesvcs:gdx-gamesvcs-core:$gamesvcsVersion:sources"
+    implementation "de.golfgl.gdxgamesvcs:gdx-gamesvcs-core:$gamesvcsVersion:sources"
 
 and add a line to `GdxDefinition.gwt.xml` and `GdxDefinitionSuperdev.gwt.xml`:
 
