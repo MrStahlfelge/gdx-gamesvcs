@@ -186,8 +186,8 @@ public class KongClient implements IGameServiceClient {
     }
 
     @Override
-    public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
-                                           IFetchLeaderBoardEntriesResponseListener callback,
+    public boolean fetchLeaderboardEntries(String leaderBoardId, final int limit, boolean relatedToPlayer,
+                                           final IFetchLeaderBoardEntriesResponseListener callback,
                                            int timespan, int collection) {
         //this does not work without hosting an own webservice, thus isFeatureSupported does not report it as supported
         //See issue #13 https://github.com/MrStahlfelge/gdx-gamesvcs/issues/13 for more information

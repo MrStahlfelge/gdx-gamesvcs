@@ -468,7 +468,7 @@ public class GameJoltClient implements IGameServiceClient {
 
     @Override
     public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
-                                           IFetchLeaderBoardEntriesResponseListener callback,
+                                           final IFetchLeaderBoardEntriesResponseListener callback,
                                            int timespan, int collection) {
         if (!initialized) {
             Gdx.app.error(GAMESERVICE_ID, "Cannot fetch leaderboard: set app ID via initialize() first");
