@@ -22,6 +22,7 @@ import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.ILeaderBoardEntry;
+import de.golfgl.gdxgamesvcs.player.IPlayerDataResponseListener;
 
 /**
  * GameServiceClient for GameJolt API
@@ -219,7 +220,7 @@ public class GameJoltClient implements IGameServiceClient {
                         sendOpenSessionEvent();
 
                         if (gsListener != null)
-                            gsListener.gsOnSessionActive();
+                            gsListener.gsOnSessionActive(null);
                     } else {
                         Gdx.app.log(GAMESERVICE_ID, "Authentification from GameJolt failed. Check username, token, " +
                                 "app id and private key.");
@@ -284,7 +285,7 @@ public class GameJoltClient implements IGameServiceClient {
         connectionPending = false;
 
         if (gsListener != null) {
-            gsListener.gsOnSessionInactive();
+            gsListener.gsOnSessionInactive(null);
 
             if (!silent)
                 gsListener.gsShowErrorToUser(IGameServiceListener.GsErrorType.errorLoginFailed, msg, null);
@@ -301,7 +302,7 @@ public class GameJoltClient implements IGameServiceClient {
         connected = false;
 
         if (gsListener != null)
-            gsListener.gsOnSessionInactive();
+            gsListener.gsOnSessionInactive(null);
     }
 
     protected void sendCloseSessionEvent() {
@@ -329,6 +330,11 @@ public class GameJoltClient implements IGameServiceClient {
     @Override
     public String getPlayerDisplayName() {
         return (connected ? userName : null);
+    }
+
+    @Override
+    public boolean getPlayerData(IPlayerDataResponseListener callback) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -462,7 +468,8 @@ public class GameJoltClient implements IGameServiceClient {
 
     @Override
     public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
-                                           final IFetchLeaderBoardEntriesResponseListener callback) {
+                                           IFetchLeaderBoardEntriesResponseListener callback,
+                                           int timespan, int collection) {
         if (!initialized) {
             Gdx.app.error(GAMESERVICE_ID, "Cannot fetch leaderboard: set app ID via initialize() first");
             return false;

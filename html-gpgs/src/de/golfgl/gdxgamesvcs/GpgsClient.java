@@ -13,6 +13,7 @@ import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
+import de.golfgl.gdxgamesvcs.player.IPlayerDataResponseListener;
 
 /**
  * Gpgs Web REST Client
@@ -163,9 +164,9 @@ public class GpgsClient implements IGameServiceClient {
 
         if (gsListener != null) {
             if (sessionActive)
-                gsListener.gsOnSessionActive();
+                gsListener.gsOnSessionActive(null);
             else
-                gsListener.gsOnSessionInactive();
+                gsListener.gsOnSessionInactive(null);
         }
     }
 
@@ -268,14 +269,14 @@ public class GpgsClient implements IGameServiceClient {
     protected void onDisplayName(String displayName) {
         this.displayName = displayName;
         if (gsListener != null)
-            gsListener.gsOnSessionActive();
+            gsListener.gsOnSessionActive(null);
     }
 
     protected void onInitError(String msg) {
         initialized = false;
         connectionPending = false;
         if (gsListener != null) {
-            gsListener.gsOnSessionInactive();
+            gsListener.gsOnSessionInactive(null);
             if (!isSilentConnect)
                 gsListener.gsShowErrorToUser(IGameServiceListener.GsErrorType.errorLoginFailed, msg, null);
         }
@@ -325,6 +326,11 @@ public class GpgsClient implements IGameServiceClient {
     @Override
     public String getPlayerDisplayName() {
         return isSessionActive() ? displayName : null;
+    }
+
+    @Override
+    public boolean getPlayerData(IPlayerDataResponseListener callback) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -389,9 +395,9 @@ public class GpgsClient implements IGameServiceClient {
 
     @Override
     public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
-                                           IFetchLeaderBoardEntriesResponseListener callback) {
-        //TODO
-        return false;
+                                           IFetchLeaderBoardEntriesResponseListener callback,
+                                           int timespan, int collection) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

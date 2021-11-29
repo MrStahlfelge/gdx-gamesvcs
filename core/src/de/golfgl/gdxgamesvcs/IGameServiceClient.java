@@ -5,6 +5,7 @@ import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
+import de.golfgl.gdxgamesvcs.player.IPlayerDataResponseListener;
 
 /**
  * This is the main interface for gdx-gamesvcs. Use this in your game core.
@@ -97,6 +98,13 @@ public interface IGameServiceClient {
     String getPlayerDisplayName();
 
     /**
+     * Gets Player data if session is connected
+     *
+     * @return Returns false if data retrieve failed. True if successful.
+     */
+    boolean getPlayerData(final IPlayerDataResponseListener callback);
+
+    /**
      * Returns if a user session is active.
      * <p>
      * You can safely call game service methods without checking if a user session exists.
@@ -158,19 +166,23 @@ public interface IGameServiceClient {
     boolean submitToLeaderboard(String leaderboardId, long score, String tag);
 
     /**
-     * Fetches leader board entries
+     * Fetches leaderboard entries
      *
      * @param leaderBoardId   leaderboard to fetch
      * @param limit           limit how many entries to retrieve
      * @param relatedToPlayer only fetch scores around current player score or by current player (depending on Game
      *                        Service). If this is not possible, player-unrelated leaderboard entries are returned.
      * @param callback
+     * @param timespan        filter the scores based on a specific timespan (depending on Game Service). If this is not
+     *                        possible, no timespan scope is used.
+     * @param collection      filter the results based on a collection e.g. Social or Public. Depends on the Game Service
+     *                        if this is possible. If this is not possible, then public scores are returned.
      * @return false if fetch attempt could not be made. Response listener will not get called in that case.
      * @throws UnsupportedOperationException if not supported by game service client, so check
      *                                       {@link #isFeatureSupported(GameServiceFeature)} prior to call this method.
      */
     boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
-                                    IFetchLeaderBoardEntriesResponseListener callback);
+                                    IFetchLeaderBoardEntriesResponseListener callback, int timespan, int collection);
 
     /**
      * Posts an event to the API.

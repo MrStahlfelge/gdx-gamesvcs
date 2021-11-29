@@ -113,7 +113,7 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 				public void run() {
 					connecting = false;
 					connected = true;
-					if(gsListener != null) gsListener.gsOnSessionActive();
+					if(gsListener != null) gsListener.gsOnSessionActive(null);
 				}
 			});
 		}
@@ -126,7 +126,7 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 
 			@Override
 			public void run() {
-				if(gsListener != null) gsListener.gsOnSessionInactive();
+				if(gsListener != null) gsListener.gsOnSessionInactive(null);
 			}
 		});
 	}
@@ -173,7 +173,7 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 
 	@Override
 	public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
-			final IFetchLeaderBoardEntriesResponseListener callback) {
+			final IFetchLeaderBoardEntriesResponseListener callback, int timespan, int collection) {
 		sleep(new Runnable() {
 			@Override
 			public void run() {

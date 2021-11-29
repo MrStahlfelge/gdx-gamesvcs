@@ -12,13 +12,17 @@ public interface IGameServiceListener {
 
     /**
      * Called when game service user session is sucessfully connected
+     *
+     * @param resultCode result code of the session represented as an int
      */
-    public void gsOnSessionActive();
+    public void gsOnSessionActive(Integer resultCode);
 
     /**
      * Called when game service user session has disconnected or a connection attempt failed
+     *
+     * @param resultCode result code of the session represented as an int
      */
-    public void gsOnSessionInactive();
+    public void gsOnSessionInactive(Integer resultCode);
 
     /**
      * Called from GameServiceClient to show a message to the user.

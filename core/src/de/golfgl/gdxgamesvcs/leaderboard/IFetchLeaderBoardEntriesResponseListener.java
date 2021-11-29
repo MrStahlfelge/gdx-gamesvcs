@@ -4,7 +4,7 @@ import com.badlogic.gdx.utils.Array;
 
 /**
  * Callback for
- * {@link de.golfgl.gdxgamesvcs.IGameServiceClient#fetchLeaderboardEntries(String, int, boolean, IFetchLeaderBoardEntriesResponseListener)}
+ * {@link de.golfgl.gdxgamesvcs.IGameServiceClient#fetchLeaderboardEntries(String, int, boolean, IFetchLeaderBoardEntriesResponseListener, int, int)}
  *
  * @author mgsx
  */

@@ -40,6 +40,7 @@ import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.ILeaderBoardEntry;
+import de.golfgl.gdxgamesvcs.player.IPlayerDataResponseListener;
 
 /**
  * Client for Google Play Games
@@ -202,7 +203,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
                 }
             mGoogleApiClient.disconnect();
             if (gameListener != null)
-                gameListener.gsOnSessionInactive();
+                gameListener.gsOnSessionInactive(null);
         }
     }
 
@@ -216,7 +217,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         firstConnectAttempt = MAX_CONNECTFAIL_RETRIES;
         isConnectionPending = false;
         if (gameListener != null)
-            gameListener.gsOnSessionActive();
+            gameListener.gsOnSessionActive(null);
     }
 
     @Override
@@ -226,6 +227,11 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
                     .getDisplayName();
         else
             return null;
+    }
+
+    @Override
+    public boolean getPlayerData(IPlayerDataResponseListener callback) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -301,7 +307,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
 
         // inform listener that connection attempt failed
         if (gameListener != null && isPendingBefore && !isConnectionPending)
-            gameListener.gsOnSessionInactive();
+            gameListener.gsOnSessionInactive(null);
     }
 
     public void signInResult(int resultCode, Intent data) {
@@ -318,7 +324,7 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
 
             // inform listener that connection attempt failed
             if (gameListener != null && isPendingBefore)
-                gameListener.gsOnSessionInactive();
+                gameListener.gsOnSessionInactive(null);
 
             // Bring up an error dialog to alert the user that sign-in
             // failed. The R.string.signin_failure should reference an error
@@ -447,7 +453,8 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
     @Override
     public boolean fetchLeaderboardEntries(final String leaderBoardId, final int limit,
                                            final boolean relatedToPlayer,
-                                           final IFetchLeaderBoardEntriesResponseListener callback) {
+                                           final IFetchLeaderBoardEntriesResponseListener callback,
+                                           final int timespan, final int collection) {
         if (!isSessionActive())
             return false;
 

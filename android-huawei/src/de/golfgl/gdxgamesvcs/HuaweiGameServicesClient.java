@@ -47,6 +47,7 @@ import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.ILeaderBoardEntry;
+import de.golfgl.gdxgamesvcs.player.IPlayerDataResponseListener;
 
 /**
  * Client for Huawei Game Services
@@ -229,6 +230,11 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
     }
 
     @Override
+    public boolean getPlayerData(IPlayerDataResponseListener callback) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean isSessionActive() {
         return this.isSessionActive;
     }
@@ -354,7 +360,9 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
     }
 
     @Override
-    public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer, IFetchLeaderBoardEntriesResponseListener callback) {
+    public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
+                                           IFetchLeaderBoardEntriesResponseListener callback,
+                                           int timespan, int collection) {
         if (!this.isSessionActive) {
             return false;
         }
@@ -655,7 +663,7 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
                 currentPlayer = player;
 
                 if (gsListener != null) {
-                    gsListener.gsOnSessionActive();
+                    gsListener.gsOnSessionActive(null);
                 }
             }
         }).addOnFailureListener(new OnFailureListener() {

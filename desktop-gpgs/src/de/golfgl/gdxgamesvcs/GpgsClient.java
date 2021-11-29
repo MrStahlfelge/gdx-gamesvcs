@@ -36,6 +36,7 @@ import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.ILeaderBoardEntry;
+import de.golfgl.gdxgamesvcs.player.IPlayerDataResponseListener;
 
 /**
  * Google Play Games Services Desktop implementation based on REST API :
@@ -277,9 +278,9 @@ public class GpgsClient implements IGameServiceClient {
         // dispatch status
         if (gameListener != null) {
             if (connected) {
-                gameListener.gsOnSessionActive();
+                gameListener.gsOnSessionActive(null);
             } else {
-                gameListener.gsOnSessionInactive();
+                gameListener.gsOnSessionInactive(null);
             }
         }
     }
@@ -317,7 +318,7 @@ public class GpgsClient implements IGameServiceClient {
     @Override
     public void pauseSession() {
         // nothing special to do here since there is no resources to freeup.
-        if (gameListener != null) gameListener.gsOnSessionInactive();
+        if (gameListener != null) gameListener.gsOnSessionInactive(null);
     }
 
     @Override
@@ -331,6 +332,11 @@ public class GpgsClient implements IGameServiceClient {
     @Override
     public String getPlayerDisplayName() {
         return playerName;
+    }
+
+    @Override
+    public boolean getPlayerData(IPlayerDataResponseListener callback) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -761,8 +767,10 @@ public class GpgsClient implements IGameServiceClient {
     }
 
     @Override
-    public boolean fetchLeaderboardEntries(final String leaderBoardId, final int limit, final boolean
-            relatedToPlayer, final IFetchLeaderBoardEntriesResponseListener callback) {
+    public boolean fetchLeaderboardEntries(final String leaderBoardId, final int limit,
+                                           final boolean relatedToPlayer,
+                                           final IFetchLeaderBoardEntriesResponseListener callback,
+                                           final int timespan, final int collection) {
         if (connected) {
             background(new SafeRunnable() {
                 @Override
@@ -781,7 +789,7 @@ public class GpgsClient implements IGameServiceClient {
 
     /**
      * Blocking version of
-     * {@link #fetchLeaderboardEntries(String, int, boolean, IFetchLeaderBoardEntriesResponseListener)}
+     * {@link #fetchLeaderboardEntries(String, int, boolean, IFetchLeaderBoardEntriesResponseListener, int, int)}
      *
      * @param leaderBoardId
      * @throws IOException

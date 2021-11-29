@@ -12,6 +12,7 @@ import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.ILeaderBoardEntry;
+import de.golfgl.gdxgamesvcs.player.IPlayerDataResponseListener;
 
 /**
  * Kongegrate Client
@@ -80,9 +81,9 @@ public class KongClient implements IGameServiceClient {
         // if Kong API has initialized, check if user session is active
         if (gsListener != null) {
             if (!isKongGuest())
-                gsListener.gsOnSessionActive();
+                gsListener.gsOnSessionActive(null);
             else
-                gsListener.gsOnSessionInactive();
+                gsListener.gsOnSessionInactive(null);
         }
     }
 
@@ -121,6 +122,11 @@ public class KongClient implements IGameServiceClient {
             return null;
         else
             return getKongPlayerName();
+    }
+
+    @Override
+    public boolean getPlayerData(IPlayerDataResponseListener callback) {
+        throw new UnsupportedOperationException();
     }
 
     private native boolean isKongGuest() /*-{
@@ -180,8 +186,9 @@ public class KongClient implements IGameServiceClient {
     }
 
     @Override
-    public boolean fetchLeaderboardEntries(String leaderBoardId, final int limit, boolean relatedToPlayer,
-                                           final IFetchLeaderBoardEntriesResponseListener callback) {
+    public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
+                                           IFetchLeaderBoardEntriesResponseListener callback,
+                                           int timespan, int collection) {
         //this does not work without hosting an own webservice, thus isFeatureSupported does not report it as supported
         //See issue #13 https://github.com/MrStahlfelge/gdx-gamesvcs/issues/13 for more information
 

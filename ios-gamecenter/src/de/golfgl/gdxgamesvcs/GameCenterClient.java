@@ -24,6 +24,7 @@ import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
+import de.golfgl.gdxgamesvcs.player.IPlayerDataResponseListener;
 
 /**
  * Apple Game Center implementation
@@ -66,14 +67,14 @@ public class GameCenterClient implements IGameServiceClient {
 						lastGotLoginScreen = null;
 						Gdx.app.debug(GAMESERVICE_ID, "Successfully logged into GameCenter");
 						if (gsListener != null) {
-							gsListener.gsOnSessionActive();
+							gsListener.gsOnSessionActive(null);
 						}
 					} else {
 						if (gkViewController != null)
 							lastGotLoginScreen = gkViewController;
 						Gdx.app.debug(GAMESERVICE_ID, "Did not authenticate.");
 						if (gsListener != null)
-							gsListener.gsOnSessionInactive();
+							gsListener.gsOnSessionInactive(null);
 						if (callLoginFromHandler)
 							logIn();
 					}
@@ -119,6 +120,11 @@ public class GameCenterClient implements IGameServiceClient {
 	@Override
 	public String getPlayerDisplayName() {
 		return isSessionActive() ? GKLocalPlayer.getLocalPlayer().getAlias() : null;
+	}
+
+	@Override
+	public boolean getPlayerData(IPlayerDataResponseListener callback) {
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -190,8 +196,10 @@ public class GameCenterClient implements IGameServiceClient {
 	}
 
 	@Override
-	public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer, IFetchLeaderBoardEntriesResponseListener callback) {
-		return false;
+	public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
+										   IFetchLeaderBoardEntriesResponseListener callback,
+										   int timespan, int collection) {
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
