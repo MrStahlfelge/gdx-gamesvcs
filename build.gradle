@@ -1,17 +1,23 @@
 ext {
     GROUPID = 'de.golfgl.gdxgamesvcs'
     VERSION = '1.1.0'
-
 }
 
 buildscript {
     repositories {
-        maven { url 'https://plugins.gradle.org/m2/' }
+        mavenLocal()
+        mavenCentral()
         google()
+        maven { url "https://plugins.gradle.org/m2/" }
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven { url 'https://developer.huawei.com/repo/' }
+        gradlePluginPortal()
     }
     dependencies {
         classpath 'org.wisepersist:gwt-gradle-plugin:1.0.6'
-        classpath 'com.android.tools.build:gradle:3.2.0'
+        classpath 'com.android.tools.build:gradle:4.2.2'
+        classpath 'com.google.gms:google-services:4.3.10'
+        classpath 'com.huawei.agconnect:agcp:1.3.2.301'
         classpath 'com.mobidevelop.robovm:robovm-gradle-plugin:2.3.5'
     }
 }
@@ -21,23 +27,34 @@ allprojects {
     apply plugin: "idea"
 
     ext {
-        minSdk = 15
-        targetSdk = 27
-        compileSdk = 27
-        buildTools = '28.0.3'
+        minSdkVer = 16
+        targetSdkVer = 30
+        compileSdkVer = 30
+        buildToolsVer = '30.0.2'
 
-        appName = 'gdx-gamesvcs'
-        gdxVersion = '1.9.8'
+        gdxVersion = '1.10.0'
         roboVMVersion = '2.3.5'
+
+        //Variables used in publishing step
+        libraryName = 'gdx-gamesvcs'
+        libraryDescription = 'Gameservices APIs for libGDX.'
+        librarySiteUrl = 'https://github.com/MrStahlfelge/gdx-gamesvcs'
+        libraryGitUrl = 'git@github.com:MrStahlfelge/gdx-gamesvcs.git'
+        developerId = 'MrStahlfelge'
+        developerName = 'Benjamin Schulte'
+        developerEmail = 'lightblocks@golfgl.de'
+        licenseName = 'The Apache Software License, Version 2.0'
+        licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+        licenseDistribution = 'repo'
     }
 
     repositories {
-        mavenCentral()
         mavenLocal()
+        mavenCentral()
+        google()
         maven { url 'https://plugins.gradle.org/m2/' }
         maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
         maven { url "https://oss.sonatype.org/content/repositories/releases/" }
-        maven { url "https://maven.google.com" }
         maven { url 'https://developer.huawei.com/repo/' }
     }
 
@@ -46,94 +63,56 @@ allprojects {
 }
 
 project(":android-gpgs") {
-    configurations {
-        custom
-        compile.extendsFrom custom
-    }
+    apply plugin: 'com.android.library'
 
     eclipse {
         project {
-            name = appName + "-android-gpgs"
+            name = "$libraryName-android-gpgs"
         }
     }
 
     dependencies {
-        if (!project.hasProperty('gms_library_version')) {
-            ext.gms_library_version = '16.0.0'
-        }
-
-        compile "com.google.android.gms:play-services-games:${gms_library_version}"
-        compile "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
-
-        compile project(':core')
+        implementation project(":core")
+        api "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
     }
 }
 
 
 project(":core") {
-    apply plugin: 'java'
-
-    apply from: '../publish.gradle'
-
-    configurations {
-        custom
-        compile.extendsFrom custom
-    }
+    apply plugin: 'java-library'
 
     eclipse {
         project {
-            name = appName + "-core"
+            name = "$libraryName-core"
         }
     }
 
     dependencies {
-        compile "com.badlogicgames.gdx:gdx:$gdxVersion"
+        api "com.badlogicgames.gdx:gdx:$gdxVersion"
     }
 }
-
-
-
 
 project(":core-gamejolt") {
     apply plugin: 'java'
 
-    apply from: '../publish.gradle'
-
-    configurations {
-        custom
-        compile.extendsFrom custom
-    }
-
     eclipse {
         project {
-            name = appName + "-core-gamejolt"
+             name = "$libraryName-core-gamejolt"
         }
     }
 
     dependencies {
-        compile project(':core')
-    }
-    dependencies {
-        compile "com.badlogicgames.gdx:gdx:$gdxVersion"
+        implementation project(':core')
+        implementation "com.badlogicgames.gdx:gdx:$gdxVersion"
     }
 }
-
-
-
 
 project(":desktop-gpgs") {
     apply plugin: 'java'
 
-    apply from: '../publish.gradle'
-
-    configurations {
-        custom
-        compile.extendsFrom custom
-    }
-
     eclipse {
         project {
-            name = appName + "-desktop-gpgs"
+            name = "$libraryName-desktop-gpgs"
         }
     }
     
@@ -142,100 +121,68 @@ project(":desktop-gpgs") {
     }
 
     dependencies {
-        compile project(':core')
+        implementation project(':core')
+
+        implementation "com.google.apis:google-api-services-games:v1-rev239-$gapiVersion"
+        implementation "com.google.oauth-client:google-oauth-client-jetty:$gapiVersion"
+        implementation "com.google.apis:google-api-services-drive:v3-rev77-$gapiVersion"
         
-        compile "com.google.apis:google-api-services-games:v1-rev239-$gapiVersion"
-        compile "com.google.oauth-client:google-oauth-client-jetty:$gapiVersion"
-        compile "com.google.apis:google-api-services-drive:v3-rev77-$gapiVersion"
-        
-        testCompile "com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion"
-        testCompile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+        testImplementation "com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion"
+        testImplementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
     }
 }
-
 
 project(":html-kong") {
     apply plugin: 'java'
 
-
-    apply from: '../publish.gradle'
-
-    configurations {
-        custom
-        compile.extendsFrom custom
-    }
-
     eclipse {
         project {
-            name = appName + "-html-kong"
+            name = "$libraryName-html-kong"
         }
     }
 
     dependencies {
-        compile project(':core')
-    }
-    dependencies {
-        compile "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion"
-        compile "com.badlogicgames.gdx:gdx:$gdxVersion:sources"
-        compile "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion:sources"
+        implementation project(':core')
+
+        implementation "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion"
+        implementation "com.badlogicgames.gdx:gdx:$gdxVersion:sources"
+        implementation "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion:sources"
     }
 }
-
-
 
 project(":html-gpgs") {
     apply plugin: 'java'
 
-
-    apply from: '../publish.gradle'
-
-    configurations {
-        custom
-        compile.extendsFrom custom
-    }
-
     eclipse {
         project {
-            name = appName + "-html-gpgs"
+            name = "$libraryName-html-gpgs"
         }
     }
 
     dependencies {
-        compile project(':core')
-    }
-    dependencies {
-        compile "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion"
-        compile "com.badlogicgames.gdx:gdx:$gdxVersion:sources"
-        compile "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion:sources"
+        implementation project(':core')
+
+        implementation "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion"
+        implementation "com.badlogicgames.gdx:gdx:$gdxVersion:sources"
+        implementation "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion:sources"
     }
 }
-
-
 
 project(":ios-gamecenter") {
     apply plugin: 'java'
     apply plugin: 'robovm'
 
-    apply from: '../publish.gradle'
-
-    configurations {
-        custom
-        compile.extendsFrom custom
-    }
-
     eclipse {
         project {
-            name = appName + "-ios-gamecenter"
+            name = "$libraryName-html-gpgs"
         }
     }
 
     dependencies {
+        implementation project(':core')
 
-        compile project(':core')
-
-        compile "com.mobidevelop.robovm:robovm-rt:${roboVMVersion}"
-        compile "com.mobidevelop.robovm:robovm-cocoatouch:${roboVMVersion}"
-        compile "com.badlogicgames.gdx:gdx-backend-robovm:$gdxVersion"
-
+        implementation "com.mobidevelop.robovm:robovm-rt:$roboVMVersion"
+        implementation "com.mobidevelop.robovm:robovm-cocoatouch:$roboVMVersion"
+        implementation "com.badlogicgames.gdx:gdx-backend-robovm:$gdxVersion"
     }
 }

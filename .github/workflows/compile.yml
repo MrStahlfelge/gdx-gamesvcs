@@ -25,4 +25,4 @@ jobs:
     - name: Setup Android build environment
       uses: android-actions/setup-android@v2.0.2
     - name: Local install
-      run: ./gradlew clean uploadArchives -PSNAPSHOT=true -PLOCAL=true
+      run: ./gradlew clean publishToMavenLocal -PSNAPSHOT=true -PLOCAL=true
