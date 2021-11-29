@@ -72,7 +72,7 @@ After including the dependencies and refreshing, you can use the `NoGameServiceC
 ### Building from source
 To build from source, clone or download this repository, then open it in Android Studio. Perform the following command to compile and upload the library in your local repository:
 
-    gradlew clean uploadArchives -PLOCAL=true
+    gradlew clean publishToMavenLocal
     
 See `build.gradle` file for current version to use in your dependencies.
 
