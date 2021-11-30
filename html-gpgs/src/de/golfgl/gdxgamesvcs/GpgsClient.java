@@ -52,7 +52,7 @@ public class GpgsClient implements IGameServiceClient {
     /**
      * sets up the mapper for leader board ids
      *
-     * @param gpgsLeaderboardIdMapper
+     * @param gpgsLeaderboardIdMapper mapper that maps a given constant to a leaderboard id
      * @return this for method chaining
      */
     public GpgsClient setGpgsLeaderboardIdMapper(IGameServiceIdMapper<String> gpgsLeaderboardIdMapper) {
@@ -63,7 +63,7 @@ public class GpgsClient implements IGameServiceClient {
     /**
      * sets up the mapper for leader achievement ids
      *
-     * @param gpgsAchievementIdMapper
+     * @param gpgsAchievementIdMapper mapper that maps a given constant to a achievment id
      * @return this for method chaining
      */
     public GpgsClient setGpgsAchievementIdMapper(IGameServiceIdMapper<String> gpgsAchievementIdMapper) {
@@ -573,8 +573,8 @@ public class GpgsClient implements IGameServiceClient {
 
     /**
      * gets the real download url and calls downloadFileFromDrive, or the response listener
-     * @param driveFileId
-     * @param responseListener
+     * @param driveFileId the drive file id
+     * @param responseListener the listener that will be notified about the result
      */
     protected native void loadFileFromDrive(String driveFileId, final ILoadGameStateResponseListener responseListener) /*-{
         var that=this;
@@ -616,8 +616,8 @@ public class GpgsClient implements IGameServiceClient {
     /**
      * this can be used instead of loadFileFromDrive/downloadFileFromDrive... but it does not work on Firefox
      * Firefox does not follow a redirect that is given back to the real download url
-     * @param driveFileId
-     * @param responseListener
+     * @param driveFileId the drive file id
+     * @param responseListener the listener that will be notified about the result
      */
     protected void loadFileFromDriveV3(String driveFileId, final ILoadGameStateResponseListener responseListener) {
         Net.HttpRequest httpRequest = new Net.HttpRequest(Net.HttpMethods.GET);
