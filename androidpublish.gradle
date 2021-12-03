@@ -1,4 +1,4 @@
-apply plugin: 'maven'
+apply plugin: 'maven-publish'
 apply plugin: 'signing'
 
 def isLocalBuild() {
@@ -52,95 +52,89 @@ def getVersion() {
     }
 }
 
-
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
-            pom.groupId = getGroupId()
-            pom.version = getVersion()
-            pom.artifactId = getArtifactId()
-
-            if (isLocalBuild()) {
-                repository(url: getLocalRepositoryUrl())
-            } else {
-                if (isReleaseBuild()) {
-                    repository(url: getReleaseRepositoryUrl()) {
-                        authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
-                    }
-                }
-                if (isSnapshotBuild()) {
-                    snapshotRepository(url: getSnapshotRepositoryUrl()) {
-                        authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
-                    }
-                }
-            }
-
-
-
-
-            pom.project {
-                name 'gdx-gamesvcs'
-                description 'Gameservices APIs for libGDX'
-                url 'https://github.com/MrStahlfelge/gdx-gamesvcs'
-
-                scm {
-                    url 'scm:git@github.com:MrStahlfelge/gdx-gamesvcs.git'
-                    connection 'scm:git@github.com:MrStahlfelge/gdx-gamesvcs.git'
-                    developerConnection 'scm:git@github.com:MrStahlfelge/gdx-gamesvcs.git'
-                }
-
-                licenses {
-                    license {
-                        name 'The Apache Software License, Version 2.0'
-                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                        distribution 'repo'
-                    }
-                }
-
-                developers {
-                    developer {
-                        id 'MrStahlfelge'
-                        name 'Benjamin Schulte'
-                        email 'lightblocks@golfgl.de'
-                    }
-                }
-            }
-        }
-    }
-}
-
-signing {
-    required { isReleaseBuild() && gradle.taskGraph.hasTask("uploadArchives") }
-    sign configurations.archives
-}
-
-
 task androidJavadocs(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-    // JDK 1.8 is more strict then 1.7. Have JDK 1.8 behave like 1.7 for javadoc generation
-    if (org.gradle.internal.jvm.Jvm.current().getJavaVersion() == JavaVersion.VERSION_1_8) {
-        options.addStringOption('Xdoclint:none', '-quiet')
-    }
+    options.addStringOption('Xdoclint:none', '-quiet')
 }
 
 task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
-    classifier = 'javadoc'
+    archiveClassifier.set('javadoc')
     from androidJavadocs.destinationDir
 }
 
 task androidSourcesJar(type: Jar) {
-    classifier = 'sources'
-    from android.sourceSets.main.java.sourceFiles
+    archiveClassifier.set('sources')
+    from android.sourceSets.main.java.srcDirs
 }
 
-artifacts {
-    archives androidSourcesJar
-    archives androidJavadocsJar
-}
+afterEvaluate { //For android we need to wrap the publishing inside afterEvaluate
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
 
-afterEvaluate {
-    androidJavadocs.classpath += project.android.libraryVariants.toList().first().javaCompile.classpath
+                groupId = GROUPID
+                artifactId = ARTIFACTID
+                version = getVersion()
+
+                println 'Publishing artifact: ' + GROUPID + ':' + ARTIFACTID + '-' + getVersion()
+
+                pom {
+                    name = libraryName
+                    description = libraryDescription
+                    url = librarySiteUrl
+
+                    licenses {
+                        license {
+                            name = licenseName
+                            url = licenseUrl
+                        }
+                    }
+
+                    developers {
+                        developer {
+                            id = developerId
+                            name = developerName
+                            email = developerEmail
+                        }
+                    }
+
+                    scm {
+                        url = libraryGitUrl
+                        connection = "scm:$libraryGitUrl"
+                        developerConnection = "scm:$libraryGitUrl"
+                    }
+                }
+            }
+        }
+
+        repositories {
+            if (isReleaseBuild()) {
+                maven {
+                    credentials {
+                        username = getRepositoryUsername()
+                        password = getRepositoryPassword()
+                    }
+
+                    url getReleaseRepositoryUrl()
+                }
+            }
+            if (isSnapshotBuild()) {
+                maven {
+                    credentials {
+                        username = getRepositoryUsername()
+                        password = getRepositoryPassword()
+                    }
+
+                    url getSnapshotRepositoryUrl()
+                }
+            }
+        }
+    }
+
+    signing {
+        required { isReleaseBuild() }
+        sign publishing.publications.release
+    }
 }
