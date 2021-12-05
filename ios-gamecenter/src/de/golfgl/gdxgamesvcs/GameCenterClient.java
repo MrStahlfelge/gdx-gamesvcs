@@ -24,6 +24,7 @@ import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
+import de.golfgl.gdxgamesvcs.player.IPlayerDataResponseListener;
 
 /**
  * Apple Game Center implementation
@@ -119,6 +120,11 @@ public class GameCenterClient implements IGameServiceClient {
 	@Override
 	public String getPlayerDisplayName() {
 		return isSessionActive() ? GKLocalPlayer.getLocalPlayer().getAlias() : null;
+	}
+
+	@Override
+	public boolean getPlayerData(IPlayerDataResponseListener callback) {
+		return false;
 	}
 
 	@Override

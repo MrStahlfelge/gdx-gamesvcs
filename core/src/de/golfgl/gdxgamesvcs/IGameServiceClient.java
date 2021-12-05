@@ -5,6 +5,7 @@ import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
+import de.golfgl.gdxgamesvcs.player.IPlayerDataResponseListener;
 
 /**
  * This is the main interface for gdx-gamesvcs. Use this in your game core.
@@ -95,6 +96,16 @@ public interface IGameServiceClient {
      * @return Display name, if available. May return null.
      */
     String getPlayerDisplayName();
+
+    /**
+     * Gets Player data if session is connected and
+     * the Game Service supports player data fetching
+     *
+     * @param callback the listener that will be notified about the result
+     *
+     * @return False if the data could not be fetched. True if the event was triggered successfully.
+     */
+    boolean getPlayerData(final IPlayerDataResponseListener callback);
 
     /**
      * Returns if a user session is active.
