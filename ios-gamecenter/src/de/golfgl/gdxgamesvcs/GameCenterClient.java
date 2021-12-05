@@ -196,9 +196,18 @@ public class GameCenterClient implements IGameServiceClient {
 	}
 
 	@Override
-	public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer, IFetchLeaderBoardEntriesResponseListener callback) {
-		return false;
+	public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
+										   IFetchLeaderBoardEntriesResponseListener callback) {
+		throw new UnsupportedOperationException();
 	}
+
+	@Override
+	public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
+										   IFetchLeaderBoardEntriesResponseListener callback,
+										   int timespan, int collection) {
+		throw new UnsupportedOperationException();
+	}
+
 
 	@Override
 	public boolean submitEvent(String eventId, int increment) {
@@ -381,8 +390,8 @@ public class GameCenterClient implements IGameServiceClient {
 			case ShowAllLeaderboardsUI:
 				return true;
 
-            case PlayerLogOut:
-                return false;
+			case PlayerLogOut:
+				return false;
 
 			default:
 				return false;

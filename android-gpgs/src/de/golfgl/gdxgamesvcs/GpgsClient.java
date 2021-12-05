@@ -520,6 +520,14 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         return true;
     }
 
+
+    @Override
+    public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
+                                           IFetchLeaderBoardEntriesResponseListener callback,
+                                           int timespan, int collection) {
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     public boolean submitEvent(String eventId, int increment) {
         // No exception, if not online events are dismissed

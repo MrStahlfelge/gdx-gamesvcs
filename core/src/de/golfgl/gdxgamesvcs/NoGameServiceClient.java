@@ -133,6 +133,12 @@ public class NoGameServiceClient implements IGameServiceClient {
     }
 
     @Override
+    public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
+                                           IFetchLeaderBoardEntriesResponseListener callback, int timespan, int collection) {
+        return false;
+    }
+
+    @Override
     public boolean submitEvent(String eventId, int increment) {
         Gdx.app.log(GAMESERVICE_ID, "Submit event " + eventId + ", value " + increment);
 

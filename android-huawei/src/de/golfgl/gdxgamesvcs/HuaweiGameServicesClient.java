@@ -360,7 +360,8 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
     }
 
     @Override
-    public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer, IFetchLeaderBoardEntriesResponseListener callback) {
+    public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
+                                           IFetchLeaderBoardEntriesResponseListener callback) {
         if (!this.isSessionActive) {
             return false;
         }
@@ -377,6 +378,15 @@ public class HuaweiGameServicesClient implements IGameServiceClient, AndroidEven
 
         return true;
     }
+
+    @Override
+    public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
+                                           IFetchLeaderBoardEntriesResponseListener callback,
+                                           int timespan, int collection) {
+        throw new UnsupportedOperationException();
+    }
+
+
 
     private void fetchLeadeboardEntriesRelatedToPLayer(String leaderBoardId, int limit, final IFetchLeaderBoardEntriesResponseListener callback) {
         Task<RankingsClient.RankingScores> task = this.leaderboardsClient.getPlayerCenteredRankingScores(leaderBoardId, 2, limit, true);

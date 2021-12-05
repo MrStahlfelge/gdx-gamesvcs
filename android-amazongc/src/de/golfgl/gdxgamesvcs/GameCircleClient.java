@@ -300,6 +300,14 @@ public class GameCircleClient implements IGameServiceClient {
     }
 
     @Override
+    public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
+                                           IFetchLeaderBoardEntriesResponseListener callback,
+                                           int timespan, int collection) {
+        //TODO supported by GameCircle
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean submitEvent(String eventId, int increment) {
         Gdx.app.debug(GS_CLIENT_ID, "Event " + eventId + " not logged (not supported by this service)");
         return false;

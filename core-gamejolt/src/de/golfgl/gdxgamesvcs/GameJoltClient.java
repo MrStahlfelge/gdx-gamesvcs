@@ -465,7 +465,6 @@ public class GameJoltClient implements IGameServiceClient {
 
         return true;
     }
-
     @Override
     public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
                                            final IFetchLeaderBoardEntriesResponseListener callback) {
@@ -535,6 +534,13 @@ public class GameJoltClient implements IGameServiceClient {
         });
 
         return true;
+    }
+
+    @Override
+    public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
+                                           final IFetchLeaderBoardEntriesResponseListener callback,
+                                           int timespan, int collection) {
+        throw new UnsupportedOperationException();
     }
 
     /**

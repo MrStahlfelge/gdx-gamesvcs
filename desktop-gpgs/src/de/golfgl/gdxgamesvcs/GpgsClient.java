@@ -767,8 +767,9 @@ public class GpgsClient implements IGameServiceClient {
     }
 
     @Override
-    public boolean fetchLeaderboardEntries(final String leaderBoardId, final int limit, final boolean
-            relatedToPlayer, final IFetchLeaderBoardEntriesResponseListener callback) {
+    public boolean fetchLeaderboardEntries(final String leaderBoardId, final int limit,
+                                           final boolean relatedToPlayer,
+                                           final IFetchLeaderBoardEntriesResponseListener callback) {
         if (connected) {
             background(new SafeRunnable() {
                 @Override
@@ -785,12 +786,25 @@ public class GpgsClient implements IGameServiceClient {
         return connected;
     }
 
+    @Override
+    public boolean fetchLeaderboardEntries(final String leaderBoardId, final int limit,
+                                           final boolean relatedToPlayer,
+                                           final IFetchLeaderBoardEntriesResponseListener callback,
+                                           final int timespan, final int collection) {
+        throw new UnsupportedOperationException();
+    }
+
     /**
      * Blocking version of
-     * {@link #fetchLeaderboardEntries(String, int, boolean, IFetchLeaderBoardEntriesResponseListener)}
+     * {@link #fetchLeaderboardEntries(String, int, boolean, IFetchLeaderBoardEntriesResponseListener, int, int)}
      *
-     * @param leaderBoardId
-     * @throws IOException
+     * @param leaderBoardId leaderboard id used for data fetching
+     * @param limit how many results to return
+     * @param aroundPlayer are the results related to the player
+     * @param friendsOnly should the results contain friends only
+     *
+     * @return array of leaderboard entries
+     * @throws IOException on error cases throws an IOException
      */
     public Array<ILeaderBoardEntry> fetchLeaderboardSync(String leaderBoardId, int limit, boolean aroundPlayer,
                                                          boolean friendsOnly) throws IOException {

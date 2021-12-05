@@ -247,6 +247,13 @@ public class KongClient implements IGameServiceClient {
         return true;
     }
 
+    @Override
+    public boolean fetchLeaderboardEntries(String leaderBoardId, final int limit, boolean relatedToPlayer,
+                                           final IFetchLeaderBoardEntriesResponseListener callback,
+                                           int timespan, int collection) {
+        throw new UnsupportedOperationException();
+    }
+
     /**
      * override this method for tunneling through own server or other needs
      */
