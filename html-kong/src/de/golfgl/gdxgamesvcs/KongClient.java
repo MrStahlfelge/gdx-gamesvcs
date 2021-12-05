@@ -255,7 +255,12 @@ public class KongClient implements IGameServiceClient {
     }
 
     /**
-     * override this method for tunneling through own server or other needs
+     * Override this method for tunneling through own server or other needs
+     *
+     * @param statId the stat id
+     * @param playerRelated is the requested results related to the player
+     *
+     * @return the resulting HTTP request
      */
     protected Net.HttpRequest buildQueryStatRequest(Integer statId, boolean playerRelated) {
         String url = "https://api.kongregate.com/api/high_scores/" +
