@@ -173,7 +173,19 @@ abstract public class MockGameServiceClient implements IGameServiceClient
 
 	@Override
 	public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
-			final IFetchLeaderBoardEntriesResponseListener callback) {
+										   final IFetchLeaderBoardEntriesResponseListener callback) {
+		sleep(new Runnable() {
+			@Override
+			public void run() {
+				callback.onLeaderBoardResponse(getLeaderboardEntries());
+			}
+		});
+		return true;
+	}
+
+	@Override
+	public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
+			final IFetchLeaderBoardEntriesResponseListener callback, int timespan, int collection) {
 		sleep(new Runnable() {
 			@Override
 			public void run() {

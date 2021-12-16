@@ -7,6 +7,7 @@ import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
+import de.golfgl.gdxgamesvcs.player.IPlayerDataResponseListener;
 
 /**
  * NoGameServiceClient is an implementation for IGameServiceClient available on any platform.
@@ -87,6 +88,11 @@ public class NoGameServiceClient implements IGameServiceClient {
     }
 
     @Override
+    public boolean getPlayerData(IPlayerDataResponseListener callback) {
+        return false;
+    }
+
+    @Override
     public boolean isSessionActive() {
         return connected;
     }
@@ -123,6 +129,12 @@ public class NoGameServiceClient implements IGameServiceClient {
     @Override
     public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
                                            IFetchLeaderBoardEntriesResponseListener callback) {
+        return false;
+    }
+
+    @Override
+    public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
+                                           IFetchLeaderBoardEntriesResponseListener callback, int timespan, int collection) {
         return false;
     }
 

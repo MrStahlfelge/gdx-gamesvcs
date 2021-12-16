@@ -5,6 +5,7 @@ import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
+import de.golfgl.gdxgamesvcs.player.IPlayerDataResponseListener;
 
 /**
  * This is the main interface for gdx-gamesvcs. Use this in your game core.
@@ -97,6 +98,16 @@ public interface IGameServiceClient {
     String getPlayerDisplayName();
 
     /**
+     * Gets Player data if session is connected and
+     * the Game Service supports player data fetching
+     *
+     * @param callback the listener that will be notified about the result
+     *
+     * @return False if the data could not be fetched. True if the event was triggered successfully.
+     */
+    boolean getPlayerData(final IPlayerDataResponseListener callback);
+
+    /**
      * Returns if a user session is active.
      * <p>
      * You can safely call game service methods without checking if a user session exists.
@@ -111,7 +122,7 @@ public interface IGameServiceClient {
     /**
      * Checks if a user session connection attempt is running
      *
-     * @return
+     * @return boolean which describes if the connection attempt is pending
      */
     boolean isConnectionPending();
 
@@ -136,7 +147,7 @@ public interface IGameServiceClient {
      * Should only be called when {@link GameServiceFeature#FetchAchievements} is supported,
      * check {@link #isFeatureSupported(GameServiceFeature)} prior to call this method.
      *
-     * @param callback
+     * @param callback the listener that will be notified about the result
      * @return false if fetch attempt could not be made. Response listener will not get called in that case.
      * @throws UnsupportedOperationException if not supported by game service client, so check
      *                                       {@link #isFeatureSupported(GameServiceFeature)} prior to call this method.
@@ -150,27 +161,48 @@ public interface IGameServiceClient {
      * info level. If the connection is not open, this is no error - some game services allow submitting scores
      * without a user session.
      *
-     * @param leaderboardId
-     * @param score
+     * @param leaderboardId leaderboard id where the score is submitted
+     * @param score         score that will be submitted
      * @param tag           an optional information to post on the leader board, if API supports it. May be null.
      * @return false if submission couldn't be made. true if submit request was made (regardless if it was successful)
      */
     boolean submitToLeaderboard(String leaderboardId, long score, String tag);
 
     /**
-     * Fetches leader board entries
+     * Fetches leaderboard entries
      *
      * @param leaderBoardId   leaderboard to fetch
      * @param limit           limit how many entries to retrieve
      * @param relatedToPlayer only fetch scores around current player score or by current player (depending on Game
      *                        Service). If this is not possible, player-unrelated leaderboard entries are returned.
-     * @param callback
+     * @param callback        the listener that will be notified about the result
+     *
      * @return false if fetch attempt could not be made. Response listener will not get called in that case.
      * @throws UnsupportedOperationException if not supported by game service client, so check
      *                                       {@link #isFeatureSupported(GameServiceFeature)} prior to call this method.
      */
     boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
                                     IFetchLeaderBoardEntriesResponseListener callback);
+
+    /**
+     * Fetches leaderboard entries by refining the results with timespan and collection parameters
+     *
+     * @param leaderBoardId   leaderboard to fetch
+     * @param limit           limit how many entries to retrieve
+     * @param relatedToPlayer only fetch scores around current player score or by current player (depending on Game
+     *                        Service). If this is not possible, player-unrelated leaderboard entries are returned.
+     * @param callback        the listener that will be notified about the result
+     * @param timespan        filter the scores based on a specific timespan (depending on Game Service). If this is not
+     *                        possible, no timespan scope is used.
+     * @param collection      filter the results based on a collection e.g. Social or Public. Depends on the Game Service
+     *                        if this is possible. If specifying the collection is not supported, then public scores
+     *                        will be fetched.
+     * @return false if fetch attempt could not be made. Response listener will not get called in that case.
+     * @throws UnsupportedOperationException if not supported by game service client, so check
+     *                                       {@link #isFeatureSupported(GameServiceFeature)} prior to call this method.
+     */
+    boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
+                                    IFetchLeaderBoardEntriesResponseListener callback, int timespan, int collection);
 
     /**
      * Posts an event to the API.
@@ -234,6 +266,7 @@ public interface IGameServiceClient {
      * {@link GameServiceFeature#GameStateStorage} ()} before calling.
      *
      * @param fileId file id to load from when multiple files are supported. Ignored otherwise
+     * @param responseListener the listener that will be notified about the result
      */
     void loadGameState(String fileId, ILoadGameStateResponseListener responseListener);
 
@@ -251,7 +284,7 @@ public interface IGameServiceClient {
     /**
      * Fetch current player's game states.
      *
-     * @param callback
+     * @param callback the listener that will be notified about the result
      * @return false if fetch attempt could not be made. Response listener will not get called in that case.
      * @throws UnsupportedOperationException if not supported by game service client, so check
      *                                       {@link #isFeatureSupported(GameServiceFeature)} prior to call this method.
@@ -261,27 +294,35 @@ public interface IGameServiceClient {
     /**
      * Queries if a certain feature is available for this Game Service
      *
-     * @param feature
+     * @param feature feature to query if it is supported
      * @return true if feature is supported by implementation and game service
      */
     boolean isFeatureSupported(GameServiceFeature feature);
 
+    public static enum LeaderboardTimespan {
+        TIMESPAN_DAILY,
+        TIMESPAN_WEEKLY,
+        TIMESPAN_ALLTIME
+    }
+
+    public static enum LeaderboardCollection {
+        COLLECTION_PUBLIC,
+        COLLECTION_SOCIAL
+    }
+
     public static enum GameServiceFeature {
+        FetchAchievements,
         FetchGameStates,
-        GameStateStorage,
+        FetchLeaderBoardEntries,
         GameStateDelete,
         GameStateMultipleFiles,
-
-        FetchAchievements,
+        GameStateStorage,
+        LeaderboardCollections,
+        LeaderboardTimeSpans,
+        PlayerLogOut,
         ShowAchievementsUI,
-
-        SubmitEvents,
-
-        FetchLeaderBoardEntries,
-
-		PlayerLogOut,
-
+        ShowAllLeaderboardsUI,
         ShowLeaderboardUI,
-        ShowAllLeaderboardsUI
+        SubmitEvents
     }
 }

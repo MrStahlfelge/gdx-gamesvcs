@@ -12,6 +12,7 @@ import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.ILeaderBoardEntry;
+import de.golfgl.gdxgamesvcs.player.IPlayerDataResponseListener;
 
 /**
  * Kongegrate Client
@@ -121,6 +122,11 @@ public class KongClient implements IGameServiceClient {
             return null;
         else
             return getKongPlayerName();
+    }
+
+    @Override
+    public boolean getPlayerData(IPlayerDataResponseListener callback) {
+        return false;
     }
 
     private native boolean isKongGuest() /*-{
@@ -241,8 +247,20 @@ public class KongClient implements IGameServiceClient {
         return true;
     }
 
+    @Override
+    public boolean fetchLeaderboardEntries(String leaderBoardId, final int limit, boolean relatedToPlayer,
+                                           final IFetchLeaderBoardEntriesResponseListener callback,
+                                           int timespan, int collection) {
+        throw new UnsupportedOperationException();
+    }
+
     /**
-     * override this method for tunneling through own server or other needs
+     * Override this method for tunneling through own server or other needs
+     *
+     * @param statId the stat id
+     * @param playerRelated is the requested results related to the player
+     *
+     * @return the resulting HTTP request
      */
     protected Net.HttpRequest buildQueryStatRequest(Integer statId, boolean playerRelated) {
         String url = "https://api.kongregate.com/api/high_scores/" +

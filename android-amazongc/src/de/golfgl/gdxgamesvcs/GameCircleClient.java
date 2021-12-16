@@ -26,6 +26,7 @@ import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
+import de.golfgl.gdxgamesvcs.player.IPlayerDataResponseListener;
 
 /**
  * Client implementation for Amazon GameCircle
@@ -243,6 +244,11 @@ public class GameCircleClient implements IGameServiceClient {
     }
 
     @Override
+    public boolean getPlayerData(IPlayerDataResponseListener callback) {
+        return false;
+    }
+
+    @Override
     public boolean isSessionActive() {
         return agsClient != null && AmazonGamesClient.isInitialized() && isConnected && !isConnectionPending;
     }
@@ -289,6 +295,14 @@ public class GameCircleClient implements IGameServiceClient {
     @Override
     public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
                                            IFetchLeaderBoardEntriesResponseListener callback) {
+        //TODO supported by GameCircle
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
+                                           IFetchLeaderBoardEntriesResponseListener callback,
+                                           int timespan, int collection) {
         //TODO supported by GameCircle
         throw new UnsupportedOperationException();
     }

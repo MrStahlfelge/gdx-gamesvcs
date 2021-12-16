@@ -24,6 +24,7 @@ import de.golfgl.gdxgamesvcs.gamestate.IFetchGameStatesListResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ILoadGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.gamestate.ISaveGameStateResponseListener;
 import de.golfgl.gdxgamesvcs.leaderboard.IFetchLeaderBoardEntriesResponseListener;
+import de.golfgl.gdxgamesvcs.player.IPlayerDataResponseListener;
 
 /**
  * Apple Game Center implementation
@@ -122,6 +123,11 @@ public class GameCenterClient implements IGameServiceClient {
 	}
 
 	@Override
+	public boolean getPlayerData(IPlayerDataResponseListener callback) {
+		return false;
+	}
+
+	@Override
 	public boolean isSessionActive() {
 		return GKLocalPlayer.getLocalPlayer().isAuthenticated();
 	}
@@ -190,9 +196,18 @@ public class GameCenterClient implements IGameServiceClient {
 	}
 
 	@Override
-	public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer, IFetchLeaderBoardEntriesResponseListener callback) {
-		return false;
+	public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
+										   IFetchLeaderBoardEntriesResponseListener callback) {
+		throw new UnsupportedOperationException();
 	}
+
+	@Override
+	public boolean fetchLeaderboardEntries(String leaderBoardId, int limit, boolean relatedToPlayer,
+										   IFetchLeaderBoardEntriesResponseListener callback,
+										   int timespan, int collection) {
+		throw new UnsupportedOperationException();
+	}
+
 
 	@Override
 	public boolean submitEvent(String eventId, int increment) {
@@ -375,8 +390,8 @@ public class GameCenterClient implements IGameServiceClient {
 			case ShowAllLeaderboardsUI:
 				return true;
 
-            case PlayerLogOut:
-                return false;
+			case PlayerLogOut:
+				return false;
 
 			default:
 				return false;
