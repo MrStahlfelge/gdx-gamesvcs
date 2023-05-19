@@ -463,8 +463,8 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
         return true;
     }
 
-    private boolean fetchLeaderboardEntriesSync(String leaderBoardId, int limit, boolean relatedToPlayer,
-                                                IFetchLeaderBoardEntriesResponseListener callback) {
+    public boolean fetchLeaderboardEntriesSync(String leaderBoardId, int limit, boolean relatedToPlayer,
+                                               IFetchLeaderBoardEntriesResponseListener callback) {
         if (!isSessionActive())
             return false;
 
