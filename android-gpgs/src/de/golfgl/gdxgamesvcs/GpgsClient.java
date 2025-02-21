@@ -19,6 +19,7 @@ import com.google.android.gms.drive.Drive;
 import com.google.android.gms.games.Games;
 import com.google.android.gms.games.GamesActivityResultCodes;
 import com.google.android.gms.games.GamesStatusCodes;
+import com.google.android.gms.games.Player;
 import com.google.android.gms.games.achievement.Achievement;
 import com.google.android.gms.games.achievement.AchievementBuffer;
 import com.google.android.gms.games.achievement.Achievements;
@@ -221,11 +222,13 @@ public class GpgsClient implements GoogleApiClient.ConnectionCallbacks, GoogleAp
 
     @Override
     public String getPlayerDisplayName() {
-        if (isSessionActive())
-            return Games.Players.getCurrentPlayer(mGoogleApiClient)
-                    .getDisplayName();
-        else
-            return null;
+        if (isSessionActive()) {
+            Player player = Games.Players.getCurrentPlayer(mGoogleApiClient);
+            if (player != null) 
+                return player.getDisplayName();
+        }
+
+        return null;
     }
 
     @Override
